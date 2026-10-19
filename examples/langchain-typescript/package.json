@@ -1,0 +1,17 @@
+{
+  "name": "@acp/example-langchain-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "description": "LangChain TypeScript agent behind an ACP message boundary",
+  "type": "module",
+  "scripts": {
+    "start": "tsx main.ts"
+  },
+  "dependencies": {
+    "@langchain/openai": "^1.0.0",
+    "langchain": "^1.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

@@ -1,11 +1,10 @@
-import type { DeliveryReceipt, ReceiveMetadata } from "@acp/adapter";
+import type { DeliveryReceipt } from "@acp/adapter";
 import { AcpError, ConflictError, createActionId, ValidationError } from "@acp/core";
 import {
   ActionExecutedSchema,
   ActionFailedSchema,
   type ActionRequest,
   ActionRequestSchema,
-  type ActorRef,
   ApprovalOutcome,
   createEvent,
   type EventEnvelope,
@@ -23,20 +22,19 @@ import type {
   ActionExecutionContext,
   ActionRequestOptions,
   ActionResult,
+  AgentCard,
   AgentDefinition,
   ChannelDefinition,
 } from "./types.js";
 
 interface PendingAction {
   action: ActionRequest;
-  actor: ActorRef;
+  actor: ActionExecutionContext["actor"];
   definition: ActionDefinition<unknown, unknown>;
-  event?: EventEnvelope;
+  event: EventEnvelope;
   input: unknown;
   options: ActionRequestOptions;
 }
-
-type AppState = "created" | "running" | "stopping" | "stopped";
 
 /** Creates a lifecycle-managed ACP application for agents, channels, and actions. */
 export function createAcp(options: AcpAppOptions): AcpApp {
@@ -46,13 +44,12 @@ export function createAcp(options: AcpAppOptions): AcpApp {
 class AcpApplication implements AcpApp {
   readonly gateway: ChannelGateway;
   readonly runtime: AcpRuntime;
-
   private readonly actions = new Map<string, ActionDefinition<unknown, unknown>>();
-  private readonly defaultApprover: ActorRef;
+  private readonly defaultApprover: NonNullable<AcpAppOptions["defaultApprover"]>;
   private readonly hooks: AcpHooks;
   private readonly pendingActions = new Map<string, PendingAction>();
   private readonly host: AgentHost;
-  private state: AppState = "created";
+  private state: "created" | "running" | "stopping" | "stopped" = "created";
   private sourceAbort?: AbortController;
   private runtimeSubscription?: () => void;
   private readonly active = new Set<Promise<unknown>>();
@@ -68,14 +65,12 @@ class AcpApplication implements AcpApp {
       runtimeActor: options.runtimeActor,
     });
     this.gateway = new ChannelGateway(this.runtime);
-
     for (const channel of options.channels ?? []) {
       this.registerChannel(channel);
     }
     for (const action of options.actions ?? []) {
       this.registerAction(action);
     }
-
     this.host = new AgentHost({
       actionRequester: (agent, event, type, input, actionOptions) =>
         this.requestAction(agent, event, type, input, actionOptions),
@@ -91,7 +86,7 @@ class AcpApplication implements AcpApp {
     this.host.register(agent);
   }
 
-  listAgentCards() {
+  listAgentCards(): AgentCard[] {
     return this.host.listAgentCards();
   }
 
@@ -99,7 +94,7 @@ class AcpApplication implements AcpApp {
     if (this.actions.has(action.type)) {
       throw new ConflictError("ACP action", action.type);
     }
-    this.actions.set(action.type, action as unknown as ActionDefinition<unknown, unknown>);
+    this.actions.set(action.type, action as ActionDefinition<unknown, unknown>);
   }
 
   on(eventType: string, handler: (event: EventEnvelope) => void | Promise<void>): () => void {
@@ -117,7 +112,6 @@ class AcpApplication implements AcpApp {
     if (this.state === "stopping" || this.state === "stopped") {
       throw new AcpError("ACP_TRANSPORT", `Cannot start ACP app while it is ${this.state}`);
     }
-
     this.sourceAbort = new AbortController();
     this.host.attach();
     await this.gateway.start(
@@ -146,12 +140,12 @@ class AcpApplication implements AcpApp {
     return this.track(this.gateway.ingest(event));
   }
 
-  receive(provider: string, input: unknown, metadata?: ReceiveMetadata) {
+  receive(provider: string, input: unknown, metadata?: Parameters<ChannelGateway["receive"]>[2]) {
     this.assertAccepting();
     return this.track(this.gateway.receive(provider, input, metadata));
   }
 
-  approve(approvalId: string, approver: ActorRef, reason?: string) {
+  approve(approvalId: string, approver: ActionExecutionContext["actor"], reason?: string) {
     return this.runtime.decideApproval({
       approvalId,
       approver,
@@ -160,7 +154,7 @@ class AcpApplication implements AcpApp {
     });
   }
 
-  deny(approvalId: string, approver: ActorRef, reason?: string) {
+  deny(approvalId: string, approver: ActionExecutionContext["actor"], reason?: string) {
     return this.runtime.decideApproval({
       approvalId,
       approver,
@@ -179,7 +173,7 @@ class AcpApplication implements AcpApp {
   }
 
   private async requestAction<TInput, TResult>(
-    actor: ActorRef,
+    actor: ActionExecutionContext["actor"],
     inbound: EventEnvelope,
     type: string,
     input: TInput,
@@ -189,7 +183,6 @@ class AcpApplication implements AcpApp {
     if (!definition) {
       throw new ValidationError(`No ACP action is registered for type: ${type}`);
     }
-
     let validated: unknown = input;
     try {
       validated = definition.validate ? definition.validate(input) : input;
@@ -200,7 +193,6 @@ class AcpApplication implements AcpApp {
         status: "failed",
       };
     }
-
     const actionId = options.actionId ?? createActionId();
     const action = create(ActionRequestSchema, {
       actionId,
@@ -208,7 +200,10 @@ class AcpApplication implements AcpApp {
       target: options.target ?? `action:${type}`,
       type,
     });
-    const actionOptions = {
+    const actionOptions: ActionRequestOptions & {
+      approver: NonNullable<ActionRequestOptions["approver"]>;
+      reason: string;
+    } = {
       ...options,
       approver: options.approver ?? this.defaultApprover,
       channel: options.channel ?? inbound.channel,
@@ -225,15 +220,9 @@ class AcpApplication implements AcpApp {
       reason: actionOptions.reason,
       recipient: actionOptions.recipient,
     });
-
     if (submission.status === "blocked") {
-      return {
-        actionId,
-        reason: submission.decision.reason,
-        status: "blocked",
-      };
+      return { actionId, reason: submission.decision.reason, status: "blocked" };
     }
-
     const pending: PendingAction = {
       action,
       actor,
@@ -242,16 +231,10 @@ class AcpApplication implements AcpApp {
       input: validated,
       options: actionOptions,
     };
-
     if (submission.status === "approval_required" && submission.approvalId) {
       this.pendingActions.set(submission.approvalId, pending);
-      return {
-        actionId,
-        approvalId: submission.approvalId,
-        status: "approval_required",
-      };
+      return { actionId, approvalId: submission.approvalId, status: "approval_required" };
     }
-
     return (await this.executeAction(pending)) as ActionResult<TResult>;
   }
 
@@ -262,15 +245,14 @@ class AcpApplication implements AcpApp {
       event: pending.event,
       runtime: this.runtime,
     };
-
     try {
       const result = await pending.definition.execute(pending.input, context);
       const event = createEvent({
         actor: pending.actor,
-        causationId: pending.event?.eventId,
+        causationId: pending.event.eventId,
         channel: pending.options.channel,
         conversation: pending.options.conversation,
-        correlationId: pending.event?.correlationId || pending.action.actionId,
+        correlationId: pending.event.correlationId || pending.action.actionId,
         eventType: "action.executed",
         occurredAt: timestampFromDate(this.runtime.clock.now()),
         payload: {
@@ -294,10 +276,10 @@ class AcpApplication implements AcpApp {
     } catch (error) {
       const failedEvent = createEvent({
         actor: pending.actor,
-        causationId: pending.event?.eventId,
+        causationId: pending.event.eventId,
         channel: pending.options.channel,
         conversation: pending.options.conversation,
-        correlationId: pending.event?.correlationId || pending.action.actionId,
+        correlationId: pending.event.correlationId || pending.action.actionId,
         eventType: "action.failed",
         occurredAt: timestampFromDate(this.runtime.clock.now()),
         payload: {
@@ -308,7 +290,7 @@ class AcpApplication implements AcpApp {
             errorMessage: error instanceof Error ? error.message : String(error),
             retryable: Boolean(
               error && typeof error === "object" && "retryable" in error
-                ? (error as { retryable?: boolean }).retryable
+                ? (error as { retryable?: unknown }).retryable
                 : false,
             ),
           }),
@@ -329,7 +311,6 @@ class AcpApplication implements AcpApp {
 
   private async handleRuntimeEvent(event: EventEnvelope): Promise<void> {
     await this.runHook(this.hooks.onEventAccepted, event);
-
     if (event.eventType === "approval.granted" && event.payload.case === "approvalDecided") {
       const pending = this.pendingActions.get(event.payload.value.approvalId);
       if (pending) {
@@ -337,15 +318,12 @@ class AcpApplication implements AcpApp {
         await this.executeAction(pending);
       }
     }
-
     if (
       (event.eventType === "approval.denied" || event.eventType === "approval.expired") &&
       (event.payload.case === "approvalDecided" || event.payload.case === "approvalExpired")
     ) {
-      const { approvalId } = event.payload.value;
-      this.pendingActions.delete(approvalId);
+      this.pendingActions.delete(event.payload.value.approvalId);
     }
-
     await this.runHook(this.hooks.onEventProcessed, event);
   }
 
@@ -364,7 +342,7 @@ class AcpApplication implements AcpApp {
   }
 
   private async drain(timeoutMs: number): Promise<void> {
-    const drain = async () => {
+    const drain = async (): Promise<void> => {
       if (this.active.size === 0) {
         return;
       }
@@ -372,7 +350,7 @@ class AcpApplication implements AcpApp {
       await this.host.waitForIdle();
       await drain();
     };
-    let timeout: NodeJS.Timeout | undefined;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     try {
       await Promise.race([
         drain(),
@@ -417,10 +395,7 @@ class AcpApplication implements AcpApp {
       return "null";
     }
     try {
-      if (typeof result === "string") {
-        return result;
-      }
-      return JSON.stringify(result);
+      return typeof result === "string" ? result : JSON.stringify(result);
     } catch {
       return String(result);
     }

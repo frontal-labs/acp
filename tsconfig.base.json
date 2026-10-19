@@ -17,7 +17,7 @@
       "@acp/policy": ["packages/policy/src/index.ts"],
       "@acp/protocol": ["packages/protocol/src/index.ts"],
       "@acp/runtime": ["packages/runtime/src/index.ts"],
-      "acp-sdk-ts": ["sdks/typescript/src/index.ts"],
+      "acp-sdk": ["sdks/typescript/src/index.ts"],
       "@acp/testing": ["packages/testing/src/index.ts"]
     }
   }

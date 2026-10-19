@@ -10,7 +10,7 @@
       "@acp/protocol",
       "@acp/runtime",
       "acp-cli",
-      "acp-sdk-ts"
+      "acp-sdk"
     ]
   ],
   "linked": [],

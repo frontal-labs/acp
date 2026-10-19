@@ -26,7 +26,10 @@ const requiredFiles = [
   "renovate.json",
   "ruff.toml",
   "rust-toolchain.toml",
-  "crates/acp-cli/Cargo.toml",
+  "rustfmt.toml",
+  "docs/README.md",
+  "docs/DEVELOPMENT.md",
+  "docs/SPEC_V0_1.md",
   "examples/README.md",
   "skills/acp-examples/SKILL.md",
   "skills/acp-governance/SKILL.md",
@@ -57,23 +60,18 @@ const jsonFiles = [
   "skills.sh.json",
 ];
 const metadataTextChecks = {
-  "crates/acp-cli/Cargo.toml": [
-    'name = "acp-cli"',
-    'readme = "README.md"',
-    'repository = "https://github.com/frontal-labs/acp"',
-  ],
   "proto/buf.yaml": ["name: buf.build/frontal-labs/acp"],
   "sdks/python/pyproject.toml": [
-    'name = "acp-sdk-py"',
+    'name = "acp-sdk"',
     'readme = "README.md"',
     "[project.urls]",
     'Repository = "https://github.com/frontal-labs/acp"',
   ],
   "sdks/rust/Cargo.toml": [
-    'name = "acp-sdk-rs"',
+    'name = "acp-sdk"',
     'readme = "README.md"',
     'repository = "https://github.com/frontal-labs/acp"',
-    'documentation = "https://docs.rs/acp-sdk-rs"',
+    'documentation = "https://docs.rs/acp-sdk"',
   ],
 };
 

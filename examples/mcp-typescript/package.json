@@ -1,0 +1,16 @@
+{
+  "name": "@acp/example-mcp-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MCP tool result bridged into an ACP response",
+  "type": "module",
+  "scripts": {
+    "start": "tsx main.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/client": "^1.29.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

@@ -1,7 +1,5 @@
-import type { DeliveryReceipt } from "@acp/adapter";
 import { ConflictError } from "@acp/core";
 import {
-  type ActorRef,
   ActorRefSchema,
   ActorType,
   createEvent,
@@ -70,7 +68,6 @@ export class AgentHost {
     if (this.detachSubscription) {
       return this.detachSubscription;
     }
-
     const unsubscribe = this.runtime.subscribe((event) => this.handle(event).then(() => undefined));
     this.detachSubscription = () => {
       unsubscribe();
@@ -96,7 +93,6 @@ export class AgentHost {
       () => undefined,
     );
     this.queues.set(key, tail);
-
     try {
       return await current;
     } finally {
@@ -116,7 +112,6 @@ export class AgentHost {
     if (!definition) {
       return false;
     }
-
     const agent = this.toActor(definition);
     const context: AgentContext = {
       actions: {
@@ -144,7 +139,7 @@ export class AgentHost {
   }
 
   private async reply(
-    agent: ActorRef,
+    agent: ReturnType<AgentHost["toActor"]>,
     inbound: EventEnvelope,
     text: string,
   ): Promise<EventEnvelope> {
@@ -166,13 +161,17 @@ export class AgentHost {
     if (this.gateway) {
       const receipt = await this.gateway.dispatch(event);
       if (receipt) {
-        await this.onDelivery?.(receipt as DeliveryReceipt);
+        await this.onDelivery?.(receipt);
       }
     }
     return event;
   }
 
-  private requestAction(agent: ActorRef, inbound: EventEnvelope, input: AgentActionInput) {
+  private requestAction(
+    agent: ReturnType<AgentHost["toActor"]>,
+    inbound: EventEnvelope,
+    input: AgentActionInput,
+  ) {
     if (this.actionRequester && input.action) {
       return this.actionRequester(agent, inbound, input.action.type, input.action, {
         approver: input.approver,
@@ -228,7 +227,7 @@ export class AgentHost {
     });
   }
 
-  private toActor(definition: AgentDefinition): ActorRef {
+  private toActor(definition: AgentDefinition) {
     return create(ActorRefSchema, {
       capabilities: definition.actorCapabilities ?? [],
       displayName: definition.name,

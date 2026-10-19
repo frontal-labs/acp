@@ -118,10 +118,7 @@ export type ActionResult<TResult> =
   | { actionId: string; status: "failed"; error: unknown };
 
 /** Action input that is completed with the current agent and conversation. */
-export type AgentActionInput = Omit<
-  SubmitActionInput,
-  "actor" | "channel" | "conversation"
-> & {
+export type AgentActionInput = Omit<SubmitActionInput, "actor" | "channel" | "conversation"> & {
   channel?: SubmitActionInput["channel"];
   conversation?: SubmitActionInput["conversation"];
 };
@@ -179,10 +176,7 @@ export interface AcpApp {
   readonly gateway: ChannelGateway;
   ingest: (event: EventEnvelope) => Promise<RuntimeResult>;
   listAgentCards: () => AgentCard[];
-  on: (
-    eventType: string,
-    handler: (event: EventEnvelope) => void | Promise<void>,
-  ) => () => void;
+  on: (eventType: string, handler: (event: EventEnvelope) => void | Promise<void>) => () => void;
   receive: (
     provider: string,
     input: unknown,

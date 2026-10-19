@@ -4,12 +4,12 @@ Add one Markdown file to this directory for every user-visible package change:
 
 ```md
 ---
-"acp-sdk-ts": minor
+"acp-sdk": minor
 ---
 
 Describe the change and any migration notes.
 ```
 
-Run `pnpm changeset` to create a changeset interactively, `pnpm changeset:status` to inspect pending releases, and `pnpm release:version` to apply versions and changelogs. Public JavaScript packages are published by the release workflow; the same release version is synchronized to `acp-sdk-py`, `acp-sdk-rs`, and the native `acp-cli` crate.
+Run `pnpm changeset` to create a changeset interactively, `pnpm changeset:status` to inspect pending releases, and `pnpm release:version` to apply versions and changelogs. Public SDK distributions use the common name `acp-sdk`; their language import identifiers are `acp-sdk`, `acp`, and `acp_sdk` respectively.
 
 Generated changelog entries use the GitHub-aware Changesets adapter and link back to `frontal-labs/acp`.

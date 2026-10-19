@@ -65,8 +65,8 @@ skills/                        ACP-specific instructions for agents and contribu
 tests/                         Cross-package Vitest conformance tests
 skills/                        Project-local ACP skills for agent workflows
 skills.sh.json                 skills.sh grouping and discovery metadata
-docs/spec-v0.1.md              Normative behavior and compatibility rules
-docs/development.md            Local development and agent SDK guide
+docs/SPEC_V0_1.md              Normative behavior and compatibility rules
+docs/DEVELOPMENT.md             Local development and agent SDK guide
 proto/README.md                Schema and generated-code workflow
 turbo.json                     Root Turborepo task graph
 renovate.json                  Dependency-update policy for code and examples
@@ -106,6 +106,6 @@ ACP uses compatible concepts such as actors, tasks, artifacts, correlation IDs, 
 
 ## Contributing
 
-The canonical schema lives under `proto/`. Run `pnpm generate` after changing it, then run `pnpm check`. New provider integrations should implement `ChannelSource` and/or `ChannelSink` and translate provider-native events into ACP envelopes without leaking provider-specific fields into the core payloads. Application code should prefer `createAcp()` from `acp-sdk-ts`.
+The canonical schema lives under `proto/`. Run `pnpm generate` after changing it, then run `pnpm check`. New provider integrations should implement `ChannelSource` and/or `ChannelSink` and translate provider-native events into ACP envelopes without leaking provider-specific fields into the core payloads. Application code should prefer `createAcp()` from `acp-sdk`.
 
 Use `pnpm fix` for safe formatting and lint fixes. Package-level task configuration is inherited from the root `turbo.json`; each package also contains a local `turbo.json` so ownership and future task overrides stay close to the package.

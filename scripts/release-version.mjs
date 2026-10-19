@@ -50,7 +50,6 @@ updatePackageVersion("cli/package.json");
 updatePackageVersion("sdks/typescript/package.json");
 updateTomlVersion("sdks/python/pyproject.toml");
 updateTomlVersion("sdks/rust/Cargo.toml");
-updateTomlVersion("crates/acp-cli/Cargo.toml");
 
 const updateLockVersion = (file, packageName) => {
   const path = resolve(root, file);
@@ -65,8 +64,7 @@ const updateLockVersion = (file, packageName) => {
   }
 };
 
-updateLockVersion("sdks/rust/Cargo.lock", "acp-sdk-rs");
-updateLockVersion("crates/acp-cli/Cargo.lock", "acp-cli");
-updateLockVersion("examples/native-rust/Cargo.lock", "acp-sdk-rs");
+updateLockVersion("sdks/rust/Cargo.lock", "acp-sdk");
+updateLockVersion("examples/native-rust/Cargo.lock", "acp-sdk");
 
-console.log(`Synchronized native SDK and CLI versions to ${releaseVersion}.`);
+console.log(`Synchronized SDK versions to ${releaseVersion}.`);

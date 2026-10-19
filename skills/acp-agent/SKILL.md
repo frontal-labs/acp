@@ -69,7 +69,7 @@ card shape changes, and test duplicate registration as a conflict.
 Relevant commands:
 
 ```bash
-pnpm --filter acp-sdk-ts test
-pnpm --filter acp-sdk-ts typecheck
+pnpm --filter acp-sdk test
+pnpm --filter acp-sdk typecheck
 pnpm test
 ```

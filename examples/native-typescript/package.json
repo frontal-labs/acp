@@ -1,0 +1,7 @@
+{
+  "name": "@acp/example-native-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Native TypeScript ACP agent and approval examples",
+  "type": "module"
+}

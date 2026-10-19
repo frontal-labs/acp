@@ -5,7 +5,17 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const requiredCommands = ["node", "pnpm", "buf", "protoc", "cargo", "python3"];
+const requiredCommands = [
+  "node",
+  "pnpm",
+  "buf",
+  "protoc",
+  "cargo",
+  "python3",
+  "ruff",
+  "rustfmt",
+  "cargo-clippy",
+];
 const requiredFiles = [
   "package.json",
   "proto/v1/api/events.proto",

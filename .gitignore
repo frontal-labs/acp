@@ -17,6 +17,5 @@ __pycache__/
 .pytest_cache/
 sdks/python/.venv/
 sdks/rust/target/
-crates/acp-cli/target/
 examples/native-rust/target/
 .DS_Store

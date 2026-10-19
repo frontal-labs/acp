@@ -57,7 +57,7 @@ importers:
       acp-cli:
         specifier: workspace:*
         version: link:cli
-      acp-sdk-ts:
+      acp-sdk:
         specifier: workspace:*
         version: link:sdks/typescript
       husky:

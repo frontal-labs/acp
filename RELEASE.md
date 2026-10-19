@@ -2,31 +2,33 @@
 
 ACP uses Changesets for JavaScript package versioning and release orchestration. The public release surface is:
 
-- npm: `acp-cli` and `acp-sdk-ts`;
-- crates.io: `acp-sdk-rs` and the native `acp-cli` crate;
-- PyPI: `acp-sdk-py`;
-- GitHub Releases: native `acp-cli` archives for the supported target triples.
+- npm: `acp-cli` and `acp-sdk`;
+- crates.io: `acp-sdk`;
+- PyPI: `acp-sdk`;
+
+The SDK package name is unified as `acp-sdk`; the language-specific import
+identifiers are `acp-sdk` for TypeScript, `acp` for Python, and `acp_sdk` for
+Rust.
 
 ## Prepare a release
 
 1. Add a changeset with `pnpm changeset` for each user-visible package change.
 2. Run `pnpm changeset:status` and review the release plan.
 3. Run `pnpm check`.
-4. Run `pnpm release:version` to update package versions, changelogs, and the native Rust/Python manifests.
+4. Run `pnpm release:version` to update package versions, changelogs, and the Rust/Python SDK manifests.
 5. Review the generated changes, then commit them and create a release PR.
 
 ## Publish from CI
 
 The `Release` workflow creates or updates the Changesets release PR. Once that PR
-lands on `main`, it publishes the npm, crates.io, and PyPI packages and attaches
-the five native CLI archives to `acp-cli-v<version>`.
+lands on `main`, it publishes the TypeScript CLI/SDK, Rust SDK, and Python SDK.
 
 Configure these repository secrets before enabling publishing:
 
-- `NPM_TOKEN` — npm publish token for `acp-cli` and `acp-sdk-ts`;
-- `CARGO_REGISTRY_TOKEN` — crates.io token for `acp-sdk-rs` and `acp-cli`;
-- `PYPI_API_TOKEN` — PyPI token for `acp-sdk-py`.
+- `NPM_TOKEN` — npm publish token for `acp-cli` and `acp-sdk`;
+- `CARGO_REGISTRY_TOKEN` — crates.io token for `acp-sdk`;
+- `PYPI_API_TOKEN` — PyPI token for `acp-sdk`.
 
-Run `pnpm release:publish:native -- --dry-run` locally to package and validate
-the native SDK and CLI distributions without uploading them. Never commit
-registry tokens.
+Run `pnpm release:publish:sdk -- --dry-run` locally to package and validate the
+Rust and Python SDK distributions without uploading them. Never commit registry
+tokens.

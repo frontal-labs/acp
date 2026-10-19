@@ -10,7 +10,7 @@ export default defineConfig({
       "@acp/runtime": new URL("./packages/runtime/src/index.ts", import.meta.url).pathname,
       "@acp/testing": new URL("./packages/testing/src/index.ts", import.meta.url).pathname,
       "acp-cli": new URL("./cli/src/index.ts", import.meta.url).pathname,
-      "acp-sdk-ts": new URL("./sdks/typescript/src/index.ts", import.meta.url).pathname,
+      "acp-sdk": new URL("./sdks/typescript/src/index.ts", import.meta.url).pathname,
     },
   },
   test: {
