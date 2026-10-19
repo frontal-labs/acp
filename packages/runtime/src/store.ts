@@ -1,10 +1,11 @@
 import type { EventEnvelope } from "@acp/protocol";
 
-import type { EventStore } from "./types.js";
+import type { ActionExecutionRecord, EventStore } from "./types.js";
 
 /** Simple append-only in-memory event store for local runtimes. */
 export class InMemoryEventStore implements EventStore {
   private readonly events = new Map<string, EventEnvelope>();
+  private readonly actions = new Map<string, ActionExecutionRecord>();
 
   has(eventId: string): Promise<boolean> {
     return Promise.resolve(this.events.has(eventId));
@@ -36,5 +37,43 @@ export class InMemoryEventStore implements EventStore {
 
   all(): Promise<EventEnvelope[]> {
     return Promise.resolve([...this.events.values()]);
+  }
+
+  claimAction(actionId: string, owner: string): Promise<boolean> {
+    if (this.actions.has(actionId)) {
+      return Promise.resolve(false);
+    }
+    this.actions.set(actionId, { actionId, owner, status: "claimed" });
+    return Promise.resolve(true);
+  }
+
+  completeAction(actionId: string, result: unknown): Promise<void> {
+    const current = this.actions.get(actionId);
+    this.actions.set(actionId, {
+      actionId,
+      owner: current?.owner,
+      result,
+      status: "completed",
+    });
+    return Promise.resolve();
+  }
+
+  failAction(actionId: string, error: unknown): Promise<void> {
+    const current = this.actions.get(actionId);
+    this.actions.set(actionId, {
+      actionId,
+      error,
+      owner: current?.owner,
+      status: "failed",
+    });
+    return Promise.resolve();
+  }
+
+  getAction(actionId: string): Promise<ActionExecutionRecord | undefined> {
+    return Promise.resolve(this.actions.get(actionId));
+  }
+
+  close(): void {
+    // In-memory state has no external resources to close.
   }
 }

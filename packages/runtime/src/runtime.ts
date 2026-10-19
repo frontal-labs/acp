@@ -20,6 +20,7 @@ import { SYSTEM_ACTOR } from "./actors.js";
 import { SystemClock } from "./clock.js";
 import { InMemoryEventStore } from "./store.js";
 import type {
+  ActionExecutionRecord,
   Clock,
   DecideApprovalInput,
   EventHandler,
@@ -40,6 +41,7 @@ export class AcpRuntime {
   private readonly runtimeActor: ActorRef;
   private readonly pendingApprovals = new Map<string, PendingApproval>();
   private readonly handlers = new Set<EventHandler>();
+  private readonly actionRecords = new Map<string, ActionExecutionRecord>();
 
   constructor(options: RuntimeOptions) {
     this.policy = options.policy;
@@ -52,6 +54,59 @@ export class AcpRuntime {
   subscribe(handler: EventHandler): () => void {
     this.handlers.add(handler);
     return () => this.handlers.delete(handler);
+  }
+
+  /** Claims an action ID exactly once across this runtime/store. */
+  claimAction(actionId: string, owner: string): Promise<boolean> {
+    if (this.eventStore.claimAction) {
+      return this.eventStore.claimAction(actionId, owner);
+    }
+    if (this.actionRecords.has(actionId)) {
+      return Promise.resolve(false);
+    }
+    this.actionRecords.set(actionId, {
+      actionId,
+      owner,
+      status: "claimed",
+    });
+    return Promise.resolve(true);
+  }
+
+  async completeAction(actionId: string, result: unknown): Promise<void> {
+    if (this.eventStore.completeAction) {
+      await this.eventStore.completeAction(actionId, result);
+    }
+    const current = this.actionRecords.get(actionId);
+    this.actionRecords.set(actionId, {
+      actionId,
+      owner: current?.owner,
+      result,
+      status: "completed",
+    });
+  }
+
+  async failAction(actionId: string, error: unknown): Promise<void> {
+    if (this.eventStore.failAction) {
+      await this.eventStore.failAction(actionId, error);
+    }
+    const current = this.actionRecords.get(actionId);
+    this.actionRecords.set(actionId, {
+      actionId,
+      error,
+      owner: current?.owner,
+      status: "failed",
+    });
+  }
+
+  getAction(actionId: string): Promise<ActionExecutionRecord | undefined> {
+    if (this.eventStore.getAction) {
+      return this.eventStore.getAction(actionId);
+    }
+    return Promise.resolve(this.actionRecords.get(actionId));
+  }
+
+  async close(): Promise<void> {
+    await this.eventStore.close?.();
   }
 
   async process(event: EventEnvelope): Promise<RuntimeResult> {

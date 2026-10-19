@@ -8,9 +8,23 @@ export interface EventStore {
   append: (event: EventEnvelope) => Promise<void>;
   /** Atomically appends an event and returns false when it already exists. */
   appendIfAbsent?: (event: EventEnvelope) => Promise<boolean>;
+  claimAction?: (actionId: string, owner: string) => Promise<boolean>;
+  close?: () => Promise<void> | void;
+  completeAction?: (actionId: string, result: unknown) => Promise<void>;
+  failAction?: (actionId: string, error: unknown) => Promise<void>;
   get?: (eventId: string) => Promise<EventEnvelope | undefined>;
+  getAction?: (actionId: string) => Promise<ActionExecutionRecord | undefined>;
   has: (eventId: string) => Promise<boolean>;
   list?: (options?: { eventType?: string; limit?: number }) => Promise<EventEnvelope[]>;
+}
+
+/** Durable state used to make registered action execution idempotent. */
+export interface ActionExecutionRecord {
+  actionId: string;
+  error?: unknown;
+  owner?: string;
+  result?: unknown;
+  status: "claimed" | "completed" | "failed";
 }
 
 /** Scheduling abstraction that keeps approval expiry testable. */

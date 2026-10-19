@@ -4,6 +4,7 @@ export { ChannelGateway } from "./gateway.js";
 export { AcpRuntime } from "./runtime.js";
 export { InMemoryEventStore } from "./store.js";
 export type {
+  ActionExecutionRecord,
   ChannelGatewayOptions,
   Clock,
   DecideApprovalInput,

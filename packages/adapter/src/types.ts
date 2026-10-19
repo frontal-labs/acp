@@ -37,8 +37,9 @@ export interface ChannelSource {
 
 /** Delivers normalized ACP events to a provider. */
 export interface ChannelSink {
+  close?: () => Promise<void> | void;
   readonly provider: string;
-  send: (event: EventEnvelope, options?: DeliveryOptions) => Promise<DeliveryReceipt | undefined>;
+  send: (event: EventEnvelope, options?: DeliveryOptions) => Promise<DeliveryReceipt>;
 }
 
 /** Combined provider contract for adapters that support both directions. */

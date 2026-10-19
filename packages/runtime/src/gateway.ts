@@ -6,7 +6,7 @@ import type {
   DeliveryReceipt,
   ReceiveMetadata,
 } from "@acp/adapter";
-import { TransportError, ValidationError } from "@acp/core";
+import { AcpError, TransportError, ValidationError } from "@acp/core";
 import type { EventEnvelope } from "@acp/protocol";
 
 import type { AcpRuntime } from "./runtime.js";
@@ -96,10 +96,7 @@ export class ChannelGateway {
     this.sourceRuns.clear();
   }
 
-  async dispatch(
-    event: EventEnvelope,
-    options?: DeliveryOptions,
-  ): Promise<DeliveryReceipt | undefined> {
+  async dispatch(event: EventEnvelope, options?: DeliveryOptions): Promise<DeliveryReceipt> {
     const provider = event.channel?.provider;
     if (!provider) {
       throw new ValidationError(
@@ -113,6 +110,26 @@ export class ChannelGateway {
         details: { eventId: event.eventId, provider },
       });
     }
-    return await adapter.send(event, options);
+    try {
+      return await adapter.send(event, options);
+    } catch (error) {
+      if (error instanceof AcpError) {
+        throw error;
+      }
+      throw new TransportError(`Delivery failed for ACP event ${event.eventId}`, {
+        cause: error,
+        eventId: event.eventId,
+        provider,
+        retryable: true,
+        stage: "delivery",
+      });
+    }
+  }
+
+  async close(): Promise<void> {
+    for (const sink of this.sinks.values()) {
+      // biome-ignore lint/performance/noAwaitInLoops: Sinks close deterministically before shutdown completes.
+      await sink.close?.();
+    }
   }
 }
