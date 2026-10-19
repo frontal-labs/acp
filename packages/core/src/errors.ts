@@ -63,7 +63,7 @@ export class AcpError extends Error {
       ...(this.eventId ? { eventId: this.eventId } : {}),
       ...(this.provider ? { provider: this.provider } : {}),
       ...(this.stage ? { stage: this.stage } : {}),
-      retryable: this.retryable,
+      ...(this.retryable ? { retryable: true } : {}),
     };
   }
 }
