@@ -77,14 +77,27 @@ export {
   eventToJson,
 } from "./serialization.js";
 export type {
+  ActionExecutedInput,
+  ActionFailedInput,
+  ApprovalRequestedInput,
   LegacyV1EventEnvelope,
+  MessageReceivedInput,
+  MessageSentInput,
+  V2EventBuilderBase,
+  V2EventEnvelope,
   V2EventInput,
   V2EventName,
   V2EventPayload,
 } from "./v2.js";
 export {
   ACP_V2_PROTOCOL_VERSION,
+  actionExecuted,
+  actionFailed,
+  approvalRequested,
   createV2Event,
+  messageReceived,
+  messageSent,
+  parseEvent,
   V2_EVENT_TYPES,
   v2EventFromBinary,
   v2EventFromJson,

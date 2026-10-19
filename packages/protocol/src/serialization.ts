@@ -3,9 +3,13 @@ import { fromBinary, fromJson, type JsonValue, toBinary, toJson } from "@bufbuil
 import { validateEvent } from "./events.js";
 import { type EventEnvelope, EventEnvelopeSchema } from "./generated.js";
 import { parseEventJson } from "./schemas.js";
+import { type V2EventEnvelope, v2EventToBinary, v2EventToJson } from "./v2.js";
 
 /** Serializes a validated event to ProtoJSON. */
-export function eventToJson(event: EventEnvelope): JsonValue {
+export function eventToJson(event: EventEnvelope | V2EventEnvelope): JsonValue {
+  if (!("eventType" in event)) {
+    return v2EventToJson(event);
+  }
   validateEvent(event);
   return toJson(EventEnvelopeSchema, event);
 }
@@ -32,7 +36,10 @@ export function eventFromJson(value: unknown): EventEnvelope {
 }
 
 /** Serializes a validated event to binary protobuf. */
-export function eventToBinary(event: EventEnvelope): Uint8Array {
+export function eventToBinary(event: EventEnvelope | V2EventEnvelope): Uint8Array {
+  if (!("eventType" in event)) {
+    return v2EventToBinary(event);
+  }
   validateEvent(event);
   return toBinary(EventEnvelopeSchema, event);
 }

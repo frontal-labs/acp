@@ -2,13 +2,24 @@ import { randomUUID } from "node:crypto";
 
 import { ProtocolError, ValidationError } from "@acp/core";
 import { create, fromBinary, fromJson, type JsonValue, toBinary, toJson } from "@bufbuild/protobuf";
-import { timestampNow } from "@bufbuild/protobuf/wkt";
-
+import type { Timestamp } from "@bufbuild/protobuf/wkt";
+import { timestampFromDate, timestampNow } from "@bufbuild/protobuf/wkt";
 import {
-  type EventEnvelope as V2EventEnvelope,
+  type EventEnvelope as GeneratedV2EventEnvelope,
   EventEnvelopeSchema as V2EventEnvelopeSchema,
 } from "../../../proto/gen/typescript/v2/api/events_pb.js";
-import { ApprovalOutcome, type EventEnvelope as V1EventEnvelope } from "./generated.js";
+import {
+  ActionExecutedSchema,
+  ActionFailedSchema,
+  type ActionRequest,
+  type ActorRef,
+  ApprovalOutcome,
+  ApprovalRequestedSchema,
+  type ArtifactRef,
+  MessageReceivedSchema,
+  MessageSentSchema,
+  type EventEnvelope as V1EventEnvelope,
+} from "./generated.js";
 
 /** ACP v0.2 protocol version used by the typed v2 envelope. */
 export const ACP_V2_PROTOCOL_VERSION = "0.2";
@@ -33,7 +44,11 @@ export const V2_EVENT_TYPES = [
 ] as const;
 
 export type V2EventName = (typeof V2_EVENT_TYPES)[number];
+export type V2EventEnvelope = GeneratedV2EventEnvelope;
 export type V2EventPayload = Exclude<V2EventEnvelope["payload"], { case: undefined }>;
+
+/** Common metadata accepted by typed v2 event builders. */
+export type V2EventBuilderBase = Omit<V2EventInput, "eventType" | "payload">;
 
 /** Input accepted by the v2 event builder. `eventType` is used only to select/validate the oneof. */
 export interface V2EventInput {
@@ -51,6 +66,128 @@ export interface V2EventInput {
   protocolVersion?: string;
   recipient?: V2EventEnvelope["recipient"];
   source?: V2EventEnvelope["source"];
+}
+
+export interface MessageReceivedInput extends V2EventBuilderBase {
+  attachments?: ArtifactRef[];
+  metadata?: Record<string, string>;
+  text: string;
+}
+
+export interface MessageSentInput extends V2EventBuilderBase {
+  attachments?: ArtifactRef[];
+  metadata?: Record<string, string>;
+  text: string;
+}
+
+export interface ApprovalRequestedInput extends V2EventBuilderBase {
+  agent: ActorRef;
+  approvalId: string;
+  approver: ActorRef;
+  deadline?: Date | Timestamp;
+  reason: string;
+  requestedAction: ActionRequest;
+}
+
+export interface ActionExecutedInput extends V2EventBuilderBase {
+  action: ActionRequest;
+  artifacts?: ArtifactRef[];
+  result?: string;
+}
+
+export interface ActionFailedInput extends V2EventBuilderBase {
+  action: ActionRequest;
+  errorCode: string;
+  errorMessage: string;
+  retryable?: boolean;
+}
+
+function timestamp(value: Date | Timestamp | undefined): Timestamp | undefined {
+  return value instanceof Date ? timestampFromDate(value) : value;
+}
+
+/** Builds a typed `message.received` v2 event. */
+export function messageReceived(input: MessageReceivedInput): V2EventEnvelope {
+  return createV2Event({
+    ...input,
+    eventType: "message.received",
+    payload: {
+      case: "messageReceived",
+      value: create(MessageReceivedSchema, {
+        attachments: input.attachments,
+        metadata: input.metadata,
+        text: input.text,
+      }),
+    },
+  });
+}
+
+/** Builds a typed `message.sent` v2 event. */
+export function messageSent(input: MessageSentInput): V2EventEnvelope {
+  return createV2Event({
+    ...input,
+    eventType: "message.sent",
+    payload: {
+      case: "messageSent",
+      value: create(MessageSentSchema, {
+        attachments: input.attachments,
+        metadata: input.metadata,
+        text: input.text,
+      }),
+    },
+  });
+}
+
+/** Builds a typed `approval.requested` v2 event. */
+export function approvalRequested(input: ApprovalRequestedInput): V2EventEnvelope {
+  return createV2Event({
+    ...input,
+    eventType: "approval.requested",
+    payload: {
+      case: "approvalRequested",
+      value: create(ApprovalRequestedSchema, {
+        agent: input.agent,
+        approvalId: input.approvalId,
+        approver: input.approver,
+        deadline: timestamp(input.deadline),
+        reason: input.reason,
+        requestedAction: input.requestedAction,
+      }),
+    },
+  });
+}
+
+/** Builds a typed `action.executed` v2 event. */
+export function actionExecuted(input: ActionExecutedInput): V2EventEnvelope {
+  return createV2Event({
+    ...input,
+    eventType: "action.executed",
+    payload: {
+      case: "actionExecuted",
+      value: create(ActionExecutedSchema, {
+        action: input.action,
+        artifacts: input.artifacts,
+        result: input.result ?? "",
+      }),
+    },
+  });
+}
+
+/** Builds a typed `action.failed` v2 event. */
+export function actionFailed(input: ActionFailedInput): V2EventEnvelope {
+  return createV2Event({
+    ...input,
+    eventType: "action.failed",
+    payload: {
+      case: "actionFailed",
+      value: create(ActionFailedSchema, {
+        action: input.action,
+        errorCode: input.errorCode,
+        errorMessage: input.errorMessage,
+        retryable: input.retryable ?? false,
+      }),
+    },
+  });
 }
 
 const PAYLOAD_CASE_BY_EVENT_TYPE: Record<
@@ -195,6 +332,11 @@ export function v2EventFromBinary(value: Uint8Array): V2EventEnvelope {
     }
     throw new ProtocolError("Unable to decode ACP v2 binary envelope", { cause: error });
   }
+}
+
+/** Parses a v2 ProtoJSON object or binary protobuf payload. */
+export function parseEvent(value: unknown): V2EventEnvelope {
+  return value instanceof Uint8Array ? v2EventFromBinary(value) : v2EventFromJson(value);
 }
 
 /** Marks the v1 envelope type as intentionally separate from v2 at API boundaries. */
