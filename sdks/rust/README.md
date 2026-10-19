@@ -26,9 +26,9 @@ let mut app = AcpAppBuilder::new()
     ))?
     .build();
 
-app.start();
-let result = app.ingest(&event)?;
-app.stop();
+app.start()?;
+let result = app.ingest(event)?;
+app.stop()?;
 ```
 
 ```rust

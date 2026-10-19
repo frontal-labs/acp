@@ -10,8 +10,9 @@ language-specific:
 | [`python/`](./python/) | PyPI `acp-sdk` | `acp` | `AcpApp`, `AgentHost` |
 | [`rust/`](./rust/) | crates.io `acp-sdk` | `acp_sdk` | `AcpAppBuilder`, `AgentHost` |
 
-All SDKs use the canonical schemas in `proto/v1` and generated bindings under
-`proto/gen`. They expose transport-neutral application APIs; provider SDKs,
+All SDKs use the v0.2 canonical envelope in `proto/v2` and generated bindings
+under `proto/gen`; `proto/v1` remains available as legacy reference material.
+They expose transport-neutral application APIs; provider SDKs,
 credentials, and framework-specific orchestration belong in adapters or the
 opt-in examples.
 

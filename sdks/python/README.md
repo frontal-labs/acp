@@ -1,8 +1,8 @@
 # acp-sdk
 
 The PyPI distribution is `acp-sdk`, imported as `acp`. It provides an
-application facade, an A2A-like agent card and host API, ProtoJSON-shaped
-models, and transport-independent channel contracts.
+application facade, an A2A-like agent card and host API, v0.2 event builders,
+and transport-independent source/sink contracts.
 
 ```bash
 python -m pip install acp-sdk
@@ -23,20 +23,26 @@ await app.stop()
 ## Usage
 
 ```python
-from acp import AgentDefinition, AgentHost
+from acp import AcpApp, AgentDefinition, PolicyDecision
 
-host = AgentHost()
-host.register(
-    AgentDefinition(
-        id="agent:support",
-        name="Support Agent",
-        on_message=lambda context: context.reply("I am looking into this."),
-    )
+app = AcpApp(
+    agents=[
+        AgentDefinition(
+            id="agent:support",
+            name="Support Agent",
+            on_message=lambda context: context.reply("I am looking into this."),
+        )
+    ],
+    policy=lambda *_: PolicyDecision(allowed=True),
 )
-handled = await host.handle(event)
+await app.start()
+await app.stop()
 ```
 
-`AgentContext.reply()` returns a validated ACP message event and optionally dispatches it through the callback passed to `AgentHost(dispatch=...)`. Use `list_agent_cards()` for discovery and `request_action()` for policy-aware application actions.
+`AgentContext.reply()` returns a validated ACP message event and dispatches it
+through the configured sink. Use `list_agent_cards()` for discovery and
+`context.actions.request()` for policy-aware application actions. `AgentHost`
+remains available for lower-level composition.
 
 ## Development
 
