@@ -10,12 +10,12 @@ describe("@acp/ext-postgres", () => {
         query: <TRow>(sql: string) => {
           if (sql.includes("RETURNING event_id")) {
             if (inserted) {
-              return { rows: [] as TRow[] };
+              return Promise.resolve({ rows: [] as TRow[] });
             }
             inserted = true;
-            return { rows: [{ event_id: "event:1" }] as TRow[] };
+            return Promise.resolve({ rows: [{ event_id: "event:1" }] as TRow[] });
           }
-          return { rows: [] as TRow[] };
+          return Promise.resolve({ rows: [] as TRow[] });
         },
       },
     });

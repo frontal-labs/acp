@@ -7,7 +7,7 @@ describe("@acp/ext-mcp", () => {
     const [action] = createMcpActions({
       callTool: ({ tool }) => {
         calls.push(tool);
-        return { content: [{ text: "ok", type: "text" }] };
+        return Promise.resolve({ content: [{ text: "ok", type: "text" }] });
       },
     });
     expect(action?.type).toBe("mcp.tool_call");

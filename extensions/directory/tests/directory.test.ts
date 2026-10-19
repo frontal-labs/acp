@@ -9,10 +9,10 @@ describe("@acp/ext-directory", () => {
       transport: {
         getActor: () => {
           calls += 1;
-          return createTestHuman();
+          return Promise.resolve(createTestHuman());
         },
-        getGroupsForActor: () => [],
-        searchActors: () => [],
+        getGroupsForActor: () => Promise.resolve([]),
+        searchActors: () => Promise.resolve([]),
       },
     });
     await provider.getActor("user:1");

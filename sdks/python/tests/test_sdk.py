@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 
 from acp import (
     AcpApp,
@@ -6,8 +7,13 @@ from acp import (
     ActorRef,
     AgentDefinition,
     AgentHost,
+    ChannelDefinition,
+    DeliveryReceipt,
     EventEnvelope,
     PolicyDecision,
+    event_from_binary,
+    event_to_binary,
+    message_received,
 )
 
 
@@ -78,6 +84,62 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(await app.ingest(event))
         self.assertEqual(executions, [2])
+
+    async def test_v2_builder_round_trips_without_duplicate_event_type(self) -> None:
+        event = message_received(text="hello", actor=ActorRef("human:builder"))
+
+        self.assertEqual(event.event_type, "message.received")
+        self.assertNotIn("eventType", event.to_proto_json())
+        self.assertEqual(event_from_binary(event_to_binary(event)).payload_case, "messageReceived")
+
+    async def test_app_source_sink_lifecycle_and_duplicate_delivery(self) -> None:
+        delivered: list[EventEnvelope] = []
+        lifecycle: list[str] = []
+        inbound = EventEnvelope.message_received(
+            actor=ActorRef("human:source", type="ACTOR_TYPE_HUMAN"),
+            recipient=ActorRef("agent:source"),
+            text="hello",
+        )
+
+        class Source:
+            provider = "memory"
+
+            async def normalize(self, _value, _metadata=None):
+                return inbound
+
+            async def start(self, _emit):
+                lifecycle.append("start")
+
+            async def stop(self):
+                lifecycle.append("stop")
+
+        class Sink:
+            provider = "memory"
+
+            async def send(self, event, _options=None):
+                delivered.append(event)
+                return DeliveryReceipt("memory", event.event_id, datetime.now())
+
+            async def close(self):
+                lifecycle.append("close")
+
+        async def on_message(context) -> None:
+            await context.reply("reply")
+
+        app = AcpApp(
+            agents=[AgentDefinition(id="agent:source", name="Source", on_message=on_message)],
+            channels=[ChannelDefinition("memory", source=Source(), sink=Sink())],
+            policy=lambda *_args: PolicyDecision(allowed=True),
+        )
+        await app.start()
+        first = (await app.receive("memory", {}))[0]
+        second = (await app.receive("memory", {}))[0]
+        await app.stop()
+
+        self.assertFalse(first.duplicate)
+        self.assertTrue(second.duplicate)
+        self.assertEqual(len(delivered), 1)
+        self.assertEqual(lifecycle, ["start", "stop", "close"])
 
 
 if __name__ == "__main__":

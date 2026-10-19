@@ -22,7 +22,7 @@ describe("@acp/ext-slack", () => {
     const sink = createSlackSink({
       postMessage: ({ text }) => {
         calls.push(text);
-        return { messageId: "ts:1" };
+        return Promise.resolve({ messageId: "ts:1" });
       },
     });
     const event = createTestEvent({ eventType: "message.sent", text: "hello" });
