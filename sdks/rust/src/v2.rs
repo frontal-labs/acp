@@ -217,7 +217,8 @@ pub fn parse_event(value: &[u8]) -> Result<V2EventEnvelope, serde_json::Error> {
     } else if let Some(value) = object.get("actionFailed") {
         V2EventPayload::ActionFailed(value.clone())
     } else {
-        return Err(serde_json::from_str("null").expect_err("null cannot decode envelope"));
+        return Err(serde_json::from_str::<V2EventEnvelope>("null")
+            .expect_err("null cannot decode envelope"));
     };
     Ok(V2EventEnvelope {
         event_id: object
@@ -267,4 +268,19 @@ pub fn parse_event(value: &[u8]) -> Result<V2EventEnvelope, serde_json::Error> {
             .unwrap_or_default(),
         payload,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn typed_builder_round_trips_without_a_duplicate_event_type() {
+        let event = message_received("hello");
+        let json = event_to_json(&event).expect("event serializes");
+        assert_eq!(event.event_type(), "message.received");
+        assert!(json.get("eventType").is_none());
+        let binary = event_to_binary(&event).expect("event encodes");
+        assert_eq!(parse_event(&binary).expect("event parses").event_type(), "message.received");
+    }
 }
