@@ -1,0 +1,62 @@
+{
+  "name": "@acp/ext-whatsapp",
+  "version": "0.1.0",
+  "description": "WhatsApp Business Cloud source and sink integration for the Agent Communication Protocol",
+  "keywords": [
+    "agent-communication-protocol",
+    "acp",
+    "whatsapp",
+    "agents",
+    "messaging"
+  ],
+  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "bugs": {
+    "url": "https://github.com/frontal-labs/acp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frontal-labs/acp.git",
+    "directory": "extensions/whatsapp"
+  },
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Frontal Labs",
+    "email": "support@frontal.dev",
+    "url": "https://github.com/frontal-labs"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "format": "ultracite fix src tests",
+    "lint": "ultracite check src tests",
+    "test": "vitest run --root ../.. extensions/whatsapp/tests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@acp/adapter": "workspace:*",
+    "@acp/ext-shared": "workspace:*",
+    "@acp/protocol": "workspace:*",
+    "@bufbuild/protobuf": "^2.2.5",
+    "acp-sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@acp/testing": "workspace:*",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
