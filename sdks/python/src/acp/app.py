@@ -218,6 +218,7 @@ class AcpApp:
             task = asyncio.create_task(self._run_source(channel.source))
             self._source_tasks.add(task)
             task.add_done_callback(self._source_tasks.discard)
+        await asyncio.sleep(0)
 
     async def stop(self, *, timeout_ms: int = 30_000) -> None:
         if not self._accepting:

@@ -97,6 +97,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         lifecycle: list[str] = []
         inbound = EventEnvelope.message_received(
             actor=ActorRef("human:source", type="ACTOR_TYPE_HUMAN"),
+            channel={"provider": "memory", "channelId": "source"},
             recipient=ActorRef("agent:source"),
             text="hello",
         )
