@@ -7,7 +7,7 @@ describe("@acp/demo", () => {
     vi.restoreAllMocks();
   });
 
-  it("runs the approval and escalation reference flow", async () => {
+  it("runs the approval and execution reference flow", async () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
 
     await runDemo();
@@ -15,12 +15,8 @@ describe("@acp/demo", () => {
     expect(log.mock.calls.some(([message]) => message === "action status: approval_required")).toBe(
       true,
     );
-    expect(
-      log.mock.calls.some(
-        ([message]) =>
-          message === "escalation.triggered (approval" ||
-          String(message).startsWith("escalation.triggered"),
-      ),
-    ).toBe(true);
+    expect(log.mock.calls.some(([message]) => String(message).startsWith("action executed:"))).toBe(
+      true,
+    );
   });
 });
