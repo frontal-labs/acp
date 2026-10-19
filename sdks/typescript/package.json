@@ -1,0 +1,61 @@
+{
+  "name": "acp-sdk",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for building Agent Communication Protocol agents and hosts",
+  "keywords": [
+    "agent-communication-protocol",
+    "acp",
+    "agents",
+    "agent-host",
+    "a2a"
+  ],
+  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "bugs": {
+    "url": "https://github.com/frontal-labs/acp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frontal-labs/acp.git",
+    "directory": "sdks/typescript"
+  },
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Frontal Labs",
+    "email": "support@frontal.dev",
+    "url": "https://github.com/frontal-labs"
+  },
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "format": "ultracite fix src",
+    "lint": "ultracite check src",
+    "test": "vitest run --root ../.. sdks/typescript/tests",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@acp/adapter": "workspace:*",
+    "@acp/core": "workspace:*",
+    "@acp/policy": "workspace:*",
+    "@acp/protocol": "workspace:*",
+    "@acp/runtime": "workspace:*",
+    "@bufbuild/protobuf": "^2.2.5"
+  },
+  "devDependencies": {
+    "@acp/testing": "workspace:*",
+    "vitest": "^2.1.8"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

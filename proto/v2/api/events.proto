@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+package acp.v2.api;
+
+import "google/protobuf/timestamp.proto";
+import "v1/types/actions_result.proto";
+import "v1/types/actors.proto";
+import "v1/types/approvals.proto";
+import "v1/types/channels.proto";
+import "v1/types/handoffs.proto";
+import "v1/types/messages.proto";
+import "v1/types/policy.proto";
+import "v1/types/tasks.proto";
+
+// EventEnvelope v2 removes the duplicated event_type string. The payload oneof is
+// the canonical event discriminant; SDKs expose friendly dot-separated names.
+message EventEnvelope {
+  string event_id = 1;
+  string protocol_version = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+  acp.v1.types.ActorRef source = 4;
+  acp.v1.types.ActorRef actor = 5;
+  acp.v1.types.ActorRef recipient = 6;
+  acp.v1.types.ChannelRef channel = 7;
+  acp.v1.types.ConversationRef conversation = 8;
+  string correlation_id = 9;
+  string causation_id = 10;
+  string idempotency_key = 11;
+  map<string, string> extensions = 12;
+
+  oneof payload {
+    acp.v1.types.MessageReceived message_received = 20;
+    acp.v1.types.MessageSent message_sent = 21;
+    acp.v1.types.TaskCreated task_created = 22;
+    acp.v1.types.TaskAssigned task_assigned = 23;
+    acp.v1.types.ApprovalRequested approval_requested = 24;
+    acp.v1.types.ApprovalDecided approval_decided = 25;
+    acp.v1.types.ApprovalExpired approval_expired = 26;
+    acp.v1.types.EscalationTriggered escalation_triggered = 27;
+    acp.v1.types.HandoffInitiated handoff_initiated = 28;
+    acp.v1.types.HandoffCompleted handoff_completed = 29;
+    acp.v1.types.PolicyEvaluated policy_evaluated = 30;
+    acp.v1.types.ActionExecuted action_executed = 31;
+    acp.v1.types.ActionFailed action_failed = 32;
+  }
+}

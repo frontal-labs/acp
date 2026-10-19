@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package acp.v1.api;
+
+import "google/protobuf/timestamp.proto";
+import "v1/types/actions_result.proto";
+import "v1/types/actors.proto";
+import "v1/types/approvals.proto";
+import "v1/types/channels.proto";
+import "v1/types/handoffs.proto";
+import "v1/types/messages.proto";
+import "v1/types/policy.proto";
+import "v1/types/tasks.proto";
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+  EVENT_TYPE_MESSAGE_RECEIVED = 1;
+  EVENT_TYPE_MESSAGE_SENT = 2;
+  EVENT_TYPE_TASK_CREATED = 3;
+  EVENT_TYPE_TASK_ASSIGNED = 4;
+  EVENT_TYPE_APPROVAL_REQUESTED = 5;
+  EVENT_TYPE_APPROVAL_GRANTED = 6;
+  EVENT_TYPE_APPROVAL_DENIED = 7;
+  EVENT_TYPE_APPROVAL_EXPIRED = 8;
+  EVENT_TYPE_ESCALATION_TRIGGERED = 9;
+  EVENT_TYPE_HANDOFF_INITIATED = 10;
+  EVENT_TYPE_HANDOFF_COMPLETED = 11;
+  EVENT_TYPE_POLICY_ALLOWED = 12;
+  EVENT_TYPE_POLICY_BLOCKED = 13;
+  EVENT_TYPE_ACTION_EXECUTED = 14;
+  EVENT_TYPE_ACTION_FAILED = 15;
+}
+
+message EventEnvelope {
+  string event_id = 1;
+  string event_type = 2;
+  string protocol_version = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+  acp.v1.types.ActorRef source = 5;
+  acp.v1.types.ActorRef actor = 6;
+  acp.v1.types.ActorRef recipient = 7;
+  acp.v1.types.ChannelRef channel = 8;
+  acp.v1.types.ConversationRef conversation = 9;
+  string correlation_id = 10;
+  string causation_id = 11;
+  string idempotency_key = 12;
+  map<string, string> extensions = 13;
+
+  oneof payload {
+    acp.v1.types.MessageReceived message_received = 20;
+    acp.v1.types.MessageSent message_sent = 21;
+    acp.v1.types.TaskCreated task_created = 22;
+    acp.v1.types.TaskAssigned task_assigned = 23;
+    acp.v1.types.ApprovalRequested approval_requested = 24;
+    acp.v1.types.ApprovalDecided approval_decided = 25;
+    acp.v1.types.ApprovalExpired approval_expired = 26;
+    acp.v1.types.EscalationTriggered escalation_triggered = 27;
+    acp.v1.types.HandoffInitiated handoff_initiated = 28;
+    acp.v1.types.HandoffCompleted handoff_completed = 29;
+    acp.v1.types.PolicyEvaluated policy_evaluated = 30;
+    acp.v1.types.ActionExecuted action_executed = 31;
+    acp.v1.types.ActionFailed action_failed = 32;
+  }
+}

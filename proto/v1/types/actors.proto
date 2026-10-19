@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package acp.v1.types;
+
+enum ActorType {
+  ACTOR_TYPE_UNSPECIFIED = 0;
+  ACTOR_TYPE_HUMAN = 1;
+  ACTOR_TYPE_AGENT = 2;
+  ACTOR_TYPE_SYSTEM = 3;
+}
+
+message ActorRef {
+  string id = 1;
+  ActorType type = 2;
+  string display_name = 3;
+  string authority = 4;
+  repeated string capabilities = 5;
+}

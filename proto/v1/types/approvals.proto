@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package acp.v1.types;
+
+import "google/protobuf/timestamp.proto";
+import "v1/types/actions.proto";
+import "v1/types/actors.proto";
+
+message ApprovalRequested {
+  string approval_id = 1;
+  ActorRef agent = 2;
+  ActionRequest requested_action = 3;
+  string reason = 4;
+  ActorRef approver = 5;
+  google.protobuf.Timestamp deadline = 6;
+}
+
+message ApprovalDecided {
+  string approval_id = 1;
+  ActorRef approver = 2;
+  ApprovalOutcome outcome = 3;
+  string reason = 4;
+}
+
+message ApprovalExpired {
+  string approval_id = 1;
+  string reason = 2;
+}
+
+message EscalationTriggered {
+  string escalation_id = 1;
+  ActorRef source = 2;
+  ActorRef target = 3;
+  string reason = 4;
+  string related_approval_id = 5;
+}

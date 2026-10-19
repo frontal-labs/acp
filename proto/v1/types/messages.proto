@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package acp.v1.types;
+
+import "v1/types/channels.proto";
+
+message MessageReceived {
+  string text = 1;
+  repeated ArtifactRef attachments = 2;
+  map<string, string> metadata = 3;
+}
+
+message MessageSent {
+  string text = 1;
+  repeated ArtifactRef attachments = 2;
+  map<string, string> metadata = 3;
+}

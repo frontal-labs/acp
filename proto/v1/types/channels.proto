@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package acp.v1.types;
+
+import "v1/types/actors.proto";
+
+message ChannelRef {
+  string provider = 1;
+  string channel_id = 2;
+  string thread_id = 3;
+  string address = 4;
+}
+
+enum ConversationStatus {
+  CONVERSATION_STATUS_UNSPECIFIED = 0;
+  CONVERSATION_STATUS_OPEN = 1;
+  CONVERSATION_STATUS_PAUSED = 2;
+  CONVERSATION_STATUS_CLOSED = 3;
+}
+
+message ConversationRef {
+  string id = 1;
+  ConversationStatus status = 2;
+  repeated ActorRef participants = 3;
+}
+
+message ArtifactRef {
+  string id = 1;
+  string uri = 2;
+  string title = 3;
+  string media_type = 4;
+  string source_of_truth = 5;
+}

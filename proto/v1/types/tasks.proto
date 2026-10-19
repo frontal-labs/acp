@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package acp.v1.types;
+
+import "v1/types/actors.proto";
+
+message TaskCreated {
+  string task_id = 1;
+  string intent = 2;
+  string description = 3;
+  ActorRef requested_by = 4;
+}
+
+message TaskAssigned {
+  string task_id = 1;
+  ActorRef assignee = 2;
+  string reason = 3;
+}
