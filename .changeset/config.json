@@ -1,0 +1,25 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@2.3.0/schema.json",
+  "changelog": ["@changesets/changelog-github", { "repo": "frontal-labs/acp" }],
+  "commit": false,
+  "fixed": [
+    [
+      "@acp/adapter",
+      "@acp/core",
+      "@acp/policy",
+      "@acp/protocol",
+      "@acp/runtime",
+      "acp-cli",
+      "acp-sdk-ts"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@acp/demo"],
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  }
+}

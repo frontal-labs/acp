@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@acp/adapter": ["packages/adapter/src/index.ts"],
+      "acp-cli": ["cli/src/index.ts"],
+      "@acp/core": ["packages/core/src/index.ts"],
+      "@acp/demo": ["packages/demo/src/index.ts"],
+      "@acp/policy": ["packages/policy/src/index.ts"],
+      "@acp/protocol": ["packages/protocol/src/index.ts"],
+      "@acp/runtime": ["packages/runtime/src/index.ts"],
+      "acp-sdk-ts": ["sdks/typescript/src/index.ts"],
+      "@acp/testing": ["packages/testing/src/index.ts"]
+    }
+  }
+}

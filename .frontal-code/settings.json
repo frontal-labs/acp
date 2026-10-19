@@ -1,0 +1,107 @@
+{
+  "version": "1.0",
+  "workspace": {
+    "name": "acp",
+    "description": "Agent Communication Protocol reference implementation",
+    "guidance": [
+      "Run `pnpm doctor` before landing changes.",
+      "Keep `.frontal-code/settings.local.json` for machine-specific overrides."
+    ]
+  },
+  "session": {
+    "auto_save": true,
+    "max_sessions": 100,
+    "compression": "gzip",
+    "metadata": {
+      "save_system_info": true,
+      "save_environment": false,
+      "save_git_state": true
+    },
+    "session_dir": "${FCODE_SESSION_DIR:-${HOME}/.frontal-code/sessions}",
+    "encryption": false
+  },
+  "telemetry": {
+    "enabled": false,
+    "sample_rate": 0,
+    "events": [
+      "session_start",
+      "session_end",
+      "tool_use",
+      "error",
+      "command_completion"
+    ]
+  },
+  "mcp": {
+    "enabled": true,
+    "auto_start": [],
+    "timeout": 30,
+    "servers_dir": "${FCODE_MCP_SERVERS_DIR:-${HOME}/.frontal-code/mcp-servers}",
+    "servers": {}
+  },
+  "plugins": {
+    "enabled": true,
+    "auto_load": [],
+    "plugins_dir": "${FRONTAL_CODE_CONFIG_DIR:-${HOME}/.frontal-code}/plugins",
+    "trusted_sources": [],
+    "update_check_interval": "24h"
+  },
+  "ui": {
+    "output_format": "text",
+    "color_output": true,
+    "show_tool_calls": true,
+    "show_thinking": false,
+    "stream_output": true,
+    "markdown_rendering": true,
+    "syntax_highlighting": true
+  },
+  "permissions": {
+    "defaultMode": "workspace-write",
+    "askBeforeTool": ["bash", "write", "edit"],
+    "allowDangerousOverrides": false
+  },
+  "runtime": {
+    "default_provider": "frontal",
+    "default_model": "frontal-code",
+    "allowed_tools": [
+      "bash",
+      "read",
+      "write",
+      "edit",
+      "grep",
+      "glob",
+      "web_search",
+      "web_fetch"
+    ],
+    "max_tokens": 4096,
+    "temperature": 0.2,
+    "timeout": 300,
+    "log_level": "info"
+  },
+  "tools": {
+    "bash": { "enabled": true, "timeout": 120 },
+    "read": { "enabled": true },
+    "write": { "enabled": true },
+    "edit": { "enabled": true },
+    "grep": { "enabled": true },
+    "glob": { "enabled": true },
+    "web_search": { "enabled": true },
+    "web_fetch": { "enabled": true }
+  },
+  "devtools": {
+    "doctor": {
+      "kind": "node",
+      "command": "pnpm doctor",
+      "description": "Environment and repository health check"
+    },
+    "generate": {
+      "kind": "mixed",
+      "command": "pnpm generate",
+      "description": "Regenerate TypeScript, Python, and Rust protobuf bindings"
+    },
+    "check": {
+      "kind": "mixed",
+      "command": "pnpm check",
+      "description": "Run the complete ACP verification pipeline"
+    }
+  }
+}

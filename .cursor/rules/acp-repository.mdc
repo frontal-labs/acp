@@ -1,0 +1,14 @@
+---
+description: ACP repository architecture and verification rules
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# ACP repository rules
+
+- Treat `proto/v1` as the canonical wire schema. Regenerate bindings with `pnpm generate` after schema changes; do not edit `proto/gen` by hand.
+- Keep provider-specific behavior at the adapter boundary. The protocol, runtime, and policy packages must remain provider-neutral.
+- Export public TypeScript APIs through each package's `src/index.ts`.
+- Validate untrusted event data through `eventFromJson()` or the exported Zod schemas before passing it to runtime code.
+- Run `pnpm check` for changes that affect protocol behavior, runtime behavior, generated code, or package configuration.
+- Add a Changeset for user-visible package changes with `pnpm changeset`.

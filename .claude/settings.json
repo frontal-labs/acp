@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm build)",
+      "Bash(pnpm check)",
+      "Bash(pnpm check:config)",
+      "Bash(pnpm check:docs)",
+      "Bash(pnpm doctor)",
+      "Bash(pnpm generate)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm test)",
+      "Bash(pnpm typecheck)",
+      "Bash(pnpm sdk:test)",
+      "Bash(git diff *)",
+      "Bash(git status)",
+      "Bash(rg *)"
+    ],
+    "deny": [
+      "Bash(rm -rf *)",
+      "Bash(git reset --hard *)",
+      "Bash(git clean -fd *)"
+    ]
+  }
+}

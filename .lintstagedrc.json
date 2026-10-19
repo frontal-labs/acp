@@ -1,0 +1,5 @@
+{
+  "*.{cjs,js,json,jsonc,mjs,ts,tsx,yaml,yml}": "ultracite check",
+  "*.md": "node scripts/check-docs.mjs",
+  "*.proto": "pnpm proto:lint"
+}

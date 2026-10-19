@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+.acp-buf-cache/
+.pnpm-store/
+sdks/rust/target/
+proto/gen/
+*.map
+*.pyc
+__pycache__/
+.frontal-code/tool-state/

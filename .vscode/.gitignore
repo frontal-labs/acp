@@ -1,0 +1,7 @@
+# Local VS Code state (never committed)
+settings.json
+workspaceStorage/
+globalStorage/
+*.code-snippets
+*.local
+*.log

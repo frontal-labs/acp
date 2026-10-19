@@ -1,0 +1,8 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "extends": [
+    "ultracite/biome/core",
+    "ultracite/biome/vitest",
+    "./ultracite.json"
+  ]
+}

@@ -1,0 +1,165 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Version and publish packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      published: ${{ steps.changesets.outputs.published }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          registry-url: https://registry.npmjs.org
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - run: pnpm install --frozen-lockfile
+      - name: Install Python release tools
+        run: python -m pip install --disable-pip-version-check --no-cache-dir "build>=1.2.2,<2" "twine>=6.1,<7"
+
+      - id: changesets
+        name: Create release PR or publish packages
+        uses: changesets/action@v2
+        with:
+          version-script: pnpm release:version
+          publish-script: pnpm release:publish
+          commit-message: "chore: version packages"
+          pr-title: "chore: version packages"
+          create-github-releases: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+
+  cli-binaries:
+    name: Build ${{ matrix.target }} CLI
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            runner: macos-14
+            archive: tar.gz
+          - target: aarch64-unknown-linux-gnu
+            runner: ubuntu-latest
+            archive: tar.gz
+            cross: true
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
+            archive: zip
+          - target: x86_64-apple-darwin
+            runner: macos-15-intel
+            archive: tar.gz
+          - target: x86_64-unknown-linux-gnu
+            runner: ubuntu-latest
+            archive: tar.gz
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - if: matrix.cross == true
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross
+
+      - name: Build native CLI with cargo
+        if: matrix.cross != true
+        run: cargo build --locked --release --manifest-path crates/acp-cli/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Build native CLI with cross
+        if: matrix.cross == true
+        run: cross build --locked --release --manifest-path crates/acp-cli/Cargo.toml --target ${{ matrix.target }}
+
+      - name: Package Unix CLI
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p release
+          cp "target/${{ matrix.target }}/release/acp" release/acp
+          tar -czf "release/acp-cli-${{ matrix.target }}.tar.gz" -C release acp
+          rm release/acp
+          shasum -a 256 "release/acp-cli-${{ matrix.target }}.tar.gz" > "release/acp-cli-${{ matrix.target }}.tar.gz.sha256"
+
+      - name: Package Windows CLI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/acp.exe" "release/acp.exe"
+          Compress-Archive -Path "release/acp.exe" -DestinationPath "release/acp-cli-${{ matrix.target }}.zip" -Force
+          Remove-Item "release/acp.exe"
+          $hash = (Get-FileHash "release/acp-cli-${{ matrix.target }}.zip" -Algorithm SHA256).Hash.ToLower()
+          "$hash  acp-cli-${{ matrix.target }}.zip" | Set-Content "release/acp-cli-${{ matrix.target }}.zip.sha256"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: acp-cli-${{ matrix.target }}
+          path: release/*
+          if-no-files-found: error
+
+  cli-release:
+    name: Publish native CLI release
+    needs: [release, cli-binaries]
+    if: needs.release.outputs.published == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: acp-cli-*
+          path: release
+          merge-multiple: true
+
+      - id: version
+        name: Read CLI version
+        run: echo "version=$(node -p \"require('./cli/package.json').version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Attach platform archives to GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: acp-cli-v${{ steps.version.outputs.version }}
+          name: acp-cli v${{ steps.version.outputs.version }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: release/*

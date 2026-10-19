@@ -1,0 +1,116 @@
+{
+  "name": "acp",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open Agent Communication Protocol reference implementation",
+  "keywords": [
+    "agent-communication-protocol",
+    "acp",
+    "agents",
+    "ai",
+    "automation",
+    "protocol"
+  ],
+  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "bugs": {
+    "url": "https://github.com/frontal-labs/acp/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frontal-labs/acp.git"
+  },
+  "license": "Apache-2.0",
+  "author": {
+    "name": "Frontal Labs",
+    "email": "oss@frontal.dev",
+    "url": "https://github.com/frontal-labs"
+  },
+  "contributors": [
+    {
+      "name": "Frontal Labs",
+      "email": "oss@frontal.dev",
+      "url": "https://github.com/frontal-labs"
+    }
+  ],
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "changeset": "changeset",
+    "changeset:publish": "changeset publish",
+    "changeset:status": "changeset status",
+    "changeset:version": "changeset version",
+    "check": "pnpm check:config && pnpm check:docs && pnpm check:examples && pnpm generate && pnpm proto:build && pnpm proto:lint && pnpm lint && pnpm build && pnpm typecheck && pnpm test && pnpm sdk:test",
+    "check:config": "node scripts/check-config.mjs",
+    "check:docs": "node scripts/check-docs.mjs",
+    "check:examples": "node scripts/check-examples.mjs",
+    "check:format": "ultracite check",
+    "cli": "turbo run cli --filter=acp-cli",
+    "commitlint": "commitlint --from=HEAD~1 --to=HEAD --verbose",
+    "demo": "turbo run demo --filter=@acp/demo",
+    "doctor": "node scripts/doctor.mjs",
+    "examples:approval": "tsx examples/native-typescript/approval-flow.ts",
+    "examples:typescript": "tsx examples/native-typescript/main.ts",
+    "fix": "ultracite fix",
+    "format": "turbo run format && pnpm format:root",
+    "format:root": "ultracite fix .",
+    "generate": "pnpm generate:typescript && pnpm generate:python && pnpm generate:rust",
+    "generate:python": "mkdir -p proto/gen/python && protoc --proto_path=proto --python_out=proto/gen/python $(find proto/v1 proto/v2 -name '*.proto' -print)",
+    "generate:rust": "cargo build --manifest-path sdks/rust/Cargo.toml",
+    "generate:typescript": "BUF_CACHE_DIR=.acp-buf-cache buf generate --config proto/buf.yaml --template proto/buf.gen.yaml proto",
+    "lint": "turbo run lint && pnpm lint:root",
+    "lint:root": "ultracite check .",
+    "prepare": "husky",
+    "proto:build": "BUF_CACHE_DIR=.acp-buf-cache buf build --config proto/buf.yaml proto",
+    "proto:format": "BUF_CACHE_DIR=.acp-buf-cache buf format --config proto/buf.yaml proto -w",
+    "proto:lint": "BUF_CACHE_DIR=.acp-buf-cache buf lint --config proto/buf.yaml proto",
+    "python:format": "ruff format sdks/python examples",
+    "python:format:check": "ruff format --check sdks/python examples",
+    "python:lint": "ruff check sdks/python examples",
+    "release:publish": "node scripts/release-publish.mjs",
+    "release:publish:native": "node scripts/publish-native.mjs",
+    "release:version": "node scripts/release-version.mjs",
+    "rust:format": "cargo fmt --manifest-path sdks/rust/Cargo.toml && cargo fmt --manifest-path crates/acp-cli/Cargo.toml && cargo fmt --manifest-path examples/native-rust/Cargo.toml",
+    "rust:format:check": "cargo fmt --manifest-path sdks/rust/Cargo.toml -- --check && cargo fmt --manifest-path crates/acp-cli/Cargo.toml -- --check && cargo fmt --manifest-path examples/native-rust/Cargo.toml -- --check",
+    "rust:lint": "cargo clippy --manifest-path sdks/rust/Cargo.toml --all-targets --all-features -- -D warnings && cargo clippy --manifest-path crates/acp-cli/Cargo.toml --all-targets --all-features -- -D warnings && cargo clippy --manifest-path examples/native-rust/Cargo.toml --all-targets --all-features -- -D warnings",
+    "sdk:python:test": "PYTHONPATH=sdks/python/src python3 -m unittest discover -s sdks/python/tests -p 'test_*.py'",
+    "sdk:rust:test": "cargo test --manifest-path sdks/rust/Cargo.toml",
+    "sdk:test": "pnpm sdk:python:test && pnpm sdk:rust:test",
+    "test": "turbo run test && turbo run //#test:root",
+    "test:root": "vitest run",
+    "typecheck": "turbo run typecheck && pnpm typecheck:root",
+    "typecheck:root": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^2.2.5"
+  },
+  "devDependencies": {
+    "@acp/adapter": "workspace:*",
+    "@acp/core": "workspace:*",
+    "@acp/policy": "workspace:*",
+    "@acp/protocol": "workspace:*",
+    "@acp/runtime": "workspace:*",
+    "@acp/testing": "workspace:*",
+    "@biomejs/biome": "^2.5.15",
+    "@bufbuild/buf": "^1.63.0",
+    "@bufbuild/protoc-gen-es": "^2.2.5",
+    "@changesets/changelog-github": "^0.6.0",
+    "@changesets/cli": "^2.31.1",
+    "@commitlint/cli": "^21.2.0",
+    "@commitlint/config-conventional": "^21.2.0",
+    "@types/node": "^22.10.2",
+    "acp-cli": "workspace:*",
+    "acp-sdk-ts": "workspace:*",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
+    "tsx": "^4.19.2",
+    "turbo": "^2.11.9",
+    "typescript": "^5.7.2",
+    "ultracite": "^8.0.1",
+    "vitest": "^2.1.8"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.18.0",
+    "pnpm": ">=10"
+  }
+}

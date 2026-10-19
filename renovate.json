@@ -1,0 +1,51 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "ACP dependency updates",
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps):",
+  "prConcurrentLimit": 8,
+  "rebaseWhen": "conflicted",
+  "rangeStrategy": "bump",
+  "enabledManagers": [
+    "cargo",
+    "github-actions",
+    "npm",
+    "pep621",
+    "pip_requirements",
+    "pnpm"
+  ],
+  "packageRules": [
+    {
+      "matchManagers": ["pnpm", "npm"],
+      "matchFileNames": ["package.json", "**/package.json"],
+      "groupName": "JavaScript tooling",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["cargo"],
+      "groupName": "Rust dependencies",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["pep621", "pip_requirements"],
+      "groupName": "Python dependencies",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchManagers": ["github-actions"],
+      "groupName": "GitHub Actions",
+      "matchUpdateTypes": ["minor", "patch"]
+    },
+    {
+      "matchPackageNames": [
+        "@bufbuild/protobuf",
+        "@bufbuild/protoc-gen-es",
+        "prost",
+        "prost-build"
+      ],
+      "groupName": "Protocol toolchain"
+    }
+  ]
+}

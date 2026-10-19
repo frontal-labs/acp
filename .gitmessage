@@ -1,0 +1,4 @@
+# <type>(<scope>): <subject>
+#
+# Types: feat, fix, docs, refactor, test, build, ci, chore, perf, revert
+# Keep the subject imperative and under 100 characters.

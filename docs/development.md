@@ -1,0 +1,57 @@
+# Development guide
+
+ACP is a pnpm workspace managed by Turborepo. TypeScript package `index.ts` files are export-only entrypoints; implementation modules stay next to the APIs they provide. Python and Rust SDKs use their native package layouts.
+
+## Local workflow
+
+```bash
+pnpm install
+pnpm check
+pnpm demo
+pnpm cli -- version
+pnpm sdk:test
+```
+
+`pnpm check` regenerates and validates protobuf bindings, runs Ultracite/Biome linting, builds every package, typechecks every package and the root test project, then runs the package test graph and root Vitest integration suite.
+
+## Tooling commands
+
+```bash
+pnpm build       # Turbo package builds in dependency order
+pnpm typecheck   # package and root TypeScript checks
+pnpm test        # package tests followed by root Vitest integration tests
+pnpm lint        # package lint tasks followed by the root check
+pnpm format      # package and root Ultracite fixes
+pnpm fix         # safe repository-wide Ultracite fixes
+```
+
+Biome is configured in `biome.json`; it extends the Ultracite presets and the shared project settings in `ultracite.json`. The editor configuration uses the Biome extension as the TypeScript formatter and enables format-on-save.
+
+`pnpm generate` produces all language bindings: Buf/protoc-gen-es writes TypeScript, `protoc` writes Python, and the Rust SDK's `prost-build` writes Rust modules. The canonical schema is split between `proto/v1` for the legacy envelope and `proto/v2` for the typed envelope, with shared domain messages under `proto/v1/types`.
+
+The shared `@acp/testing` package provides deterministic ACP fixtures, event inspection, async coordination, buffered CLI I/O, and in-memory state doubles. Package-local tests and the root integration suite use the same Vitest configuration and aliases.
+
+Public TypeScript entrypoints use explicit named exports, and shared failures are represented by `@acp/core` error classes. Validate untrusted event JSON with `eventFromJson()` or the exported Zod schemas before handing it to an agent or runtime.
+
+## Adding an agent
+
+For new applications, use the config-first `createAcp` facade. It composes the runtime, agent host, channel source/sink registration, action registry, lifecycle, and hooks. Use `AgentHost` directly when you need lower-level composition. This keeps agent discovery and execution separate from channel transport, similar to the useful parts of A2A without importing an A2A transport requirement.
+
+```ts
+import { createAcp } from "acp-sdk-ts";
+
+const app = createAcp({
+  policy,
+  agents: [{
+    id: "agent:triage",
+    name: "Triage Agent",
+    skills: [{ id: "triage", name: "Triage" }],
+    async onMessage(context) {
+      await context.reply("I am looking into this.");
+    },
+  }],
+});
+await app.start();
+```
+
+Use `listAgentCards()` for discovery, `context.actions.request()` for typed policy-controlled actions, and `context.reply()` for channel-aware responses. Implement provider integrations as a `ChannelSource` for inbound normalization and a `ChannelSink` for outbound delivery.

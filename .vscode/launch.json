@@ -1,0 +1,258 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: debug server-side",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run dev",
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "name": "Next.js: debug client-side",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000"
+    },
+    {
+      "name": "Next.js: debug full stack",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "bun run dev",
+      "serverReadyAction": {
+        "pattern": "started server on .+, url: (https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      },
+      "presentation": {
+        "hidden": false,
+        "group": "1",
+        "order": 1
+      }
+    },
+    {
+      "name": "Vitest: Run All Tests",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "--reporter=verbose"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Vitest: Debug Current File",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/vitest/vitest.mjs",
+      "args": ["run", "${relativeFile}"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Cypress: Open",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/node_modules/.bin/cypress",
+      "args": ["open"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen"
+    },
+    {
+      "name": "Go: Debug Current Package",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}",
+      "env": {
+        "GOPATH": "${workspaceFolder}/go",
+        "GOROOT": ""
+      },
+      "args": [],
+      "showLog": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Go: Debug Test",
+      "type": "go",
+      "request": "launch",
+      "mode": "test",
+      "program": "${workspaceFolder}",
+      "env": {
+        "GOPATH": "${workspaceFolder}/go",
+        "GOROOT": ""
+      },
+      "args": ["-test.v"],
+      "showLog": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Go: Debug Billing Service",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/domains/billing/backend",
+      "env": {
+        "GOPATH": "${workspaceFolder}/go",
+        "GOROOT": "",
+        "FRONTAL_LOG_LEVEL": "debug"
+      },
+      "args": [],
+      "showLog": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Go: Debug Auth Service",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/domains/auth/backend",
+      "env": {
+        "GOPATH": "${workspaceFolder}/go",
+        "GOROOT": "",
+        "FRONTAL_LOG_LEVEL": "debug"
+      },
+      "args": [],
+      "showLog": true,
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Python: Debug Current File",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "python": "${workspaceFolder}/python/.venv/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/common",
+        "FRONTAL_LOG_LEVEL": "debug"
+      }
+    },
+    {
+      "name": "Python: Debug Module",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "entry",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "python": "${workspaceFolder}/python/.venv/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/common",
+        "FRONTAL_LOG_LEVEL": "debug"
+      }
+    },
+    {
+      "name": "Python: Debug Pytest",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${workspaceFolder}/common", "-v"],
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "python": "${workspaceFolder}/python/.venv/bin/python"
+    },
+    {
+      "name": "Python: Debug Data Service",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "data.backend.serving",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "python": "${workspaceFolder}/python/.venv/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/common",
+        "FRONTAL_LOG_LEVEL": "debug"
+      }
+    },
+    {
+      "name": "Rust: Debug Current Binary",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/.cargo/target/debug/${input:binaryName}",
+      "args": [],
+      "cwd": "${workspaceFolder}/rust",
+      "console": "integratedTerminal",
+      "preLaunchTask": "cargo build"
+    },
+    {
+      "name": "Rust: Debug Test",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/.cargo/target/debug/deps/${input:testName}",
+      "args": [],
+      "cwd": "${workspaceFolder}/rust",
+      "console": "integratedTerminal",
+      "preLaunchTask": "cargo test build"
+    },
+    {
+      "name": "Rust: Debug Logging Crate",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/.cargo/target/debug/examples/logging_example",
+      "args": [],
+      "cwd": "${workspaceFolder}/crates/logging",
+      "console": "integratedTerminal",
+      "preLaunchTask": "cargo build logging example"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "binaryName",
+      "description": "Binary name to debug",
+      "default": "frontend",
+      "type": "promptString"
+    },
+    {
+      "id": "testName",
+      "description": "Test name to debug",
+      "default": "test_logging",
+      "type": "promptString"
+    },
+    {
+      "id": "serviceName",
+      "description": "Service name to debug",
+      "default": "billing",
+      "type": "promptString"
+    },
+    {
+      "id": "serviceLanguage",
+      "description": "Service language",
+      "default": "go",
+      "type": "pickString",
+      "options": ["go", "python", "rust", "typescript"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Debug Full Stack",
+      "configurations": [
+        "Next.js: debug server-side",
+        "Go: Debug Billing Service",
+        "Python: Debug Data Service"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "fullstack",
+        "order": 1
+      }
+    },
+    {
+      "name": "Debug All Services",
+      "configurations": [
+        "Next.js: debug server-side",
+        "Go: Debug Billing Service",
+        "Go: Debug Auth Service",
+        "Python: Debug Data Service"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "services",
+        "order": 2
+      }
+    }
+  ]
+}

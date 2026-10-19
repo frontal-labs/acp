@@ -1,0 +1,585 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "dev",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "dev"],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "build"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test:unit",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "test:unit"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "test:unit:run",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "test:unit:run"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "check",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "check"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "fix",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "fix"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "check:broken-links",
+      "type": "shell",
+      "command": "bun",
+      "args": ["run", "check:broken-links"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:dev-setup",
+      "type": "shell",
+      "command": "make",
+      "args": ["dev-setup"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:deps",
+      "type": "shell",
+      "command": "make",
+      "args": ["deps"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:build",
+      "type": "shell",
+      "command": "make",
+      "args": ["build"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:build:prod",
+      "type": "shell",
+      "command": "make",
+      "args": ["build:prod"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:test",
+      "type": "shell",
+      "command": "make",
+      "args": ["test"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:test:unit",
+      "type": "shell",
+      "command": "make",
+      "args": ["test:unit"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:test:integration",
+      "type": "shell",
+      "command": "make",
+      "args": ["test:integration"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:lint",
+      "type": "shell",
+      "command": "make",
+      "args": ["lint"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:format",
+      "type": "shell",
+      "command": "make",
+      "args": ["format"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:check",
+      "type": "shell",
+      "command": "make",
+      "args": ["check"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:up",
+      "type": "shell",
+      "command": "make",
+      "args": ["up"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "make:down",
+      "type": "shell",
+      "command": "make",
+      "args": ["down"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "go:build",
+      "type": "shell",
+      "command": "cd",
+      "args": ["go", "&&", "go", "build", "./..."],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "go:test",
+      "type": "shell",
+      "command": "cd",
+      "args": ["go", "&&", "go", "test", "./..."],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "go:test:race",
+      "type": "shell",
+      "command": "cd",
+      "args": ["go", "&&", "go", "test", "./...", "-race"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$go"]
+    },
+    {
+      "label": "go:lint",
+      "type": "shell",
+      "command": "cd",
+      "args": ["go", "&&", "golangci-lint", "run"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "go:fmt",
+      "type": "shell",
+      "command": "cd",
+      "args": ["go", "&&", "goimports", "-w", "."],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "python:test",
+      "type": "shell",
+      "command": "cd",
+      "args": ["python", "&&", "python", "-m", "pytest"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "python:test:coverage",
+      "type": "shell",
+      "command": "cd",
+      "args": ["python", "&&", "python", "-m", "pytest", "--cov"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "python:lint",
+      "type": "shell",
+      "command": "cd",
+      "args": ["python", "&&", "ruff", "check", "."],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "python:format",
+      "type": "shell",
+      "command": "cd",
+      "args": ["python", "&&", "black", ".", "&&", "ruff", "format", "."],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "python:mypy",
+      "type": "shell",
+      "command": "cd",
+      "args": ["python", "&&", "mypy", "."],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "rust:build",
+      "type": "shell",
+      "command": "cd",
+      "args": ["rust", "&&", "cargo", "build"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "rust:build:release",
+      "type": "shell",
+      "command": "cd",
+      "args": ["rust", "&&", "cargo", "build", "--release"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "rust:test",
+      "type": "shell",
+      "command": "cd",
+      "args": ["rust", "&&", "cargo", "test"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "rust:clippy",
+      "type": "shell",
+      "command": "cd",
+      "args": ["rust", "&&", "cargo", "clippy"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "rust:fmt",
+      "type": "shell",
+      "command": "cd",
+      "args": ["rust", "&&", "cargo", "fmt"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "rust:check",
+      "type": "shell",
+      "command": "cd",
+      "args": ["rust", "&&", "cargo", "check"],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "cargo build",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "cargo test build",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["test", "--no-run"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "cargo build logging example",
+      "type": "shell",
+      "command": "cargo",
+      "args": ["build", "--example", "logging_example"],
+      "options": {
+        "cwd": "${workspaceFolder}/crates/logging"
+      },
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": ["$rustc"]
+    },
+    {
+      "label": "proto:gen",
+      "type": "shell",
+      "command": "make",
+      "args": ["proto-gen"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "proto:python",
+      "type": "shell",
+      "command": "make",
+      "args": ["proto-python"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "docker:build",
+      "type": "shell",
+      "command": "make",
+      "args": ["docker:build"],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "new"
+      },
+      "problemMatcher": []
+    }
+  ]
+}
