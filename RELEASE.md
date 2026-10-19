@@ -10,6 +10,10 @@ The SDK package name is unified as `acp-sdk`; the language-specific import
 identifiers are `acp-sdk` for TypeScript, `acp` for Python, and `acp_sdk` for
 Rust.
 
+Release image/container identifiers retain ecosystem suffixes (`acp-sdk-ts`,
+`acp-sdk-py`, and `acp-sdk-rs`) even though the published SDK package names are
+unified as `acp-sdk`.
+
 ## Prepare a release
 
 1. Add a changeset with `pnpm changeset` for each user-visible package change.

@@ -5,6 +5,7 @@
   },
   "include": [
     "cli/**/*.ts",
+    "extensions/**/*.ts",
     "packages/**/*.ts",
     "sdks/typescript/**/*.ts",
     "tests/**/*.ts"

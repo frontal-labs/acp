@@ -98,6 +98,299 @@ importers:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.5)
 
+  extensions/a2a:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/ext-shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/calendar:
+    dependencies:
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/directory:
+    dependencies:
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/email:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/ext-shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/google-chat:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/ext-shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/mcp:
+    dependencies:
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/microsoft-teams:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/ext-shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/opentelemetry:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/policy-cedar:
+    dependencies:
+      '@acp/policy':
+        specifier: workspace:*
+        version: link:../../packages/policy
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/policy-opa:
+    dependencies:
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@acp/policy':
+        specifier: workspace:*
+        version: link:../../packages/policy
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/postgres:
+    dependencies:
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@acp/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/shared:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/slack:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@acp/ext-shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
+  extensions/whatsapp:
+    dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../../packages/adapter
+      '@acp/ext-shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@acp/protocol':
+        specifier: workspace:*
+        version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
+      '@acp/testing':
+        specifier: workspace:*
+        version: link:../../packages/testing
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.5)
+
   packages/adapter:
     dependencies:
       '@acp/protocol':

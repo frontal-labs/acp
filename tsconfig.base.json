@@ -18,7 +18,21 @@
       "@acp/protocol": ["packages/protocol/src/index.ts"],
       "@acp/runtime": ["packages/runtime/src/index.ts"],
       "acp-sdk": ["sdks/typescript/src/index.ts"],
-      "@acp/testing": ["packages/testing/src/index.ts"]
+      "@acp/testing": ["packages/testing/src/index.ts"],
+      "@acp/ext-a2a": ["extensions/a2a/src/index.ts"],
+      "@acp/ext-calendar": ["extensions/calendar/src/index.ts"],
+      "@acp/ext-directory": ["extensions/directory/src/index.ts"],
+      "@acp/ext-email": ["extensions/email/src/index.ts"],
+      "@acp/ext-google-chat": ["extensions/google-chat/src/index.ts"],
+      "@acp/ext-mcp": ["extensions/mcp/src/index.ts"],
+      "@acp/ext-microsoft-teams": ["extensions/microsoft-teams/src/index.ts"],
+      "@acp/ext-opentelemetry": ["extensions/opentelemetry/src/index.ts"],
+      "@acp/ext-policy-cedar": ["extensions/policy-cedar/src/index.ts"],
+      "@acp/ext-policy-opa": ["extensions/policy-opa/src/index.ts"],
+      "@acp/ext-postgres": ["extensions/postgres/src/index.ts"],
+      "@acp/ext-shared": ["extensions/shared/src/index.ts"],
+      "@acp/ext-slack": ["extensions/slack/src/index.ts"],
+      "@acp/ext-whatsapp": ["extensions/whatsapp/src/index.ts"]
     }
   }
 }
