@@ -16,6 +16,7 @@ export interface EventStore {
   getAction?: (actionId: string) => Promise<ActionExecutionRecord | undefined>;
   has: (eventId: string) => Promise<boolean>;
   list?: (options?: { eventType?: string; limit?: number }) => Promise<EventEnvelope[]>;
+  query?: (options?: { eventType?: string; limit?: number }) => Promise<EventEnvelope[]>;
 }
 
 /** Durable state used to make registered action execution idempotent. */
@@ -48,6 +49,9 @@ export interface RuntimeResult {
   duplicate: boolean;
   emitted: EventEnvelope[];
 }
+
+/** A named alias used by high-level app APIs for accepted intake results. */
+export type IngestResult = RuntimeResult;
 
 /** Inputs required to submit an action through policy evaluation. */
 export interface SubmitActionInput {

@@ -69,7 +69,11 @@ export class ChannelGateway {
     return results;
   }
 
-  start(emit: (event: EventEnvelope) => Promise<void>, signal: AbortSignal): Promise<void> {
+  start(
+    emit: (event: EventEnvelope) => Promise<void>,
+    signal: AbortSignal,
+    onError?: (error: AcpError) => void | Promise<void>,
+  ): Promise<void> {
     for (const source of this.sources.values()) {
       if (!source.start) {
         continue;
@@ -77,7 +81,18 @@ export class ChannelGateway {
       const run = Promise.resolve(source.start(emit, signal));
       this.sourceRuns.set(
         source.provider,
-        run.catch(() => undefined),
+        run.catch(async (error) => {
+          await onError?.(
+            error instanceof AcpError
+              ? error
+              : new TransportError(`ACP source failed for provider ${source.provider}`, {
+                  cause: error,
+                  provider: source.provider,
+                  retryable: true,
+                  stage: "processing",
+                }),
+          );
+        }),
       );
       // Keep source failures attached to the lifecycle promise without making startup wait for a
       // long-running polling or websocket source.

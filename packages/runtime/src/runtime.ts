@@ -105,6 +105,30 @@ export class AcpRuntime {
     return Promise.resolve(this.actionRecords.get(actionId));
   }
 
+  getEvent(eventId: string): Promise<EventEnvelope | undefined> {
+    if (this.eventStore.get) {
+      return this.eventStore.get(eventId);
+    }
+    return this.eventStore
+      .all()
+      .then((events) => events.find((event) => event.eventId === eventId));
+  }
+
+  queryEvents(options: { eventType?: string; limit?: number } = {}): Promise<EventEnvelope[]> {
+    if (this.eventStore.query) {
+      return this.eventStore.query(options);
+    }
+    if (this.eventStore.list) {
+      return this.eventStore.list(options);
+    }
+    return this.eventStore.all().then((events) => {
+      const filtered = options.eventType
+        ? events.filter((event) => event.eventType === options.eventType)
+        : events;
+      return options.limit === undefined ? filtered : filtered.slice(-options.limit);
+    });
+  }
+
   async close(): Promise<void> {
     await this.eventStore.close?.();
   }

@@ -35,6 +35,10 @@ export class InMemoryEventStore implements EventStore {
     return Promise.resolve(options.limit === undefined ? events : events.slice(-options.limit));
   }
 
+  query(options: { eventType?: string; limit?: number } = {}): Promise<EventEnvelope[]> {
+    return this.list(options);
+  }
+
   all(): Promise<EventEnvelope[]> {
     return Promise.resolve([...this.events.values()]);
   }

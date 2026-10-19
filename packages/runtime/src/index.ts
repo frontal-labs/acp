@@ -10,6 +10,7 @@ export type {
   DecideApprovalInput,
   EventHandler,
   EventStore,
+  IngestResult,
   PendingApproval,
   RuntimeOptions,
   RuntimeResult,

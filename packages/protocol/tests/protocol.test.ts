@@ -2,8 +2,11 @@ import { ValidationError } from "@acp/core";
 import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
 import {
+  ActionRequestSchema,
   ActorRefSchema,
   ActorType,
+  actionExecuted,
+  approvalRequested,
   createEvent,
   createV2Event,
   eventFromBinary,
@@ -11,6 +14,8 @@ import {
   eventToBinary,
   eventToJson,
   MessageReceivedSchema,
+  messageReceived,
+  parseEvent,
   v2EventFromBinary,
   v2EventFromJson,
   v2EventToBinary,
@@ -72,5 +77,27 @@ describe("@acp/protocol", () => {
         },
       }),
     ).toThrow("requires payload case messageSent");
+  });
+
+  it("builds typed v2 events without manual envelope construction", () => {
+    const message = messageReceived({ eventId: "v2-builder-message", text: "hello" });
+    const action = create(ActionRequestSchema, {
+      actionId: "action:v2-builder",
+      parameters: { input: "{}" },
+      target: "customer:1",
+      type: "customer.reply",
+    });
+    const approval = approvalRequested({
+      agent: create(ActorRefSchema, { id: "agent:v2", type: ActorType.AGENT }),
+      approvalId: "approval:v2-builder",
+      approver: create(ActorRefSchema, { id: "human:v2", type: ActorType.HUMAN }),
+      reason: "review",
+      requestedAction: action,
+    });
+    const executed = actionExecuted({ action, result: "ok" });
+
+    expect(v2EventType(parseEvent(v2EventToJson(message)))).toBe("message.received");
+    expect(v2EventType(approval)).toBe("approval.requested");
+    expect(v2EventType(executed)).toBe("action.executed");
   });
 });
