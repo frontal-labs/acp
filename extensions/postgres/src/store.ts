@@ -1,7 +1,7 @@
 import { ValidationError } from "@acp/core";
 import type { EventEnvelope } from "@acp/protocol";
 import { eventFromJson, eventToJson } from "@acp/protocol";
-import type { EventStore } from "@acp/runtime";
+import type { ActionExecutionRecord, EventStore } from "@acp/runtime";
 
 import type { PostgresClient, PostgresEventRow, PostgresEventStoreOptions } from "./types.js";
 
@@ -24,6 +24,14 @@ CREATE TABLE IF NOT EXISTS acp_events (
 CREATE INDEX IF NOT EXISTS acp_events_type_idx ON acp_events (event_type, sequence);
 CREATE INDEX IF NOT EXISTS acp_events_correlation_idx ON acp_events (correlation_id, sequence);
 CREATE INDEX IF NOT EXISTS acp_events_idempotency_idx ON acp_events (idempotency_key);
+CREATE TABLE IF NOT EXISTS acp_actions (
+  action_id TEXT PRIMARY KEY,
+  owner TEXT,
+  status TEXT NOT NULL,
+  result_json JSONB,
+  error_json JSONB,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 `;
 
 function tableName(value: string | undefined): string {
@@ -132,6 +140,60 @@ export class PostgresEventStore implements EventStore {
 
   all(): Promise<EventEnvelope[]> {
     return this.list({ limit: 10_000_000 });
+  }
+
+  query(options: { eventType?: string; limit?: number } = {}): Promise<EventEnvelope[]> {
+    return this.list(options);
+  }
+
+  async claimAction(actionId: string, owner: string): Promise<boolean> {
+    const result = await this.client.query<{ action_id: string }>(
+      `INSERT INTO acp_actions (action_id, owner, status)
+       VALUES ($1, $2, 'claimed')
+       ON CONFLICT (action_id) DO NOTHING
+       RETURNING action_id`,
+      [actionId, owner],
+    );
+    return result.rows.length > 0;
+  }
+
+  async completeAction(actionId: string, result: unknown): Promise<void> {
+    await this.client.query(
+      `UPDATE acp_actions SET status = 'completed', result_json = $2::jsonb, updated_at = NOW()
+       WHERE action_id = $1`,
+      [actionId, JSON.stringify(result)],
+    );
+  }
+
+  async failAction(actionId: string, error: unknown): Promise<void> {
+    await this.client.query(
+      `UPDATE acp_actions SET status = 'failed', error_json = $2::jsonb, updated_at = NOW()
+       WHERE action_id = $1`,
+      [actionId, JSON.stringify(error)],
+    );
+  }
+
+  async getAction(actionId: string): Promise<ActionExecutionRecord | undefined> {
+    const result = await this.client.query<{
+      action_id: string;
+      error_json: unknown;
+      owner: string | null;
+      result_json: unknown;
+      status: ActionExecutionRecord["status"];
+    }>(
+      "SELECT action_id, owner, status, result_json, error_json FROM acp_actions WHERE action_id = $1",
+      [actionId],
+    );
+    const [row] = result.rows;
+    return row
+      ? {
+          actionId: row.action_id,
+          error: row.error_json ?? undefined,
+          owner: row.owner ?? undefined,
+          result: row.result_json ?? undefined,
+          status: row.status,
+        }
+      : undefined;
   }
 }
 

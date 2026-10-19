@@ -188,6 +188,9 @@ importers:
       '@acp/adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@acp/ext-shared':
         specifier: workspace:*
         version: link:../shared
@@ -232,6 +235,9 @@ importers:
       '@acp/adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@acp/ext-shared':
         specifier: workspace:*
         version: link:../shared
@@ -302,6 +308,9 @@ importers:
 
   extensions/postgres:
     dependencies:
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@acp/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
@@ -327,6 +336,9 @@ importers:
       '@acp/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@bufbuild/protobuf':
+        specifier: ^2.2.5
+        version: 2.16.0
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -371,6 +383,9 @@ importers:
       '@acp/adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
+      '@acp/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@acp/ext-shared':
         specifier: workspace:*
         version: link:../shared
@@ -412,22 +427,19 @@ importers:
 
   packages/demo:
     dependencies:
+      '@acp/adapter':
+        specifier: workspace:*
+        version: link:../adapter
       '@acp/policy':
         specifier: workspace:*
         version: link:../policy
-      '@acp/protocol':
-        specifier: workspace:*
-        version: link:../protocol
-      '@acp/runtime':
-        specifier: workspace:*
-        version: link:../runtime
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-    devDependencies:
       '@acp/testing':
         specifier: workspace:*
         version: link:../testing
+      acp-sdk:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
+    devDependencies:
       vitest:
         specifier: ^2.1.8
         version: 2.1.9(@types/node@22.20.5)
