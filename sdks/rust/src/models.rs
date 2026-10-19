@@ -721,10 +721,11 @@ impl AcpApp {
                 result.action_results.push(blocked);
             } else if decision.approval_required {
                 let approval_id = format!("{}:approval", action.action_id);
-                let action_id = action.action_id.clone();
+                let requested_action_id = action.action_id.clone();
                 self.pending
                     .insert(approval_id.clone(), PendingAction { action, event: event.clone() });
-                let pending_result = ActionResult::ApprovalRequired { action_id, approval_id };
+                let pending_result =
+                    ActionResult::ApprovalRequired { action_id: requested_action_id, approval_id };
                 self.action_results.insert(action_id(&pending_result), pending_result.clone());
                 result.action_results.push(pending_result);
             } else {
