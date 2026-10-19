@@ -1,5 +1,7 @@
 ---
 "@acp/adapter": minor
+"@acp/core": minor
+"@acp/ext-postgres": minor
 "@acp/protocol": minor
 "@acp/runtime": minor
 "acp-sdk": minor
