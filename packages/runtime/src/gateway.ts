@@ -59,7 +59,20 @@ export class ChannelGateway {
       });
     }
 
-    const normalized = await source.normalize(input, metadata);
+    let normalized: Awaited<ReturnType<ChannelSource["normalize"]>>;
+    try {
+      normalized = await source.normalize(input, metadata);
+    } catch (error) {
+      if (error instanceof AcpError) {
+        throw error;
+      }
+      throw new TransportError(`Unable to normalize input for provider: ${provider}`, {
+        cause: error,
+        provider,
+        retryable: true,
+        stage: "normalize",
+      });
+    }
     const events = Array.isArray(normalized) ? normalized : [normalized];
     const results: RuntimeResult[] = [];
     for (const event of events) {
