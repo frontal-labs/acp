@@ -108,7 +108,11 @@ class AcpApplication implements AcpApp {
   ): () => void {
     return this.runtime.subscribe(async (event) => {
       if (event.eventType === eventType) {
-        await handler(event as EventEnvelope & { eventType: T });
+        try {
+          await handler(event as EventEnvelope & { eventType: T });
+        } catch (error) {
+          await this.reportError(error, event.eventId);
+        }
       }
     });
   }
@@ -159,6 +163,7 @@ class AcpApplication implements AcpApp {
         "store shutdown",
       );
     } finally {
+      this.host.detach();
       this.runtimeSubscription?.();
       this.runtimeSubscription = undefined;
       this.state = "stopped";
