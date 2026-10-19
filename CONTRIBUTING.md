@@ -24,7 +24,7 @@ Keep protocol changes in `proto/v1/api` or `proto/v1/types` and update all gener
 
 ## Before you start
 
-Read [AGENTS.md](./AGENTS.md), [the protocol specification](./docs/spec-v0.1.md),
+Read [AGENTS.md](./AGENTS.md), [the protocol specification](./docs/SPEC_V0_1.md),
 [the security policy](./SECURITY.md), and the narrowest matching skill under
 [`skills/`](./skills/). Open an issue first for wire-contract, public SDK,
 provider-semantic, or security-model changes; small documentation, test, and

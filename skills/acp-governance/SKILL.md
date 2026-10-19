@@ -18,6 +18,8 @@ repository-local agent configuration.
 - `.changeset/config.json` and `CHANGELOG.md` define release-note behavior.
 - `renovate.json` defines automated dependency-update policy.
 - `skills/` defines focused ACP implementation guidance.
+- Markdown filenames use uppercase `SNAKE_CASE.md`; conventional single-token
+  names such as `README.md` and `SKILL.md` remain valid.
 
 Keep these documents mutually consistent. Links must point to files that exist,
 contact addresses must be intentional, and commands must match `package.json`.

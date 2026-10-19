@@ -53,3 +53,18 @@ The reference runtime records every accepted inbound and internally emitted even
 An adapter translates provider-native messages into `message.received` envelopes and translates outbound ACP message events into provider-native sends. Provider identifiers belong in `ChannelRef` and `extensions`; core event semantics remain provider-neutral.
 
 The reference gateway keeps ingestion and dispatch separate: inbound events enter the runtime through `ingest`, while outbound events are explicitly sent through `dispatch`. This avoids treating a stored event as proof that a provider-side delivery succeeded and leaves retry/outbox policy to the host application.
+
+## 8. Typed v2 envelope
+
+The repository also contains an experimental typed envelope in
+`acp.v2.api.EventEnvelope`. Its protocol version is `0.2`, and it removes the
+duplicated `event_type` string: the payload `oneof` is the canonical event
+discriminant. SDK helpers expose the friendly dot-separated event name through
+`v2EventType()` and validate that the requested event name matches the payload
+case.
+
+The v2 envelope reuses the v1 domain messages and payload cases. It is not a
+wire-compatible replacement for the v1 envelope because the envelope fields
+and field numbers differ. Applications should choose one envelope version at a
+boundary and preserve that version when serializing, validating, or replaying
+events.

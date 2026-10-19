@@ -18,7 +18,7 @@ not alter the wire contract.
   by hand.
 - Buf configuration lives in [`proto/buf.yaml`](../../proto/buf.yaml) and
   [`proto/buf.gen.yaml`](../../proto/buf.gen.yaml).
-- Normative behavior is in [`docs/spec-v0.1.md`](../../docs/spec-v0.1.md).
+- Normative behavior is in [`docs/SPEC_V0_1.md`](../../docs/SPEC_V0_1.md).
 
 ## Required invariants
 
@@ -64,4 +64,3 @@ not alter the wire contract.
 
 Do not claim a schema change is complete while generated bindings, protocol
 validation, or SDK compilation are stale.
-

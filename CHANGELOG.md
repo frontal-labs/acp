@@ -5,6 +5,9 @@ All notable ACP changes are recorded here by Changesets. Pending release notes l
 ## Unreleased
 
 - Initial ACP v0.1 reference implementation and repository tooling baseline.
+- Documentation now uses uppercase `SNAKE_CASE.md` filenames, validates Markdown
+  links and filenames in CI, and documents the current `acp-sdk` distribution
+  and language import identifiers.
 
 ## Release conventions
 

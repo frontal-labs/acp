@@ -8,4 +8,5 @@ Run the suite with:
 pnpm test
 ```
 
-Native SDK tests live beside their implementations in `sdks/python/tests` and the Rust crate's unit-test module. Run all SDK tests with `pnpm sdk:test`.
+Native SDK tests live beside their implementations in `sdks/python/tests` and
+the Rust SDK's unit-test module. Run all SDK tests with `pnpm sdk:test`.

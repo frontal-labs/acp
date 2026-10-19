@@ -68,6 +68,8 @@ belong in an adapter or example. Do not leak them into protocol packages.
    changes.
 8. Never commit secrets, `.env` files, build output, `target/`, or framework
    caches.
+9. Name Markdown files with uppercase `SNAKE_CASE.md`; conventional single-token
+   names such as `README.md`, `LICENSE.md`, and `SKILL.md` remain valid.
 
 ## Verification
 
@@ -99,7 +101,7 @@ the example's own manifest or requirements file.
 
 ## Protocol changes
 
-Read `docs/spec-v0.1.md` and `skills/acp-protocol/SKILL.md`, edit only canonical
+Read `docs/SPEC_V0_1.md` and `skills/acp-protocol/SKILL.md`, edit only canonical
 schemas and hand-written helpers, update all language bindings, run
 `pnpm generate`, inspect the generated diff, and then run Buf, typecheck, and
 test verification. Do not claim a schema change is complete while generated

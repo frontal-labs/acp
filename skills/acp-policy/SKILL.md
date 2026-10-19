@@ -7,7 +7,7 @@ description: Implement ACP policy decisions, approval lifecycles, escalations, a
 
 Use this skill for changes to authorization, approval routing, deadline
 handling, escalation, or the runtime action lifecycle. Read
-[`docs/spec-v0.1.md`](../../docs/spec-v0.1.md) before changing semantics.
+[`docs/SPEC_V0_1.md`](../../docs/SPEC_V0_1.md) before changing semantics.
 
 ## Ownership boundaries
 
@@ -63,4 +63,3 @@ Use `@acp/testing` fixtures and selectors to inspect events. Cover at least:
 - explicit grant/deny and repeated decision conflict;
 - deadline expiry followed by escalation;
 - duplicate event processing.
-

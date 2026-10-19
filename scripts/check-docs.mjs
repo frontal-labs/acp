@@ -35,8 +35,16 @@ async function markdownFiles(directory) {
 const files = await markdownFiles(root);
 const failures = [];
 const linkPattern = /!?\[[^\]]*\]\(([^)]+)\)/g;
+const markdownFilePattern = /^[A-Z0-9]+(?:_[A-Z0-9]+)*\.md$/;
 
 for (const file of files) {
+  const basename = file.slice(file.lastIndexOf("/") + 1);
+  const relativeFile = relative(root, file);
+  const isRepositoryMetadata =
+    relativeFile.startsWith(".claude/") || relativeFile.startsWith(".github/");
+  if (!(isRepositoryMetadata || markdownFilePattern.test(basename))) {
+    failures.push(`${relativeFile} -> filename must be uppercase SNAKE_CASE.md`);
+  }
   // biome-ignore lint/performance/noAwaitInLoops: Link errors retain the source file order.
   const content = await readFile(file, "utf8");
   for (const match of content.matchAll(linkPattern)) {
