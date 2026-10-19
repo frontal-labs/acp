@@ -26,7 +26,7 @@ export interface ChannelSource {
   normalize: (
     input: unknown,
     metadata?: ReceiveMetadata,
-  ) => Promise<EventEnvelope | EventEnvelope[]> | EventEnvelope | EventEnvelope[];
+  ) => Promise<EventEnvelope | EventEnvelope[]>;
   readonly provider: string;
   start?: (
     emit: (event: EventEnvelope) => Promise<void>,
