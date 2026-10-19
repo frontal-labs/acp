@@ -1,4 +1,4 @@
-import { ConflictError } from "@acp/core";
+import { AcpError, ActionError, ConflictError } from "@acp/core";
 import {
   ActorRefSchema,
   ActorType,
@@ -17,6 +17,7 @@ import type {
   AgentContext,
   AgentDefinition,
   AgentHostOptions,
+  ReplyOptions,
 } from "./types.js";
 
 /** Hosts discoverable agents and routes ACP channel messages to them. */
@@ -25,8 +26,12 @@ export class AgentHost {
   private readonly gateway: AgentHostOptions["gateway"];
   private readonly actionRequester: AgentHostOptions["actionRequester"];
   private readonly onDelivery: AgentHostOptions["onDelivery"];
+  private readonly onError: AgentHostOptions["onError"];
+  private readonly maxConcurrentConversations: number;
   private readonly agents = new Map<string, AgentDefinition>();
   private readonly queues = new Map<string, Promise<void>>();
+  private runningConversations = 0;
+  private readonly concurrencyWaiters: Array<() => void> = [];
   private detachSubscription?: () => void;
 
   constructor(options: AgentHostOptions) {
@@ -34,6 +39,11 @@ export class AgentHost {
     this.gateway = options.gateway;
     this.actionRequester = options.actionRequester;
     this.onDelivery = options.onDelivery;
+    this.onError = options.onError;
+    this.maxConcurrentConversations = Math.max(
+      1,
+      options.maxConcurrentConversations ?? Number.POSITIVE_INFINITY,
+    );
     for (const agent of options.agents ?? []) {
       this.register(agent);
     }
@@ -68,7 +78,21 @@ export class AgentHost {
     if (this.detachSubscription) {
       return this.detachSubscription;
     }
-    const unsubscribe = this.runtime.subscribe((event) => this.handle(event).then(() => undefined));
+    const unsubscribe = this.runtime.subscribe(async (event) => {
+      try {
+        await this.handle(event);
+      } catch (error) {
+        await this.onError?.(
+          error instanceof AcpError
+            ? error
+            : new AcpError("ACP_ACTION", error instanceof Error ? error.message : String(error), {
+                cause: error,
+                eventId: event.eventId,
+                stage: "processing",
+              }),
+        );
+      }
+    });
     this.detachSubscription = () => {
       unsubscribe();
       this.detachSubscription = undefined;
@@ -113,48 +137,69 @@ export class AgentHost {
       return false;
     }
     const agent = this.toActor(definition);
-    const context: AgentContext = {
-      actions: {
+    await this.acquireConversation();
+    try {
+      const actions = {
         request: <TInput, TResult = unknown>(
           type: string,
           input: TInput,
           options?: ActionRequestOptions,
         ): Promise<ActionResult<TResult>> => {
           if (!this.actionRequester) {
-            return Promise.reject(new Error("ACP action handling is not configured for this host"));
+            return Promise.reject(
+              new ActionError("ACP action handling is not configured for this host"),
+            );
           }
           return this.actionRequester(agent, event, type, input, options);
         },
-      },
-      agent,
-      conversationId: event.conversation?.id,
-      event,
-      message,
-      reply: (text) => this.reply(agent, event, text),
-      requestAction: (input) => this.requestAction(agent, event, input),
-      runtime: this.runtime,
-    };
-    await definition.onMessage(context, message);
-    return true;
+      };
+      const context: AgentContext = {
+        actions,
+        actor: agent,
+        agent,
+        channel: event.channel,
+        conversation: event.conversation,
+        conversationId: event.conversation?.id,
+        event,
+        hooks: { onError: (error) => this.onError?.(error) },
+        logger: {
+          debug: () => undefined,
+          error: () => undefined,
+          info: () => undefined,
+          warn: () => undefined,
+        },
+        message,
+        rawEvent: event,
+        recipient: event.recipient,
+        reply: (text, options) => this.reply(agent, event, text, options),
+        requestAction: (input) => this.requestAction(agent, event, input),
+        runtime: this.runtime,
+      };
+      await definition.onMessage(context, message);
+      return true;
+    } finally {
+      this.releaseConversation();
+    }
   }
 
   private async reply(
     agent: ReturnType<AgentHost["toActor"]>,
     inbound: EventEnvelope,
     text: string,
+    options: ReplyOptions = {},
   ): Promise<EventEnvelope> {
     const event = createEvent({
       actor: agent,
       causationId: inbound.eventId,
-      channel: inbound.channel,
-      conversation: inbound.conversation,
+      channel: options.channel ?? inbound.channel,
+      conversation: options.conversation ?? inbound.conversation,
       correlationId: inbound.correlationId || inbound.eventId,
       eventType: "message.sent",
       payload: {
         case: "messageSent",
         value: create(MessageSentSchema, { text }),
       },
-      recipient: inbound.actor,
+      recipient: options.recipient ?? inbound.actor,
       source: agent,
     });
     await this.runtime.process(event);
@@ -234,6 +279,28 @@ export class AgentHost {
       id: definition.id,
       type: ActorType.AGENT,
     });
+  }
+
+  private acquireConversation(): Promise<void> {
+    if (this.runningConversations < this.maxConcurrentConversations) {
+      this.runningConversations += 1;
+      return Promise.resolve();
+    }
+    return new Promise((resolve) => {
+      this.concurrencyWaiters.push(() => {
+        this.runningConversations += 1;
+        resolve();
+      });
+    });
+  }
+
+  private releaseConversation(): void {
+    const next = this.concurrencyWaiters.shift();
+    if (next) {
+      next();
+    } else {
+      this.runningConversations = Math.max(0, this.runningConversations - 1);
+    }
   }
 
   private conversationKey(event: EventEnvelope): string {
