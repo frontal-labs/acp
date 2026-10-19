@@ -1,90 +1,79 @@
+import { InMemoryChannelAdapter } from "@acp/adapter";
 import { RuleBasedPolicyEngine } from "@acp/policy";
-import {
-  ActionRequestSchema,
-  ActorType,
-  createEvent,
-  eventToJson,
-  MessageReceivedSchema,
-} from "@acp/protocol";
-import { AcpRuntime, createActor, ManualClock } from "@acp/runtime";
-import { create } from "@bufbuild/protobuf";
+import { createTestAgent, createTestEvent, createTestHuman } from "@acp/testing";
+import { createAcp, defineAction } from "acp-sdk";
 
-/** Runs the reference approval and escalation flow. */
+/** Runs the reference approval flow through the high-level app API. */
 export async function runDemo(): Promise<void> {
-  const clock = new ManualClock(new Date("2026-10-19T14:00:00.000Z"));
-  const human = createActor("human:gabriel", ActorType.HUMAN, "Gabriel");
-  const agent = createActor("agent:support", ActorType.AGENT, "Support Agent", ["support.reply"]);
-  const manager = createActor("human:manager", ActorType.HUMAN, "Support Manager");
-
-  const policy = new RuleBasedPolicyEngine({
-    rules: [
+  const adapter = new InMemoryChannelAdapter();
+  const human = createTestHuman("human:gabriel", "Gabriel");
+  const agent = createTestAgent("agent:support", "Support Agent");
+  const manager = createTestHuman("human:manager", "Support Manager");
+  const action = defineAction<{ ticketId: string }, { sent: boolean }>({
+    execute: (input) => {
+      console.log(`sending customer reply for ${input.ticketId}`);
+      return { sent: true };
+    },
+    type: "send_customer_reply",
+    validate: (input) => {
+      if (!input || typeof input !== "object" || !("ticketId" in input)) {
+        throw new Error("ticketId is required");
+      }
+      return input as { ticketId: string };
+    },
+  });
+  let approvalId = "";
+  const app = createAcp({
+    actions: [action],
+    agents: [
       {
-        actionType: "send_customer_reply",
-        allowed: true,
-        id: "support-reply-review",
-        reason: "Customer-facing replies require human approval",
-        requiresApproval: true,
-      },
-      {
-        actionType: "message_internal_channel",
-        allowed: true,
-        id: "internal-channel-message",
-      },
-      {
-        actionType: "message_executive",
-        allowed: false,
-        id: "executive-contact-blocked",
-        reason: "Agent is not allowed to contact executives directly",
+        id: agent.id,
+        name: agent.displayName,
+        onMessage: async (context) => {
+          const result = await context.actions.request(
+            "send_customer_reply",
+            { ticketId: "ticket:99" },
+            { approver: manager, reason: "Customer-facing replies require review" },
+          );
+          if (result.status === "approval_required") {
+            ({ approvalId } = result);
+          }
+        },
       },
     ],
-  });
-
-  const runtime = new AcpRuntime({
-    clock,
-    defaultApprovalTimeoutMs: 5000,
-    policy,
-  });
-
-  runtime.subscribe((event) => {
-    console.log(`${event.eventType} (${event.eventId})`);
-  });
-
-  const inbound = createEvent({
-    actor: human,
-    eventType: "message.received",
-    payload: {
-      case: "messageReceived",
-      value: create(MessageReceivedSchema, {
-        text: "Can you answer the customer issue on ticket 99?",
-      }),
-    },
-    recipient: agent,
-    source: human,
-  });
-
-  await runtime.process(inbound);
-
-  const result = await runtime.submitAction({
-    action: create(ActionRequestSchema, {
-      actionId: "ticket-99-reply",
-      parameters: { ticket_id: "ticket-99" },
-      target: "ticket:99",
-      type: "send_customer_reply",
+    channels: [
+      {
+        provider: "memory",
+        sink: adapter,
+        source: {
+          normalize: async () => createTestEvent({ actor: human, recipient: agent }),
+          provider: "memory",
+        },
+      },
+    ],
+    policy: new RuleBasedPolicyEngine({
+      rules: [
+        {
+          actionType: "send_customer_reply",
+          allowed: true,
+          id: "support-reply-review",
+          requiresApproval: true,
+        },
+      ],
     }),
-    actor: agent,
-    approver: manager,
-    deadline: new Date(clock.now().getTime() + 5000),
-    reason: "Confidence below the autonomous-send threshold",
+  });
+  app.on("action.executed", (event) => {
+    console.log(`action executed: ${event.eventId}`);
   });
 
-  console.log(`action status: ${result.status}`);
-  console.log(`approval id: ${result.approvalId}`);
+  await app.start();
+  await app.receive("memory", { text: "Can you answer ticket 99?" });
+  console.log(`action status: ${approvalId ? "approval_required" : "unexpected"}`);
+  await app.approve(approvalId, manager, "Approved by the support manager");
+  await app.stop();
 
-  await clock.advanceBy(5000);
-
-  const audit = await runtime.eventStore.all();
-  console.log("\nACP audit trail:");
-  for (const event of audit) {
-    console.log(JSON.stringify(eventToJson(event)));
+  console.log("\nACP delivery:");
+  for (const event of adapter.sent) {
+    console.log(`${event.eventType} (${event.eventId})`);
   }
 }
