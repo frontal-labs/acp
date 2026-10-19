@@ -1,3 +1,4 @@
+import { ValidationError } from "@acp/core";
 import type { EventEnvelope } from "@acp/protocol";
 import { eventFromJson, eventToJson } from "@acp/protocol";
 import type { EventStore } from "@acp/runtime";
@@ -28,7 +29,10 @@ CREATE INDEX IF NOT EXISTS acp_events_idempotency_idx ON acp_events (idempotency
 function tableName(value: string | undefined): string {
   const name = value ?? "acp_events";
   if (!TABLE_NAME_PATTERN.test(name)) {
-    throw new Error(`Invalid PostgreSQL table name: ${name}`);
+    throw new ValidationError(`Invalid PostgreSQL table name: ${name}`, {
+      provider: "postgres",
+      stage: "validation",
+    });
   }
   return name;
 }

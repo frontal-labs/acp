@@ -1,3 +1,4 @@
+import { ValidationError } from "@acp/core";
 import { verifyHmacSignature, verifyReplayTimestamp } from "@acp/ext-shared";
 
 import type { SlackWebhookRequest } from "./types.js";
@@ -11,7 +12,10 @@ export function verifySlackWebhook(
   const timestamp = request.headers["x-slack-request-timestamp"];
   const signature = request.headers["x-slack-signature"];
   if (!(timestamp && signature)) {
-    throw new Error("Slack webhook headers are incomplete");
+    throw new ValidationError("Slack webhook headers are incomplete", {
+      provider: "slack",
+      stage: "validation",
+    });
   }
   verifyReplayTimestamp(timestamp, now);
   verifyHmacSignature(

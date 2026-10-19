@@ -43,6 +43,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@acp/core": "workspace:*",
     "@acp/protocol": "workspace:*",
     "@acp/runtime": "workspace:*"
   },
