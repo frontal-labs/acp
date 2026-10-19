@@ -106,6 +106,7 @@ describe("acp-sdk", () => {
             return "updated";
           },
           type: "sensitive.update",
+          validate: (input: unknown) => input,
         },
       ],
       agents: [

@@ -17,5 +17,7 @@ export type {
   AgentHostOptions,
   AgentSkill,
   ChannelDefinition,
+  IngestResult,
+  ReplyOptions,
 } from "./types.js";
 export { defineAction } from "./types.js";

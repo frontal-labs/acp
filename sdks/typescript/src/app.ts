@@ -1,5 +1,5 @@
 import type { DeliveryReceipt } from "@acp/adapter";
-import { AcpError, ConflictError, createActionId, ValidationError } from "@acp/core";
+import { AcpError, ActionError, ConflictError, createActionId, ValidationError } from "@acp/core";
 import {
   ActionExecutedSchema,
   ActionFailedSchema,
@@ -8,6 +8,7 @@ import {
   ApprovalOutcome,
   createEvent,
   type EventEnvelope,
+  type EventName,
 } from "@acp/protocol";
 import { AcpRuntime, ChannelGateway, SYSTEM_ACTOR } from "@acp/runtime";
 import { create } from "@bufbuild/protobuf";
@@ -48,6 +49,8 @@ class AcpApplication implements AcpApp {
   private readonly defaultApprover: NonNullable<AcpAppOptions["defaultApprover"]>;
   private readonly hooks: AcpHooks;
   private readonly pendingActions = new Map<string, PendingAction>();
+  private readonly actionResults = new Map<string, ActionResult<unknown>>();
+  private readonly actionRuns = new Map<string, Promise<ActionResult<unknown>>>();
   private readonly host: AgentHost;
   private state: "created" | "running" | "stopping" | "stopped" = "created";
   private sourceAbort?: AbortController;
@@ -76,7 +79,9 @@ class AcpApplication implements AcpApp {
         this.requestAction(agent, event, type, input, actionOptions),
       agents: options.agents,
       gateway: this.gateway,
+      maxConcurrentConversations: options.concurrency?.maxConcurrentConversations,
       onDelivery: (receipt) => this.runHook(this.hooks.onDelivery, receipt),
+      onError: (error) => this.runHook(this.hooks.onError, error),
       runtime: this.runtime,
     });
     this.runtimeSubscription = this.runtime.subscribe((event) => this.handleRuntimeEvent(event));
@@ -97,10 +102,13 @@ class AcpApplication implements AcpApp {
     this.actions.set(action.type, action as ActionDefinition<unknown, unknown>);
   }
 
-  on(eventType: string, handler: (event: EventEnvelope) => void | Promise<void>): () => void {
+  on<T extends EventName>(
+    eventType: T,
+    handler: (event: EventEnvelope & { eventType: T }) => void | Promise<void>,
+  ): () => void {
     return this.runtime.subscribe(async (event) => {
       if (event.eventType === eventType) {
-        await handler(event);
+        await handler(event as EventEnvelope & { eventType: T });
       }
     });
   }
@@ -115,8 +123,15 @@ class AcpApplication implements AcpApp {
     this.sourceAbort = new AbortController();
     this.host.attach();
     await this.gateway.start(
-      (event) => this.ingest(event).then(() => undefined),
+      async (event) => {
+        try {
+          await this.ingest(event);
+        } catch (error) {
+          await this.reportError(error, event.eventId);
+        }
+      },
       this.sourceAbort.signal,
+      (error) => this.reportError(error),
     );
     this.state = "running";
   }
@@ -126,13 +141,28 @@ class AcpApplication implements AcpApp {
       return;
     }
     this.state = "stopping";
+    const timeoutMs = Math.max(0, options.timeoutMs ?? 30_000);
+    const startedAt = Date.now();
     this.sourceAbort?.abort();
-    await this.gateway.stop();
-    this.host.detach();
-    await this.drain(options.timeoutMs ?? 30_000);
-    this.runtimeSubscription?.();
-    this.runtimeSubscription = undefined;
-    this.state = "stopped";
+    try {
+      await this.withTimeout(this.gateway.stop(), timeoutMs, "source shutdown");
+      this.host.detach();
+      await this.drain(this.remainingTimeout(startedAt, timeoutMs));
+      await this.withTimeout(
+        this.gateway.close(),
+        this.remainingTimeout(startedAt, timeoutMs),
+        "channel shutdown",
+      );
+      await this.withTimeout(
+        this.runtime.close(),
+        this.remainingTimeout(startedAt, timeoutMs),
+        "store shutdown",
+      );
+    } finally {
+      this.runtimeSubscription?.();
+      this.runtimeSubscription = undefined;
+      this.state = "stopped";
+    }
   }
 
   ingest(event: EventEnvelope) {
@@ -183,23 +213,63 @@ class AcpApplication implements AcpApp {
     if (!definition) {
       throw new ValidationError(`No ACP action is registered for type: ${type}`);
     }
-    let validated: unknown = input;
-    try {
-      validated = definition.validate ? definition.validate(input) : input;
-    } catch (error) {
-      return {
-        actionId: options.actionId ?? createActionId(),
-        error,
+    const actionId = options.actionId ?? createActionId();
+    const previous = this.actionResults.get(actionId);
+    if (previous) {
+      return previous as ActionResult<TResult>;
+    }
+    const running = this.actionRuns.get(actionId);
+    if (running) {
+      return (await running) as ActionResult<TResult>;
+    }
+    const stored = await this.runtime.getAction(actionId);
+    if (stored?.status === "completed") {
+      const completed: ActionResult<unknown> = {
+        actionId,
+        result: stored.result,
+        status: "executed",
+      };
+      this.actionResults.set(actionId, completed);
+      return completed as ActionResult<TResult>;
+    }
+    if (stored?.status === "failed") {
+      const failed: ActionResult<unknown> = {
+        actionId,
+        error: this.toActionError(stored.error, actionId),
         status: "failed",
       };
+      this.actionResults.set(actionId, failed);
+      return failed as ActionResult<TResult>;
     }
-    const actionId = options.actionId ?? createActionId();
+    let validated: unknown;
+    try {
+      validated = definition.validate(input);
+    } catch (error) {
+      const failed: ActionResult<unknown> = {
+        actionId,
+        error: this.toActionError(error, actionId),
+        status: "failed",
+      };
+      this.actionResults.set(actionId, failed);
+      return failed as ActionResult<TResult>;
+    }
     const action = create(ActionRequestSchema, {
       actionId,
       parameters: { input: this.serializeInput(validated) },
       target: options.target ?? `action:${type}`,
       type,
     });
+    if (!(await this.runtime.claimAction(actionId, "acp-sdk"))) {
+      const duplicate: ActionResult<unknown> = {
+        actionId,
+        error: new ActionError(`ACP action ${actionId} has already been claimed`, {
+          actionId,
+        }),
+        status: "failed",
+      };
+      this.actionResults.set(actionId, duplicate);
+      return duplicate as ActionResult<TResult>;
+    }
     const actionOptions: ActionRequestOptions & {
       approver: NonNullable<ActionRequestOptions["approver"]>;
       reason: string;
@@ -210,18 +280,34 @@ class AcpApplication implements AcpApp {
       conversation: options.conversation ?? inbound.conversation,
       reason: options.reason ?? `Requested by ${actor.id}`,
     };
-    const submission = await this.runtime.submitAction({
-      action,
-      actor,
-      approver: actionOptions.approver,
-      channel: actionOptions.channel,
-      conversation: actionOptions.conversation,
-      deadline: actionOptions.deadline,
-      reason: actionOptions.reason,
-      recipient: actionOptions.recipient,
-    });
+    let submission: Awaited<ReturnType<AcpRuntime["submitAction"]>>;
+    try {
+      submission = await this.runtime.submitAction({
+        action,
+        actor,
+        approver: actionOptions.approver,
+        channel: actionOptions.channel,
+        conversation: actionOptions.conversation,
+        deadline: actionOptions.deadline,
+        reason: actionOptions.reason,
+        recipient: actionOptions.recipient,
+      });
+    } catch (error) {
+      const actionError = this.toActionError(error, actionId);
+      await this.runtime.failAction(actionId, actionError);
+      const failed: ActionResult<unknown> = { actionId, error: actionError, status: "failed" };
+      this.actionResults.set(actionId, failed);
+      await this.runHook(this.hooks.onActionCompleted, failed);
+      return failed as ActionResult<TResult>;
+    }
     if (submission.status === "blocked") {
-      return { actionId, reason: submission.decision.reason, status: "blocked" };
+      const blocked: ActionResult<unknown> = {
+        actionId,
+        reason: submission.decision.reason,
+        status: "blocked",
+      };
+      this.actionResults.set(actionId, blocked);
+      return blocked as ActionResult<TResult>;
     }
     const pending: PendingAction = {
       action,
@@ -233,14 +319,34 @@ class AcpApplication implements AcpApp {
     };
     if (submission.status === "approval_required" && submission.approvalId) {
       this.pendingActions.set(submission.approvalId, pending);
-      return { actionId, approvalId: submission.approvalId, status: "approval_required" };
+      const approval: ActionResult<unknown> = {
+        actionId,
+        approvalId: submission.approvalId,
+        status: "approval_required",
+      };
+      this.actionResults.set(actionId, approval);
+      return approval as ActionResult<TResult>;
     }
-    return (await this.executeAction(pending)) as ActionResult<TResult>;
+    const run = this.executeAction(pending);
+    this.actionRuns.set(actionId, run);
+    try {
+      return (await run) as ActionResult<TResult>;
+    } finally {
+      this.actionRuns.delete(actionId);
+    }
   }
 
   private async executeAction(pending: PendingAction): Promise<ActionResult<unknown>> {
-    await this.runHook(this.hooks.onActionStarted, pending.action.type, pending.action.actionId);
+    await this.runHook(this.hooks.onActionStarted, pending.action);
     const context: ActionExecutionContext = {
+      actions: {
+        request: <TInput, TResult = unknown>(
+          type: string,
+          input: TInput,
+          options?: ActionRequestOptions,
+        ): Promise<ActionResult<TResult>> =>
+          this.requestAction(pending.actor, pending.event, type, input, options),
+      },
       actor: pending.actor,
       event: pending.event,
       runtime: this.runtime,
@@ -271,9 +377,12 @@ class AcpApplication implements AcpApp {
         result,
         status: "executed",
       };
+      await this.runtime.completeAction(pending.action.actionId, result);
+      this.actionResults.set(pending.action.actionId, completed);
       await this.runHook(this.hooks.onActionCompleted, completed);
       return completed;
     } catch (error) {
+      const actionError = this.toActionError(error, pending.action.actionId);
       const failedEvent = createEvent({
         actor: pending.actor,
         causationId: pending.event.eventId,
@@ -286,13 +395,9 @@ class AcpApplication implements AcpApp {
           case: "actionFailed",
           value: create(ActionFailedSchema, {
             action: pending.action,
-            errorCode: error instanceof AcpError ? error.code : "ACP_ACTION_FAILED",
-            errorMessage: error instanceof Error ? error.message : String(error),
-            retryable: Boolean(
-              error && typeof error === "object" && "retryable" in error
-                ? (error as { retryable?: unknown }).retryable
-                : false,
-            ),
+            errorCode: actionError.code,
+            errorMessage: actionError.message,
+            retryable: actionError.retryable,
           }),
         },
         recipient: pending.options.recipient,
@@ -301,9 +406,11 @@ class AcpApplication implements AcpApp {
       await this.runtime.process(failedEvent);
       const failed: ActionResult<unknown> = {
         actionId: pending.action.actionId,
-        error,
+        error: actionError,
         status: "failed",
       };
+      await this.runtime.failAction(pending.action.actionId, actionError);
+      this.actionResults.set(pending.action.actionId, failed);
       await this.runHook(this.hooks.onActionCompleted, failed);
       return failed;
     }
@@ -315,13 +422,36 @@ class AcpApplication implements AcpApp {
       const pending = this.pendingActions.get(event.payload.value.approvalId);
       if (pending) {
         this.pendingActions.delete(event.payload.value.approvalId);
-        await this.executeAction(pending);
+        const run = this.executeAction(pending);
+        this.actionRuns.set(pending.action.actionId, run);
+        try {
+          await run;
+        } finally {
+          this.actionRuns.delete(pending.action.actionId);
+        }
       }
     }
     if (
       (event.eventType === "approval.denied" || event.eventType === "approval.expired") &&
       (event.payload.case === "approvalDecided" || event.payload.case === "approvalExpired")
     ) {
+      const pending = this.pendingActions.get(event.payload.value.approvalId);
+      if (pending) {
+        const blocked: ActionResult<unknown> = {
+          actionId: pending.action.actionId,
+          reason: event.eventType === "approval.expired" ? "Approval expired" : "Approval denied",
+          status: "blocked",
+        };
+        this.actionResults.set(pending.action.actionId, blocked);
+        await this.runtime.failAction(
+          pending.action.actionId,
+          new ActionError(blocked.reason, {
+            actionId: pending.action.actionId,
+            approvalId: event.payload.value.approvalId,
+          }),
+        );
+        await this.runHook(this.hooks.onActionCompleted, blocked);
+      }
       this.pendingActions.delete(event.payload.value.approvalId);
     }
     await this.runHook(this.hooks.onEventProcessed, event);
@@ -337,7 +467,44 @@ class AcpApplication implements AcpApp {
     try {
       await hook(...args);
     } catch (error) {
-      await this.hooks.onError?.(error);
+      await this.hooks.onError?.(this.toAcpError(error));
+    }
+  }
+
+  private async reportError(error: unknown, eventId?: string): Promise<void> {
+    await this.runHook(this.hooks.onError, this.toAcpError(error, eventId));
+  }
+
+  private remainingTimeout(startedAt: number, timeoutMs: number): number {
+    return Math.max(0, timeoutMs - (Date.now() - startedAt));
+  }
+
+  private async withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number,
+    operation: string,
+  ): Promise<T> {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([
+        promise,
+        new Promise<never>((_, reject) => {
+          timeout = setTimeout(
+            () =>
+              reject(
+                new AcpError("ACP_TRANSPORT", `ACP ${operation} timed out`, {
+                  retryable: true,
+                  stage: "shutdown",
+                }),
+              ),
+            timeoutMs,
+          );
+        }),
+      ]);
+    } finally {
+      if (timeout) {
+        clearTimeout(timeout);
+      }
     }
   }
 
@@ -377,6 +544,27 @@ class AcpApplication implements AcpApp {
     if (this.state === "stopping" || this.state === "stopped") {
       throw new AcpError("ACP_TRANSPORT", `ACP app is ${this.state}`);
     }
+  }
+
+  private toActionError(error: unknown, actionId?: string): ActionError {
+    if (error instanceof ActionError) {
+      return error;
+    }
+    return new ActionError(error instanceof Error ? error.message : String(error), {
+      actionId,
+      cause: error,
+      retryable: false,
+    });
+  }
+
+  private toAcpError(error: unknown, eventId?: string): AcpError {
+    return error instanceof AcpError
+      ? error
+      : new AcpError("ACP_ACTION", error instanceof Error ? error.message : String(error), {
+          cause: error,
+          eventId,
+          stage: "processing",
+        });
   }
 
   private serializeInput(input: unknown): string {

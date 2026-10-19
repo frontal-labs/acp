@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, TypeAlias
 from uuid import uuid4
 
-JsonObject = dict[str, Any]
+JsonObject: TypeAlias = dict[str, Any]
 
 
 def _actor_from_json(value: Mapping[str, Any] | None) -> ActorRef | None:
@@ -30,11 +31,7 @@ class ActorRef:
     capabilities: tuple[str, ...] = ()
 
     def to_proto_json(self) -> JsonObject:
-        value: JsonObject = {
-            "id": self.id,
-            "type": self.type,
-            "displayName": self.display_name,
-        }
+        value: JsonObject = {"id": self.id, "type": self.type, "displayName": self.display_name}
         if self.authority:
             value["authority"] = self.authority
         if self.capabilities:
@@ -80,7 +77,7 @@ class AgentCard:
     id: str
     name: str
     description: str = ""
-    version: str = "0.1.0"
+    version: str = "0.2.0"
     url: str = ""
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
     skills: tuple[AgentSkill, ...] = ()
@@ -115,12 +112,38 @@ class MessageReceived:
         )
 
 
+_PAYLOAD_TO_EVENT: dict[str, str] = {
+    "messageReceived": "message.received",
+    "messageSent": "message.sent",
+    "taskCreated": "task.created",
+    "taskAssigned": "task.assigned",
+    "approvalRequested": "approval.requested",
+    "approvalDecided": "approval.granted",
+    "approvalExpired": "approval.expired",
+    "escalationTriggered": "escalation.triggered",
+    "handoffInitiated": "handoff.initiated",
+    "handoffCompleted": "handoff.completed",
+    "policyEvaluated": "policy.allowed",
+    "actionExecuted": "action.executed",
+    "actionFailed": "action.failed",
+}
+
+
+def _event_kind(payload: Mapping[str, Any]) -> str:
+    cases = [key for key in payload if key in _PAYLOAD_TO_EVENT]
+    if len(cases) != 1:
+        raise ValueError("ACP v2 events require exactly one typed payload")
+    return _PAYLOAD_TO_EVENT[cases[0]]
+
+
 @dataclass(slots=True)
 class EventEnvelope:
+    """Portable v0.2 envelope with a payload-derived event kind."""
+
     event_type: str
     payload: Mapping[str, Any]
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    protocol_version: str = "0.1"
+    protocol_version: str = "0.2"
     occurred_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
     source: ActorRef | None = None
     actor: ActorRef | None = None
@@ -132,6 +155,19 @@ class EventEnvelope:
     idempotency_key: str = ""
     extensions: Mapping[str, str] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        derived = _event_kind(self.payload)
+        if not self.event_type:
+            self.event_type = derived
+        elif self.event_type != derived:
+            raise ValueError(
+                f"ACP event type {self.event_type!r} does not match payload kind {derived!r}"
+            )
+
+    @property
+    def payload_case(self) -> str:
+        return next(key for key in self.payload if key in _PAYLOAD_TO_EVENT)
+
     @classmethod
     def message_received(
         cls,
@@ -142,14 +178,12 @@ class EventEnvelope:
         channel: JsonObject | None = None,
         conversation: JsonObject | None = None,
     ) -> EventEnvelope:
-        return cls(
+        return message_received(
             actor=actor,
+            recipient=recipient,
+            text=text,
             channel=channel,
             conversation=conversation,
-            event_type="message.received",
-            payload={"messageReceived": {"text": text}},
-            recipient=recipient,
-            source=actor,
         )
 
     @classmethod
@@ -169,6 +203,7 @@ class EventEnvelope:
             "recipient",
             "source",
         }
+        payload = {key: item for key, item in value.items() if key not in known_fields}
         return cls(
             actor=_actor_from_json(value.get("actor")),
             causation_id=str(value.get("causationId", "")),
@@ -180,8 +215,8 @@ class EventEnvelope:
             extensions={str(key): str(item) for key, item in value.get("extensions", {}).items()},
             idempotency_key=str(value.get("idempotencyKey", "")),
             occurred_at=str(value.get("occurredAt", "")),
-            payload={key: item for key, item in value.items() if key not in known_fields},
-            protocol_version=str(value.get("protocolVersion", "")),
+            payload=payload,
+            protocol_version=str(value.get("protocolVersion", "0.2")),
             recipient=_actor_from_json(value.get("recipient")),
             source=_actor_from_json(value.get("source")),
         )
@@ -193,10 +228,11 @@ class EventEnvelope:
     def to_proto_json(self) -> JsonObject:
         value: JsonObject = {
             "eventId": self.event_id,
-            "eventType": self.event_type,
             "protocolVersion": self.protocol_version,
             "occurredAt": self.occurred_at,
         }
+        if self.protocol_version != "0.2":
+            value["eventType"] = self.event_type
         for name, actor in (
             ("source", self.source),
             ("actor", self.actor),
@@ -217,3 +253,95 @@ class EventEnvelope:
             value["extensions"] = dict(self.extensions)
         value.update(self.payload)
         return value
+
+
+def message_received(**kwargs: Any) -> EventEnvelope:
+    actor = kwargs.get("actor")
+    return EventEnvelope(
+        actor=actor,
+        channel=kwargs.get("channel"),
+        conversation=kwargs.get("conversation"),
+        event_type="message.received",
+        payload={"messageReceived": {"text": str(kwargs["text"])}},
+        recipient=kwargs.get("recipient"),
+        source=actor,
+    )
+
+
+def message_sent(**kwargs: Any) -> EventEnvelope:
+    actor = kwargs.get("actor")
+    return EventEnvelope(
+        actor=actor,
+        channel=kwargs.get("channel"),
+        conversation=kwargs.get("conversation"),
+        event_type="message.sent",
+        payload={"messageSent": {"text": str(kwargs["text"])}},
+        recipient=kwargs.get("recipient"),
+        source=actor,
+    )
+
+
+def approval_requested(**kwargs: Any) -> EventEnvelope:
+    return EventEnvelope(
+        actor=kwargs.get("actor"),
+        channel=kwargs.get("channel"),
+        conversation=kwargs.get("conversation"),
+        event_type="approval.requested",
+        payload={
+            "approvalRequested": {
+                "agent": kwargs["agent"].to_proto_json(),
+                "approvalId": kwargs["approval_id"],
+                "approver": kwargs["approver"].to_proto_json(),
+                "reason": kwargs["reason"],
+                "requestedAction": kwargs["requested_action"],
+            }
+        },
+        recipient=kwargs.get("approver"),
+        source=kwargs.get("source"),
+    )
+
+
+def action_executed(**kwargs: Any) -> EventEnvelope:
+    return EventEnvelope(
+        actor=kwargs.get("actor"),
+        event_type="action.executed",
+        payload={"actionExecuted": {"action": kwargs["action"], "result": kwargs.get("result")}},
+        channel=kwargs.get("channel"),
+        conversation=kwargs.get("conversation"),
+        source=kwargs.get("source"),
+    )
+
+
+def parse_event(value: bytes | bytearray | Mapping[str, Any]) -> EventEnvelope:
+    if isinstance(value, (bytes, bytearray)):
+        raw = bytes(value)
+        if raw.startswith(b"ACP2\n"):
+            raw = raw[5:]
+        try:
+            value = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise ValueError("Invalid ACP v2 binary event") from error
+    if not isinstance(value, Mapping):
+        raise TypeError("ACP events must be ProtoJSON mappings or bytes")
+    return EventEnvelope.from_proto_json(value)
+
+
+def event_to_json(event: EventEnvelope) -> JsonObject:
+    return event.to_proto_json()
+
+
+def event_from_json(value: Mapping[str, Any]) -> EventEnvelope:
+    return EventEnvelope.from_proto_json(value)
+
+
+def event_to_binary(event: EventEnvelope) -> bytes:
+    """Return deterministic v0.2 bytes without adding a runtime dependency."""
+
+    return (
+        b"ACP2\n"
+        + json.dumps(event.to_proto_json(), sort_keys=True, separators=(",", ":")).encode()
+    )
+
+
+def event_from_binary(value: bytes | bytearray) -> EventEnvelope:
+    return parse_event(value)

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::ops::Deref;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
@@ -133,7 +134,26 @@ pub enum ActionResult {
     Blocked { action_id: String, reason: String },
     ApprovalRequired { action_id: String, approval_id: String },
     Executed { action_id: String, result: serde_json::Value },
-    Failed { action_id: String, error: String },
+    Failed { action_id: String, error: ActionError },
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+pub struct ActionError {
+    pub code: String,
+    pub message: String,
+    pub action_id: String,
+    pub retryable: bool,
+}
+
+impl ActionError {
+    fn from_agent_error(action_id: impl Into<String>, error: &AgentError) -> Self {
+        Self {
+            code: "ACP_ACTION".to_owned(),
+            message: error.to_string(),
+            action_id: action_id.into(),
+            retryable: false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -147,24 +167,55 @@ pub trait ActionPolicy: Send + Sync {
     fn evaluate(&self, action: &ActionInvocation, event: &EventEnvelope) -> PolicyDecision;
 }
 
-type ActionHandler = dyn Fn(&serde_json::Value, &EventEnvelope) -> Result<serde_json::Value, AgentError>
+pub struct ActionExecutionContext<'a> {
+    pub actor: &'a ActorRef,
+    pub event: &'a EventEnvelope,
+}
+
+impl<'a> Deref for ActionExecutionContext<'a> {
+    type Target = EventEnvelope;
+
+    fn deref(&self) -> &Self::Target {
+        self.event
+    }
+}
+
+type ActionValidator =
+    dyn Fn(&serde_json::Value) -> Result<serde_json::Value, AgentError> + Send + Sync;
+type ActionHandler = dyn Fn(&serde_json::Value, &ActionExecutionContext<'_>) -> Result<serde_json::Value, AgentError>
     + Send
     + Sync;
 
 pub struct ActionDefinition {
     pub action_type: String,
+    validator: Box<ActionValidator>,
     handler: Box<ActionHandler>,
 }
 
 impl ActionDefinition {
     pub fn new<F>(action_type: impl Into<String>, handler: F) -> Self
     where
-        F: Fn(&serde_json::Value, &EventEnvelope) -> Result<serde_json::Value, AgentError>
+        F: Fn(
+                &serde_json::Value,
+                &ActionExecutionContext<'_>,
+            ) -> Result<serde_json::Value, AgentError>
             + Send
             + Sync
             + 'static,
     {
-        Self { action_type: action_type.into(), handler: Box::new(handler) }
+        Self {
+            action_type: action_type.into(),
+            handler: Box::new(handler),
+            validator: Box::new(|value| Ok(value.clone())),
+        }
+    }
+
+    pub fn with_validator<F>(mut self, validator: F) -> Self
+    where
+        F: Fn(&serde_json::Value) -> Result<serde_json::Value, AgentError> + Send + Sync + 'static,
+    {
+        self.validator = Box::new(validator);
+        self
     }
 }
 
@@ -258,7 +309,7 @@ impl EventEnvelope {
     }
 }
 
-fn now_rfc3339() -> String {
+pub(crate) fn now_rfc3339() -> String {
     let elapsed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
     let days = (elapsed.as_secs() / 86_400) as i64;
     let seconds = elapsed.as_secs() % 86_400;
@@ -451,11 +502,31 @@ impl AgentHost {
 pub trait ChannelSource: Send {
     fn provider(&self) -> &str;
     fn normalize(&self, input: serde_json::Value) -> Result<Vec<EventEnvelope>, AgentError>;
+
+    fn start(&mut self) -> Result<(), AgentError> {
+        Ok(())
+    }
+
+    fn stop(&mut self) -> Result<(), AgentError> {
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+pub struct DeliveryReceipt {
+    pub provider: String,
+    pub event_id: String,
+    pub delivered_at: String,
+    pub external_id: Option<String>,
 }
 
 pub trait ChannelSink: Send {
     fn provider(&self) -> &str;
-    fn send(&mut self, event: &EventEnvelope) -> Result<(), AgentError>;
+    fn send(&mut self, event: &EventEnvelope) -> Result<DeliveryReceipt, AgentError>;
+
+    fn close(&mut self) -> Result<(), AgentError> {
+        Ok(())
+    }
 }
 
 pub struct ChannelDefinition {
@@ -469,11 +540,21 @@ struct PendingAction {
     event: EventEnvelope,
 }
 
+fn action_id(result: &ActionResult) -> String {
+    match result {
+        ActionResult::Blocked { action_id, .. }
+        | ActionResult::ApprovalRequired { action_id, .. }
+        | ActionResult::Executed { action_id, .. }
+        | ActionResult::Failed { action_id, .. } => action_id.clone(),
+    }
+}
+
 pub struct AcpAppBuilder {
     host: AgentHost,
     actions: BTreeMap<String, ActionDefinition>,
     channels: Vec<ChannelDefinition>,
     policy: Option<Box<dyn ActionPolicy>>,
+    max_concurrent_conversations: usize,
 }
 
 impl Default for AcpAppBuilder {
@@ -483,6 +564,7 @@ impl Default for AcpAppBuilder {
             actions: BTreeMap::new(),
             channels: Vec::new(),
             policy: None,
+            max_concurrent_conversations: usize::MAX,
         }
     }
 }
@@ -518,6 +600,11 @@ impl AcpAppBuilder {
         self
     }
 
+    pub fn max_concurrent_conversations(mut self, limit: usize) -> Self {
+        self.max_concurrent_conversations = limit.max(1);
+        self
+    }
+
     pub fn build(self) -> AcpApp {
         AcpApp {
             host: self.host,
@@ -527,6 +614,9 @@ impl AcpAppBuilder {
             policy: self.policy,
             seen_events: BTreeMap::new(),
             started: false,
+            max_concurrent_conversations: self.max_concurrent_conversations,
+            action_results: BTreeMap::new(),
+            audit_events: Vec::new(),
         }
     }
 }
@@ -539,15 +629,41 @@ pub struct AcpApp {
     policy: Option<Box<dyn ActionPolicy>>,
     seen_events: BTreeMap<String, EventEnvelope>,
     started: bool,
+    max_concurrent_conversations: usize,
+    action_results: BTreeMap<String, ActionResult>,
+    audit_events: Vec<EventEnvelope>,
 }
 
 impl AcpApp {
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Result<(), AgentError> {
+        for channel in &mut self.channels {
+            if let Some(source) = channel.source.as_mut() {
+                source.start()?;
+            }
+        }
         self.started = true;
+        Ok(())
     }
 
-    pub fn stop(&mut self) {
+    pub fn stop(&mut self) -> Result<(), AgentError> {
+        for channel in &mut self.channels {
+            if let Some(source) = channel.source.as_mut() {
+                source.stop()?;
+            }
+            if let Some(sink) = channel.sink.as_mut() {
+                sink.close()?;
+            }
+        }
         self.started = false;
+        Ok(())
+    }
+
+    pub fn max_concurrent_conversations(&self) -> usize {
+        self.max_concurrent_conversations
+    }
+
+    pub fn audit_events(&self) -> &[EventEnvelope] {
+        &self.audit_events
     }
 
     pub fn register_agent(&mut self, agent: AgentDefinition) -> Result<&mut Self, AgentError> {
@@ -572,13 +688,21 @@ impl AcpApp {
     }
 
     pub fn ingest(&mut self, event: EventEnvelope) -> Result<HandleResult, AgentError> {
+        if !self.started {
+            self.started = true;
+        }
         if self.seen_events.contains_key(&event.event_id) {
             return Ok(HandleResult::default());
         }
         self.seen_events.insert(event.event_id.clone(), event.clone());
         let mut result = self.host.handle(&event)?;
+        self.audit_events.push(event.clone());
         self.dispatch_replies(&result.replies)?;
         for action in result.actions.iter().cloned() {
+            if let Some(previous) = self.action_results.get(&action.action_id).cloned() {
+                result.action_results.push(previous);
+                continue;
+            }
             let decision =
                 self.policy.as_ref().map(|policy| policy.evaluate(&action, &event)).unwrap_or(
                     PolicyDecision {
@@ -588,10 +712,10 @@ impl AcpApp {
                     },
                 );
             if !decision.allowed {
-                result.action_results.push(ActionResult::Blocked {
-                    action_id: action.action_id,
-                    reason: decision.reason,
-                });
+                let blocked =
+                    ActionResult::Blocked { action_id: action.action_id, reason: decision.reason };
+                self.action_results.insert(action_id(&blocked), blocked.clone());
+                result.action_results.push(blocked);
             } else if decision.approval_required {
                 let approval_id = format!("{}:approval", action.action_id);
                 let action_id = action.action_id.clone();
@@ -601,7 +725,9 @@ impl AcpApp {
                     .action_results
                     .push(ActionResult::ApprovalRequired { action_id, approval_id });
             } else {
-                result.action_results.push(self.execute_action(action, &event)?);
+                let action_result = self.execute_action(action, &event)?;
+                self.action_results.insert(action_id(&action_result), action_result.clone());
+                result.action_results.push(action_result);
             }
         }
         Ok(result)
@@ -655,11 +781,16 @@ impl AcpApp {
             .actions
             .get(&action.action_type)
             .ok_or_else(|| AgentError::UnknownAction(action.action_type.clone()))?;
-        match (definition.handler)(&action.input, event) {
+        let input = (definition.validator)(&action.input)?;
+        let default_actor = ActorRef::default();
+        let context =
+            ActionExecutionContext { actor: event.actor.as_ref().unwrap_or(&default_actor), event };
+        match (definition.handler)(&input, &context) {
             Ok(result) => Ok(ActionResult::Executed { action_id: action.action_id, result }),
-            Err(error) => {
-                Ok(ActionResult::Failed { action_id: action.action_id, error: error.to_string() })
-            }
+            Err(error) => Ok(ActionResult::Failed {
+                error: ActionError::from_agent_error(action.action_id.clone(), &error),
+                action_id: action.action_id,
+            }),
         }
     }
 
