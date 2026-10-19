@@ -182,7 +182,10 @@ impl<'a> Deref for ActionExecutionContext<'a> {
 
 type ActionValidator =
     dyn Fn(&serde_json::Value) -> Result<serde_json::Value, AgentError> + Send + Sync;
-type ActionHandler = dyn Fn(&serde_json::Value, &ActionExecutionContext<'_>) -> Result<serde_json::Value, AgentError>
+type ActionHandler = dyn for<'a> Fn(
+        &serde_json::Value,
+        &ActionExecutionContext<'a>,
+    ) -> Result<serde_json::Value, AgentError>
     + Send
     + Sync;
 
@@ -195,9 +198,9 @@ pub struct ActionDefinition {
 impl ActionDefinition {
     pub fn new<F>(action_type: impl Into<String>, handler: F) -> Self
     where
-        F: Fn(
+        F: for<'a> Fn(
                 &serde_json::Value,
-                &ActionExecutionContext<'_>,
+                &ActionExecutionContext<'a>,
             ) -> Result<serde_json::Value, AgentError>
             + Send
             + Sync
@@ -721,9 +724,9 @@ impl AcpApp {
                 let action_id = action.action_id.clone();
                 self.pending
                     .insert(approval_id.clone(), PendingAction { action, event: event.clone() });
-                result
-                    .action_results
-                    .push(ActionResult::ApprovalRequired { action_id, approval_id });
+                let pending_result = ActionResult::ApprovalRequired { action_id, approval_id };
+                self.action_results.insert(action_id(&pending_result), pending_result.clone());
+                result.action_results.push(pending_result);
             } else {
                 let action_result = self.execute_action(action, &event)?;
                 self.action_results.insert(action_id(&action_result), action_result.clone());
@@ -753,7 +756,9 @@ impl AcpApp {
             .pending
             .remove(approval_id)
             .ok_or_else(|| AgentError::Action(format!("approval not found: {approval_id}")))?;
-        self.execute_action(pending.action, &pending.event)
+        let result = self.execute_action(pending.action, &pending.event)?;
+        self.action_results.insert(action_id(&result), result.clone());
+        Ok(result)
     }
 
     pub fn deny(
@@ -765,7 +770,10 @@ impl AcpApp {
             .pending
             .remove(approval_id)
             .ok_or_else(|| AgentError::Action(format!("approval not found: {approval_id}")))?;
-        Ok(ActionResult::Blocked { action_id: pending.action.action_id, reason: reason.into() })
+        let result =
+            ActionResult::Blocked { action_id: pending.action.action_id, reason: reason.into() };
+        self.action_results.insert(action_id(&result), result.clone());
+        Ok(result)
     }
 
     pub fn list_agent_cards(&self) -> Vec<&AgentCard> {
@@ -781,7 +789,15 @@ impl AcpApp {
             .actions
             .get(&action.action_type)
             .ok_or_else(|| AgentError::UnknownAction(action.action_type.clone()))?;
-        let input = (definition.validator)(&action.input)?;
+        let input = match (definition.validator)(&action.input) {
+            Ok(input) => input,
+            Err(error) => {
+                return Ok(ActionResult::Failed {
+                    action_id: action.action_id.clone(),
+                    error: ActionError::from_agent_error(action.action_id, &error),
+                });
+            }
+        };
         let default_actor = ActorRef::default();
         let context =
             ActionExecutionContext { actor: event.actor.as_ref().unwrap_or(&default_actor), event };
