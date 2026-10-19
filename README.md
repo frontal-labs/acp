@@ -10,7 +10,10 @@ It standardizes the interaction contract around messages, tasks, approvals, esca
 
 ## Status
 
-ACP v0.1 is an experimental, spec-first reference implementation. It includes versioned protobuf schemas, ProtoJSON mapping, TypeScript/Python/Rust application facades, a rule-based policy engine, and simulated channel adapters. It does not yet include a live provider connector or durable persistence.
+ACP v0.2 is an experimental, spec-first reference implementation. It includes
+versioned protobuf schemas, typed event builders, config-first TypeScript/Python/
+Rust application facades, policy-controlled actions, source/sink channel
+contracts, and at-least-once in-process processing.
 
 Project links: [repository](https://github.com/frontal-labs/acp), [issues](https://github.com/frontal-labs/acp/issues), and [release notes](./CHANGELOG.md).
 
@@ -38,8 +41,8 @@ The demo runs this flow:
 message.received
   -> policy.allowed
   -> approval.requested
-  -> approval.expired
-  -> escalation.triggered
+  -> approval.granted
+  -> action.executed
 ```
 
 ## Repository layout
@@ -84,7 +87,10 @@ Every ACP event is an `EventEnvelope` with:
 - a typed protobuf `oneof` payload;
 - ProtoJSON support for logs, fixtures, and HTTP-oriented integrations.
 
-The event type must agree with its payload case. For example, `message.received` must contain a `messageReceived` payload, while `approval.granted` and `approval.denied` use `approvalDecided` with different outcomes.
+In v1, the event type must agree with its payload case. In v2, the payload
+oneof is canonical and the friendly event name is derived from it. For example,
+`message.received` contains a `messageReceived` payload, while `approval.granted`
+and `approval.denied` use `approvalDecided` with different outcomes.
 
 New integrations can use the v2 helpers (`createV2Event` and `v2EventType`), where the payload oneof is the canonical event kind and the friendly event name is derived by the SDK.
 
@@ -94,7 +100,8 @@ New integrations can use the v2 helpers (`createV2Event` and `v2EventType`), whe
 - A denied action cannot proceed.
 - An approval-required action creates an approval request rather than executing.
 - Expired approvals emit both `approval.expired` and `escalation.triggered`.
-- Approval grants do not execute the action automatically; an executor must explicitly submit an execution event.
+- Registered high-level actions execute automatically after an approval grant;
+  lower-level runtimes remain available for external executors.
 - Event IDs make processing idempotent for replayed inbound events.
 - The runtime exposes an append-only event store interface for durable implementations.
 - `ChannelGateway.ingest()` handles inbound events and `ChannelGateway.dispatch()` sends outbound events through a registered provider adapter.

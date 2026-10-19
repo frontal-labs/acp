@@ -1,8 +1,9 @@
 # @acp/demo
 
-Runnable ACP approval and escalation scenario.
+Runnable ACP approval and action-execution scenario.
 
-The demo sends a message to a support agent, submits a customer-facing action, waits for the approval deadline, and prints the resulting audit trail.
+The demo sends a message to a support agent, requests a customer-facing action,
+approves it through `AcpApp`, and prints the resulting delivery.
 
 ```bash
 pnpm demo
