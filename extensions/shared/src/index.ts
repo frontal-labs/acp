@@ -1,6 +1,14 @@
 export { parseExtensionConfig } from "./config.js";
 export { providerActor, providerEvent } from "./events.js";
 export {
+  createKeyCache,
+  InvalidTokenError,
+  type JwtVerificationOptions,
+  publicKeysFromJwks,
+  publicKeysFromPem,
+  verifyRs256Jwt,
+} from "./jwt.js";
+export {
   asRecord,
   optionalRecord,
   optionalString,
