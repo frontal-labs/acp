@@ -54,14 +54,24 @@ An adapter translates provider-native messages into `message.received` envelopes
 
 The reference gateway keeps ingestion and dispatch separate: inbound events enter the runtime through `ingest`, while outbound events are explicitly sent through `dispatch`. This avoids treating a stored event as proof that a provider-side delivery succeeded and leaves retry/outbox policy to the host application.
 
-## 8. Typed v2 envelope
+## 8. Protocol versions and the unified event API
 
-The repository also contains an experimental typed envelope in
-`acp.v2.api.EventEnvelope`. Its protocol version is `0.2`, and it removes the
-duplicated `event_type` string: the payload `oneof` is the canonical event
-discriminant. SDK helpers expose the friendly dot-separated event name through
-`v2EventType()` and validate that the requested event name matches the payload
-case.
+The repository contains two envelopes for the same domain payloads. Both are
+created, validated, and serialized through one API; the protocol version selects
+the envelope shape:
+
+- `0.1` (default) uses `acp.v1.api.EventEnvelope`, which stores an `event_type`
+  string that must match the payload case.
+- `0.2` uses `acp.v2.api.EventEnvelope`, which removes the duplicated
+  `event_type` string. The payload `oneof` is the canonical event discriminant,
+  and `eventTypeOf()` derives the friendly dot-separated name from it.
+
+The TypeScript API is `createEvent({ ..., protocolVersion: "0.2" })` together
+with the typed builders (`messageReceived`, `messageSent`,
+`approvalRequested`, `actionExecuted`, `actionFailed`). Each builder accepts the
+same `protocolVersion` option. Serialization (`eventToJson`, `eventFromJson`,
+`eventToBinary`, `eventFromBinary`) selects the envelope from the version. Binary
+does not carry a version, so decoding it requires the version explicitly.
 
 The v2 envelope reuses the v1 domain messages and payload cases. It is not a
 wire-compatible replacement for the v1 envelope because the envelope fields
