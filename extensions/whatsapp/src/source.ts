@@ -64,6 +64,7 @@ export async function normalizeWhatsAppEvent(
               text: optionalString(textRecord ?? {}, "body") ?? "",
             }),
           },
+          recipient: options.recipient,
           threadId: eventId,
         },
         { ...metadata, eventId, idempotencyKey: metadata.idempotencyKey ?? eventId },

@@ -1,6 +1,7 @@
 import type { ActorRef } from "@acp/protocol";
 import type { ChannelDefinition } from "acp-sdk";
 
+/** Outbound WhatsApp text message accepted by a transport. */
 export interface WhatsAppSendInput {
   idempotencyKey?: string;
   phoneNumberId: string;
@@ -9,23 +10,30 @@ export interface WhatsAppSendInput {
   to: string;
 }
 
+/** Narrow transport port for WhatsApp Business Cloud API delivery. */
 export interface WhatsAppTransport {
   sendMessage: (input: WhatsAppSendInput) => Promise<{ messageId?: string }>;
 }
 
+/** Optional WhatsApp actor lookup and business number settings. */
 export interface WhatsAppSourceOptions {
   actorResolver?: (phone: string) => ActorRef | Promise<ActorRef>;
   businessPhoneNumberId?: string;
+  /** Agent that receives inbound messages. AgentHost routes only by `recipient`, so without it the message reaches no agent. */
+  recipient?: ActorRef;
 }
 
+/** Complete WhatsApp channel configuration for `createAcp()`. */
 export interface WhatsAppChannelOptions extends WhatsAppSourceOptions {
   phoneNumberId: string;
   transport: WhatsAppTransport;
 }
 
+/** A WhatsApp webhook request with its raw body and headers. */
 export interface WhatsAppWebhookRequest {
   body: string | Uint8Array;
   headers: Record<string, string | undefined>;
 }
 
+/** ACP channel definition for WhatsApp. */
 export type WhatsAppChannel = ChannelDefinition;

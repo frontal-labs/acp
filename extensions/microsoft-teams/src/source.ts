@@ -46,6 +46,7 @@ export async function normalizeTeamsEvent(
             reason: optionalString(action ?? {}, "reason") ?? "Teams approval action",
           }),
         },
+        recipient: options.recipient,
       },
       { ...metadata, eventId: metadata.eventId ?? optionalString(body, "id") ?? approvalId },
     );
@@ -85,6 +86,7 @@ export async function normalizeTeamsEvent(
           text: optionalString(message, "text") ?? optionalString(message, "body") ?? "",
         }),
       },
+      recipient: options.recipient,
       threadId: optionalString(message, "replyToId"),
     },
     { ...metadata, eventId, idempotencyKey: metadata.idempotencyKey ?? eventId },

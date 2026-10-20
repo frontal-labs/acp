@@ -19,4 +19,5 @@ export interface McpToolClient {
   close?: () => Promise<void> | void;
 }
 
+/** ACP action definitions bridged from MCP tools. */
 export type McpActions = ActionDefinition<unknown, unknown>[];

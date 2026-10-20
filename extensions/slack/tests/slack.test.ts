@@ -1,4 +1,6 @@
+import { ActorRefSchema, ActorType } from "@acp/protocol";
 import { createTestEvent } from "@acp/testing";
+import { create } from "@bufbuild/protobuf";
 import { describe, expect, it } from "vitest";
 import { createSlackSink, createSlackSource } from "../src/index.js";
 
@@ -15,6 +17,19 @@ describe("@acp/ext-slack", () => {
     expect(event?.eventType).toBe("message.received");
     expect(event?.channel?.provider).toBe("slack");
     expect(event?.payload.case).toBe("messageReceived");
+  });
+
+  it("routes normalized messages to the configured recipient agent", async () => {
+    const recipient = create(ActorRefSchema, { id: "agent:slack-helper", type: ActorType.AGENT });
+    const source = createSlackSource({ recipient });
+    const normalized = await source.normalize({
+      event: { channel: "C123", text: "hi", ts: "1.1", type: "message", user: "U123" },
+      event_id: "Ev-route",
+      type: "event_callback",
+    });
+    const event = Array.isArray(normalized) ? normalized[0] : normalized;
+
+    expect(event?.recipient?.id).toBe("agent:slack-helper");
   });
 
   it("sends message.sent through an injected Slack transport", async () => {

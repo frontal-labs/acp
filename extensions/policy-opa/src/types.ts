@@ -1,5 +1,6 @@
 import type { PolicyContext, PolicyDecision } from "@acp/policy";
 
+/** Synchronous OPA evaluation port used for ACP policy decisions. */
 export interface OpaTransport {
   /**
    * Evaluates a policy input synchronously.
@@ -12,6 +13,7 @@ export interface OpaTransport {
   evaluate: (input: PolicyContext) => unknown;
 }
 
+/** Options for the OPA-backed policy engine. */
 export interface OpaPolicyOptions {
   defaultDecision?: PolicyDecision;
   packageId?: string;

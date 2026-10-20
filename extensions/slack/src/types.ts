@@ -20,6 +20,11 @@ export interface SlackTransport {
 export interface SlackSourceOptions {
   actorResolver?: (userId: string) => ActorRef | Promise<ActorRef>;
   botUserId?: string;
+  /**
+   * Agent that receives inbound messages. AgentHost routes only by `recipient`, so without it
+   * a Slack message reaches no agent.
+   */
+  recipient?: ActorRef;
 }
 
 /** Complete Slack channel configuration for `createAcp({ channels })`. */

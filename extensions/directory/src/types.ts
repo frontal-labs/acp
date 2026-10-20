@@ -14,6 +14,7 @@ export interface DirectoryTransport {
   searchActors: (query: string) => Promise<ActorRef[]>;
 }
 
+/** Options for a directory provider; `cacheTtlMs` sets how long lookups are cached. */
 export interface DirectoryProviderOptions {
   cacheTtlMs?: number;
   transport: DirectoryTransport;

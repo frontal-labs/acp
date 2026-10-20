@@ -54,6 +54,7 @@ export async function normalizeGoogleChatEvent(
         case: "messageReceived",
         value: create(MessageReceivedSchema, { text: optionalString(message, "text") ?? "" }),
       },
+      recipient: options.recipient,
       threadId: optionalString(thread ?? {}, "name"),
     },
     { ...metadata, eventId, idempotencyKey: metadata.idempotencyKey ?? eventId },
