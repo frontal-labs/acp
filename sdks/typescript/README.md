@@ -29,7 +29,7 @@ await app.start();
 `createAcp()` composes the runtime, `AgentHost`, channel source/sink
 registration, action registry, lifecycle, and hooks. Use `AgentHost` directly
 when an application needs lower-level composition. The package also exposes
-the v0.2 typed event builders through `@acp/protocol`.
+the typed event builders through `@acp/protocol`, which take a `protocolVersion` of `"0.1"` (default) or `"0.2"`.
 
 ## Development
 

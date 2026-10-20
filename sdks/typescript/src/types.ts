@@ -208,7 +208,8 @@ export interface AcpAppOptions {
   };
   defaultApprovalTimeoutMs?: number;
   defaultApprover?: ActorRef;
-  eventStore?: EventStore;
+  /** Durable event store. Required: pass an implementation explicitly (e.g. the postgres extension). */
+  eventStore: EventStore;
   hooks?: AcpHooks;
   policy: PolicyEngine;
   runtimeActor?: ActorRef;

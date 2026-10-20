@@ -28,8 +28,8 @@ export class AgentHost {
   private readonly onDelivery: AgentHostOptions["onDelivery"];
   private readonly onError: AgentHostOptions["onError"];
   private readonly maxConcurrentConversations: number;
-  private readonly agents = new Map<string, AgentDefinition>();
-  private readonly queues = new Map<string, Promise<void>>();
+  private readonly agents: Record<string, AgentDefinition> = Object.create(null);
+  private readonly queues: Partial<Record<string, Promise<void>>> = Object.create(null);
   private runningConversations = 0;
   private readonly concurrencyWaiters: Array<() => void> = [];
   private detachSubscription?: () => void;
@@ -50,19 +50,24 @@ export class AgentHost {
   }
 
   register(agent: AgentDefinition): this {
-    if (this.agents.has(agent.id)) {
+    if (agent.id in this.agents) {
       throw new ConflictError("ACP agent", agent.id);
     }
-    this.agents.set(agent.id, agent);
+    this.agents[agent.id] = agent;
     return this;
   }
 
   unregister(agentId: string): boolean {
-    return this.agents.delete(agentId);
+    if (!(agentId in this.agents)) {
+      return false;
+    }
+    delete this.agents[agentId];
+    return true;
   }
 
   getAgent(agentId: string): AgentDefinition | undefined {
-    return this.agents.get(agentId);
+    const agent: AgentDefinition | undefined = this.agents[agentId];
+    return agent;
   }
 
   getAgentCard(agentId: string): AgentCard | undefined {
@@ -71,7 +76,7 @@ export class AgentHost {
   }
 
   listAgentCards(): AgentCard[] {
-    return [...this.agents.values()].map((agent) => this.toCard(agent));
+    return Object.values(this.agents).map((agent) => this.toCard(agent));
   }
 
   attach(): () => void {
@@ -110,29 +115,29 @@ export class AgentHost {
     }
     const message = event.payload.value;
     const key = this.conversationKey(event);
-    const previous = this.queues.get(key) ?? Promise.resolve();
+    const previous = this.queues[key] ?? Promise.resolve();
     const current = previous.then(() => this.handleNow(event, message));
     const tail = current.then(
       () => undefined,
       () => undefined,
     );
-    this.queues.set(key, tail);
+    this.queues[key] = tail;
     try {
       return await current;
     } finally {
-      if (this.queues.get(key) === tail) {
-        this.queues.delete(key);
+      if (this.queues[key] === tail) {
+        delete this.queues[key];
       }
     }
   }
 
   async waitForIdle(): Promise<void> {
-    await Promise.allSettled(this.queues.values());
+    await Promise.allSettled(Object.values(this.queues));
   }
 
   private async handleNow(event: EventEnvelope, message: MessageReceived): Promise<boolean> {
     const agentId = event.recipient?.id;
-    const definition = agentId ? this.agents.get(agentId) : undefined;
+    const definition: AgentDefinition | undefined = agentId ? this.agents[agentId] : undefined;
     if (!definition) {
       return false;
     }
