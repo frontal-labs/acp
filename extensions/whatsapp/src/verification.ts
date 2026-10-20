@@ -1,3 +1,5 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { ValidationError } from "@acp/core";
 import { verifyHmacSignature } from "@acp/ext-shared";
 
@@ -22,11 +24,21 @@ export function verifyWhatsAppChallenge(
   challenge: string | undefined,
   expectedToken: string,
 ): string {
-  if (mode !== "subscribe" || token !== expectedToken || !challenge) {
+  if (mode !== "subscribe" || !(challenge && constantTimeEqual(token, expectedToken))) {
     throw new ValidationError("WhatsApp webhook challenge is invalid", {
       provider: "whatsapp",
       stage: "validation",
     });
   }
   return challenge;
+}
+
+/** Compares secrets in constant time; unequal lengths and missing values are never equal. */
+function constantTimeEqual(provided: string | undefined, expected: string): boolean {
+  if (provided === undefined) {
+    return false;
+  }
+  const left = Buffer.from(provided);
+  const right = Buffer.from(expected);
+  return left.length === right.length && timingSafeEqual(left, right);
 }
