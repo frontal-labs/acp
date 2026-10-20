@@ -10,7 +10,8 @@
       "!!**/.acp-buf-cache",
       "!!**/coverage",
       "!!**/proto/gen",
-      "!!**/target"
+      "!!**/target",
+      "!!**/packages/protocol/tests/fixtures"
     ]
   },
   "vcs": {
@@ -20,15 +21,25 @@
   },
   "formatter": {
     "enabled": true,
+    "useEditorconfig": true,
     "indentStyle": "space",
     "indentWidth": 2,
-    "lineWidth": 100
+    "lineEnding": "lf",
+    "lineWidth": 100,
+    "trailingNewline": true
   },
   "javascript": {
     "formatter": {
       "quoteStyle": "double",
+      "quoteProperties": "asNeeded",
       "semicolons": "always",
-      "trailingCommas": "all"
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSameLine": false,
+      "operatorLinebreak": "after",
+      "bracketSpacing": true,
+      "delimiterSpacing": false,
+      "expand": "auto"
     }
   },
   "linter": {
@@ -37,5 +48,20 @@
         "noBarrelFile": "off"
       }
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": [
+        "examples/native-typescript/**",
+        "examples/slack-typescript/**"
+      ],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUndeclaredDependencies": "off"
+          }
+        }
+      }
+    }
+  ]
 }

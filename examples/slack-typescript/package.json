@@ -1,0 +1,7 @@
+{
+  "name": "@acp/example-slack-typescript",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Slack ACP agent: signed webhooks in, chat.postMessage out",
+  "type": "module"
+}

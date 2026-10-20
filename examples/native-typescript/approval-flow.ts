@@ -1,15 +1,14 @@
-// biome-ignore lint/correctness/noUndeclaredDependencies: This native example runs from the root workspace.
 import { RuleBasedPolicyEngine } from "@acp/policy";
-// biome-ignore lint/correctness/noUndeclaredDependencies: This native example runs from the root workspace.
-import { ApprovalOutcome } from "@acp/protocol";
-// biome-ignore lint/correctness/noUndeclaredDependencies: This native example runs from the root workspace.
+import { ActionRequestSchema, ActorRefSchema, ActorType, ApprovalOutcome } from "@acp/protocol";
 import { AcpRuntime } from "@acp/runtime";
-// biome-ignore lint/correctness/noUndeclaredDependencies: This native example runs from the root workspace.
-import { createTestAction, createTestAgent, createTestHuman } from "@acp/testing";
+import { create } from "@bufbuild/protobuf";
 
-const agent = createTestAgent("agent:operator", "Operator Agent");
-const approver = createTestHuman("human:approver", "Approver");
+import { createExampleEventStore } from "../_shared/typescript/example-kit.js";
+
+const agent = create(ActorRefSchema, { id: "agent:operator", type: ActorType.AGENT });
+const approver = create(ActorRefSchema, { id: "human:approver", type: ActorType.HUMAN });
 const runtime = new AcpRuntime({
+  eventStore: createExampleEventStore(),
   policy: new RuleBasedPolicyEngine({
     rules: [
       {
@@ -23,8 +22,15 @@ const runtime = new AcpRuntime({
   }),
 });
 
+const action = create(ActionRequestSchema, {
+  actionId: "action:calendar",
+  parameters: { title: "Team sync" },
+  target: "calendar:team",
+  type: "calendar.create",
+});
+
 const pending = await runtime.submitAction({
-  action: createTestAction("calendar.create", "action:calendar", "calendar:team"),
+  action,
   actor: agent,
   approver,
   deadline: new Date(Date.now() + 60_000),
@@ -34,11 +40,12 @@ const pending = await runtime.submitAction({
 console.log({ events: pending.events.map((event) => event.eventType), status: pending.status });
 
 if (pending.approvalId) {
-  const decision = await runtime.decideApproval({
+  await runtime.decideApproval({
     approvalId: pending.approvalId,
     approver,
     outcome: ApprovalOutcome.GRANTED,
     reason: "Approved by the example approver",
   });
-  console.log({ decisionEvents: decision.emitted.map((event) => event.eventType) });
+  const recorded = await runtime.queryEvents({});
+  console.log({ recorded: recorded.map((event) => event.eventType) });
 }
