@@ -39,7 +39,8 @@ export interface Clock {
 export interface RuntimeOptions {
   clock?: Clock;
   defaultApprovalTimeoutMs?: number;
-  eventStore?: EventStore;
+  /** Durable event store. Required: the runtime has no implicit storage. */
+  eventStore: EventStore;
   policy: PolicyEngine;
   runtimeActor?: ActorRef;
 }

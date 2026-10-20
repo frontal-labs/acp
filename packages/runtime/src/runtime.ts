@@ -1,4 +1,4 @@
-import { ConflictError, NotFoundError } from "@acp/core";
+import { AuthorizationError, ConflictError, NotFoundError } from "@acp/core";
 import type { PolicyContext } from "@acp/policy";
 import {
   ActionRequestSchema,
@@ -18,7 +18,6 @@ import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 
 import { SYSTEM_ACTOR } from "./actors.js";
 import { SystemClock } from "./clock.js";
-import { InMemoryEventStore } from "./store.js";
 import type {
   ActionExecutionRecord,
   Clock,
@@ -39,13 +38,14 @@ export class AcpRuntime {
   private readonly policy: RuntimeOptions["policy"];
   private readonly defaultApprovalTimeoutMs: number;
   private readonly runtimeActor: ActorRef;
-  private readonly pendingApprovals = new Map<string, PendingApproval>();
+  private readonly pendingApprovals: Partial<Record<string, PendingApproval>> = Object.create(null);
   private readonly handlers = new Set<EventHandler>();
-  private readonly actionRecords = new Map<string, ActionExecutionRecord>();
+  private readonly actionRecords: Partial<Record<string, ActionExecutionRecord>> =
+    Object.create(null);
 
   constructor(options: RuntimeOptions) {
     this.policy = options.policy;
-    this.eventStore = options.eventStore ?? new InMemoryEventStore();
+    this.eventStore = options.eventStore;
     this.clock = options.clock ?? new SystemClock();
     this.defaultApprovalTimeoutMs = options.defaultApprovalTimeoutMs ?? 60_000;
     this.runtimeActor = options.runtimeActor ?? SYSTEM_ACTOR;
@@ -61,14 +61,14 @@ export class AcpRuntime {
     if (this.eventStore.claimAction) {
       return this.eventStore.claimAction(actionId, owner);
     }
-    if (this.actionRecords.has(actionId)) {
+    if (actionId in this.actionRecords) {
       return Promise.resolve(false);
     }
-    this.actionRecords.set(actionId, {
+    this.actionRecords[actionId] = {
       actionId,
       owner,
       status: "claimed",
-    });
+    };
     return Promise.resolve(true);
   }
 
@@ -76,33 +76,33 @@ export class AcpRuntime {
     if (this.eventStore.completeAction) {
       await this.eventStore.completeAction(actionId, result);
     }
-    const current = this.actionRecords.get(actionId);
-    this.actionRecords.set(actionId, {
+    const current = this.actionRecords[actionId];
+    this.actionRecords[actionId] = {
       actionId,
       owner: current?.owner,
       result,
       status: "completed",
-    });
+    };
   }
 
   async failAction(actionId: string, error: unknown): Promise<void> {
     if (this.eventStore.failAction) {
       await this.eventStore.failAction(actionId, error);
     }
-    const current = this.actionRecords.get(actionId);
-    this.actionRecords.set(actionId, {
+    const current = this.actionRecords[actionId];
+    this.actionRecords[actionId] = {
       actionId,
       error,
       owner: current?.owner,
       status: "failed",
-    });
+    };
   }
 
   getAction(actionId: string): Promise<ActionExecutionRecord | undefined> {
     if (this.eventStore.getAction) {
       return this.eventStore.getAction(actionId);
     }
-    return Promise.resolve(this.actionRecords.get(actionId));
+    return Promise.resolve(this.actionRecords[actionId]);
   }
 
   getEvent(eventId: string): Promise<EventEnvelope | undefined> {
@@ -162,7 +162,7 @@ export class AcpRuntime {
     }
 
     if (event.eventType === "approval.expired" && event.payload.case === "approvalExpired") {
-      const pending = this.pendingApprovals.get(event.payload.value.approvalId);
+      const pending = this.pendingApprovals[event.payload.value.approvalId];
       if (pending && pending.status === "pending") {
         pending.status = "expired";
         const escalation = createEvent({
@@ -265,8 +265,8 @@ export class AcpRuntime {
     return { approvalId, decision, events, status: "approval_required" };
   }
 
-  decideApproval(input: DecideApprovalInput): Promise<RuntimeResult> {
-    const pending = this.pendingApprovals.get(input.approvalId);
+  async decideApproval(input: DecideApprovalInput): Promise<RuntimeResult> {
+    const pending = this.pendingApprovals[input.approvalId];
     if (!pending) {
       throw new NotFoundError("ACP approval", input.approvalId);
     }
@@ -274,6 +274,12 @@ export class AcpRuntime {
       throw new ConflictError("ACP approval", input.approvalId, {
         details: { status: pending.status },
       });
+    }
+    if (pending.approver && pending.approver.id !== input.approver.id) {
+      throw new AuthorizationError(
+        `ACP approval ${input.approvalId} can only be decided by ${pending.approver.id}`,
+        { approvalId: input.approvalId, stage: "approval" },
+      );
     }
 
     const eventType: EventName =
@@ -297,7 +303,7 @@ export class AcpRuntime {
       recipient: pending.agent,
       source: input.approver,
     });
-    return this.process(event);
+    return await this.process(event);
   }
 
   private trackApproval(event: EventEnvelope): void {
@@ -345,11 +351,11 @@ export class AcpRuntime {
       });
       await this.process(expired);
     });
-    this.pendingApprovals.set(approval.approvalId, pending);
+    this.pendingApprovals[approval.approvalId] = pending;
   }
 
   private resolveApproval(approvalId: string, outcome: ApprovalOutcome): void {
-    const pending = this.pendingApprovals.get(approvalId);
+    const pending = this.pendingApprovals[approvalId];
     if (pending?.status !== "pending") {
       return;
     }

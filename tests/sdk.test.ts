@@ -1,16 +1,22 @@
-import { InMemoryChannelAdapter } from "@acp/adapter";
 import { RuleBasedPolicyEngine } from "@acp/policy";
 import { ChannelRefSchema } from "@acp/protocol";
 import { AcpRuntime, ChannelGateway } from "@acp/runtime";
-import { createTestAgent, createTestEvent, createTestHuman } from "@acp/testing";
+import {
+  createTestAgent,
+  createTestChannelAdapter,
+  createTestEvent,
+  createTestEventStore,
+  createTestHuman,
+} from "@acp/testing";
 import { create } from "@bufbuild/protobuf";
 import { AgentHost } from "acp-sdk";
 import { describe, expect, it } from "vitest";
 
 describe("ACP agent SDK", () => {
   it("routes an inbound message and dispatches the agent reply", async () => {
-    const adapter = new InMemoryChannelAdapter();
+    const adapter = createTestChannelAdapter();
     const runtime = new AcpRuntime({
+      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
     });
     const gateway = new ChannelGateway(runtime, [adapter]);
@@ -31,7 +37,7 @@ describe("ACP agent SDK", () => {
 
     const inbound = createTestEvent({
       actor: human,
-      channel: create(ChannelRefSchema, { channelId: "channel-1", provider: "memory" }),
+      channel: create(ChannelRefSchema, { channelId: "channel-1", provider: "test" }),
       recipient: agent,
       text: "Can you help?",
     });

@@ -4,6 +4,7 @@ import {
   createTestAction,
   createTestAgent,
   createTestEvent,
+  createTestEventStore,
   createTestHuman,
   eventTypes,
 } from "@acp/testing";
@@ -16,6 +17,7 @@ describe("@acp/runtime", () => {
     const runtime = new AcpRuntime({
       clock,
       defaultApprovalTimeoutMs: 1000,
+      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [{ actionType: "send_reply", allowed: true, id: "review", requiresApproval: true }],
       }),
@@ -42,6 +44,7 @@ describe("@acp/runtime", () => {
 
   it("deduplicates events and resolves an approval", async () => {
     const runtime = new AcpRuntime({
+      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [{ actionType: "send_reply", allowed: true, id: "review", requiresApproval: true }],
       }),

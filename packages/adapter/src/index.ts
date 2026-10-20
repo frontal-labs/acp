@@ -1,4 +1,3 @@
-export { InMemoryChannelAdapter } from "./memory.js";
 export type {
   ChannelAdapter,
   ChannelConnector,

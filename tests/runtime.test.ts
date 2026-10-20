@@ -1,7 +1,13 @@
 import { RuleBasedPolicyEngine } from "@acp/policy";
 import { ApprovalOutcome } from "@acp/protocol";
 import { AcpRuntime, ManualClock } from "@acp/runtime";
-import { createTestAction, createTestAgent, createTestEvent, createTestHuman } from "@acp/testing";
+import {
+  createTestAction,
+  createTestAgent,
+  createTestEvent,
+  createTestEventStore,
+  createTestHuman,
+} from "@acp/testing";
 import { describe, expect, it } from "vitest";
 
 function createRuntime() {
@@ -11,6 +17,7 @@ function createRuntime() {
   const runtime = new AcpRuntime({
     clock,
     defaultApprovalTimeoutMs: 1000,
+    eventStore: createTestEventStore(),
     policy: new RuleBasedPolicyEngine({
       rules: [
         {
