@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import inspect
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Protocol, TypedDict
 
 from .errors import AcpError, ActionError
 from .models import (
@@ -16,36 +17,47 @@ from .models import (
     message_sent,
 )
 
-Dispatch = Callable[[EventEnvelope], Any]
-ActionHandler = Callable[[Mapping[str, Any], EventEnvelope], Any]
-AgentHandler = Callable[["AgentContext"], Any]
+# Callbacks may be sync or async; their results are awaited when awaitable and otherwise ignored.
+Dispatch = Callable[[EventEnvelope], object]
+ActionHandler = Callable[[Mapping[str, object], EventEnvelope], object]
+AgentHandler = Callable[["AgentContext"], object]
 
 
-async def _maybe_await(value: Any) -> Any:
-    return await value if inspect.isawaitable(value) else value
+async def _maybe_await(value: object) -> object:
+    return (await value) if inspect.isawaitable(value) else value
+
+
+class ReplyOptions(TypedDict, total=False):
+    """Optional overrides for AgentContext.reply()."""
+
+    channel: Mapping[str, object] | None
+    conversation: Mapping[str, object] | None
+    recipient: ActorRef | None
 
 
 class AgentLogger(Protocol):
-    def debug(self, message: str, **details: Any) -> None: ...
+    def debug(self, message: str, **details: object) -> None: ...
 
-    def error(self, message: str, **details: Any) -> None: ...
+    def error(self, message: str, **details: object) -> None: ...
 
-    def info(self, message: str, **details: Any) -> None: ...
+    def info(self, message: str, **details: object) -> None: ...
 
-    def warning(self, message: str, **details: Any) -> None: ...
+    def warning(self, message: str, **details: object) -> None: ...
 
 
 class NullLogger:
-    def debug(self, message: str, **details: Any) -> None:
+    """Logger that discards every message."""
+
+    def debug(self, message: str, **details: object) -> None:
         del message, details
 
-    def error(self, message: str, **details: Any) -> None:
+    def error(self, message: str, **details: object) -> None:
         del message, details
 
-    def info(self, message: str, **details: Any) -> None:
+    def info(self, message: str, **details: object) -> None:
         del message, details
 
-    def warning(self, message: str, **details: Any) -> None:
+    def warning(self, message: str, **details: object) -> None:
         del message, details
 
 
@@ -75,20 +87,20 @@ class AgentDefinition:
 
 @dataclass(slots=True)
 class AgentActions:
-    _requester: Callable[[str, Any, Mapping[str, Any] | None], Awaitable[Any]]
+    _requester: Callable[[str, object, Mapping[str, object] | None], Awaitable[object]]
 
     async def request(
         self,
         action_type: str,
-        input: Any,
-        options: Mapping[str, Any] | None = None,
-    ) -> Any:
+        input: object,
+        options: Mapping[str, object] | None = None,
+    ) -> object:
         return await self._requester(action_type, input, options)
 
 
 @dataclass(slots=True)
 class AgentHooks:
-    on_error: Callable[[AcpError], Any] | None = None
+    on_error: Callable[[AcpError], object] | None = None
 
     async def report(self, error: AcpError) -> None:
         if self.on_error is not None:
@@ -103,8 +115,8 @@ class AgentContext:
     message: MessageReceived
     actor: ActorRef | None = None
     recipient: ActorRef | None = None
-    channel: Mapping[str, Any] | None = None
-    conversation: Mapping[str, Any] | None = None
+    channel: Mapping[str, object] | None = None
+    conversation: Mapping[str, object] | None = None
     raw_event: EventEnvelope | None = None
     actions: AgentActions | None = None
     hooks: AgentHooks = field(default_factory=AgentHooks)
@@ -120,14 +132,16 @@ class AgentContext:
     async def reply(
         self,
         text: str,
-        options: Mapping[str, Any] | None = None,
+        options: ReplyOptions | None = None,
     ) -> EventEnvelope:
-        options = options or {}
+        """Build a message.sent reply to the current event and dispatch it if a sink is set."""
+
+        opts: ReplyOptions = options or {}
         event = message_sent(
             actor=self.agent,
-            channel=options.get("channel", self.event.channel),
-            conversation=options.get("conversation", self.event.conversation),
-            recipient=options.get("recipient", self.event.actor),
+            channel=opts.get("channel", self.event.channel),
+            conversation=opts.get("conversation", self.event.conversation),
+            recipient=opts.get("recipient", self.event.actor),
             text=text,
         )
         event.causation_id = self.event.event_id
@@ -137,7 +151,9 @@ class AgentContext:
             await _maybe_await(self._dispatch(event))
         return event
 
-    async def request_action(self, action: Mapping[str, Any]) -> Any:
+    async def request_action(self, action: Mapping[str, object]) -> object:
+        """Ask the app to run an action for the current event (policy and approval apply)."""
+
         if self._action_handler is None:
             raise ActionError("ACP action handling is not configured for this host")
         return await _maybe_await(self._action_handler(action, self.event))
@@ -150,14 +166,14 @@ class AgentHost:
         agents: list[AgentDefinition] | None = None,
         dispatch: Dispatch | None = None,
         action_handler: ActionHandler | None = None,
-        on_error: Callable[[AcpError], Any] | None = None,
+        on_error: Callable[[AcpError], object] | None = None,
         max_concurrent_conversations: int | None = None,
     ) -> None:
         self._agents: dict[str, AgentDefinition] = {}
         self._dispatch = dispatch
         self._action_handler = action_handler
         self._on_error = on_error
-        self._semaphore: Any = None
+        self._semaphore: asyncio.Semaphore | None = None
         self._max_concurrent = max(1, max_concurrent_conversations or 2**31 - 1)
         for agent in agents or []:
             self.register(agent)
@@ -181,8 +197,8 @@ class AgentHost:
     def list_agent_cards(self) -> tuple[AgentCard, ...]:
         return tuple(agent.card() for agent in self._agents.values())
 
-    async def handle(self, event: EventEnvelope | Mapping[str, Any]) -> bool:
-        import asyncio
+    async def handle(self, event: EventEnvelope | Mapping[str, object]) -> bool:
+        """Route a message.received event to its recipient agent. Returns False if not routed."""
 
         if self._semaphore is None:
             self._semaphore = asyncio.Semaphore(self._max_concurrent)
@@ -226,10 +242,10 @@ class AgentHost:
     async def _request_action(
         self,
         action_type: str,
-        value: Any,
-        options: Mapping[str, Any] | None,
+        value: object,
+        options: Mapping[str, object] | None,
         event: EventEnvelope,
-    ) -> Any:
+    ) -> object:
         action = {"type": action_type, "input": value, **(dict(options or {}))}
         return (
             await _maybe_await(self._action_handler(action, event))

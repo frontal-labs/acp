@@ -15,6 +15,7 @@ from acp import (
     event_to_binary,
     message_received,
 )
+from support import InMemoryStore
 
 
 class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
@@ -65,6 +66,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(result.status, "executed")
 
         app = AcpApp(
+            store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:app", name="App", on_message=on_message)],
             actions=[
                 ActionDefinition(
@@ -86,11 +88,15 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(executions, [2])
 
     async def test_v2_builder_round_trips_without_duplicate_event_type(self) -> None:
-        event = message_received(text="hello", actor=ActorRef("human:builder"))
+        event = message_received(
+            text="hello", actor=ActorRef("human:builder"), protocol_version="0.2"
+        )
 
         self.assertEqual(event.event_type, "message.received")
         self.assertNotIn("eventType", event.to_proto_json())
-        self.assertEqual(event_from_binary(event_to_binary(event)).payload_case, "messageReceived")
+        self.assertEqual(
+            event_from_binary(event_to_binary(event), "0.2").payload_case, "messageReceived"
+        )
 
     async def test_app_source_sink_lifecycle_and_duplicate_delivery(self) -> None:
         delivered: list[EventEnvelope] = []
@@ -128,6 +134,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
             await context.reply("reply")
 
         app = AcpApp(
+            store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:source", name="Source", on_message=on_message)],
             channels=[ChannelDefinition("memory", source=Source(), sink=Sink())],
             policy=lambda *_args: PolicyDecision(allowed=True),

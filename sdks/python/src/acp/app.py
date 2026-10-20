@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Literal, Protocol
+from typing import Any, Generic, Literal, Protocol, TypeVar
 from uuid import uuid4
 
 from .errors import AcpError, ActionError, DeliveryError, as_acp_error
-from .host import AgentDefinition, AgentHost
+from .host import AgentDefinition, AgentHost, _maybe_await
 from .models import ActorRef, AgentCard, EventEnvelope
+
+InputT = TypeVar("InputT")
 
 
 @dataclass(frozen=True, slots=True)
@@ -25,10 +26,10 @@ class ChannelSource(Protocol):
     provider: str
 
     async def normalize(
-        self, value: Any, metadata: Mapping[str, Any] | None = None
+        self, value: object, metadata: Mapping[str, object] | None = None
     ) -> EventEnvelope | list[EventEnvelope]: ...
 
-    async def start(self, emit: Callable[[EventEnvelope], Awaitable[None]]) -> None: ...
+    async def start(self, emit: Callable[[EventEnvelope], Awaitable[object]]) -> None: ...
 
     async def stop(self) -> None: ...
 
@@ -36,7 +37,9 @@ class ChannelSource(Protocol):
 class ChannelSink(Protocol):
     provider: str
 
-    async def send(self, event: EventEnvelope, options: Mapping[str, Any] | None = None) -> Any: ...
+    async def send(
+        self, event: EventEnvelope, options: Mapping[str, object] | None = None
+    ) -> object: ...
 
     async def close(self) -> None: ...
 
@@ -64,7 +67,7 @@ class ActionResult:
     status: ActionStatus
     approval_id: str = ""
     reason: str = ""
-    result: Any = None
+    result: object = None
     error: ActionError | None = None
 
 
@@ -76,14 +79,21 @@ class ActionExecutionContext:
 
 
 @dataclass(frozen=True, slots=True)
-class ActionDefinition:
+class ActionDefinition(Generic[InputT]):
+    """A named application action. `validate` (optional) converts raw input to `InputT`."""
+
     type: str
-    execute: Callable[[Any, ActionExecutionContext], Any]
-    validate: Callable[[Any], Any] = lambda value: value
+    execute: Callable[[InputT, ActionExecutionContext], object]
+    validate: Callable[[object], InputT] | None = None
 
 
-Policy = Callable[[str, ActorRef, Any, EventEnvelope], PolicyDecision | Awaitable[PolicyDecision]]
-Hook = Callable[..., Any]
+# The action registry is heterogeneous: each action's input type is enforced by its own validate/execute.
+AnyActionDefinition = ActionDefinition[Any]
+
+Policy = Callable[
+    [str, ActorRef, object, EventEnvelope], PolicyDecision | Awaitable[PolicyDecision]
+]
+Hook = Callable[..., object]
 
 
 @dataclass(slots=True)
@@ -104,34 +114,14 @@ class DurableStore(Protocol):
     async def close(self) -> None: ...
 
 
-class InMemoryStore:
-    """Atomic append-only store used by the Python app by default."""
-
-    def __init__(self) -> None:
-        self._events: dict[str, EventEnvelope] = {}
-        self._actions: dict[str, tuple[str, Any]] = {}
-
-    async def append_if_absent(self, event: EventEnvelope) -> bool:
-        if event.event_id in self._events:
-            return False
-        self._events[event.event_id] = event
-        return True
-
-    async def all(self) -> list[EventEnvelope]:
-        return list(self._events.values())
-
-    async def close(self) -> None:
-        return None
-
-
 @dataclass(slots=True)
 class _PendingAction:
     action_id: str
     approval_id: str
-    definition: ActionDefinition
+    definition: AnyActionDefinition
     actor: ActorRef
     event: EventEnvelope
-    input: Any
+    input: object
     expiry: asyncio.Task[None] | None = None
 
 
@@ -150,11 +140,11 @@ class AcpApp:
     def __init__(
         self,
         *,
+        store: DurableStore,
         agents: list[AgentDefinition] | None = None,
-        actions: list[ActionDefinition] | None = None,
+        actions: list[AnyActionDefinition] | None = None,
         channels: list[ChannelDefinition] | None = None,
         policy: Policy | None = None,
-        store: DurableStore | None = None,
         hooks: AcpHooks | None = None,
         on_event: Hook | None = None,
         max_concurrent_conversations: int | None = None,
@@ -167,8 +157,8 @@ class AcpApp:
         self._action_results: dict[str, ActionResult] = {}
         self._claimed_actions: set[str] = set()
         self._locks: dict[str, asyncio.Lock] = {}
-        self._inflight: set[asyncio.Task[Any]] = set()
-        self._source_tasks: set[asyncio.Task[Any]] = set()
+        self._inflight: set[asyncio.Task[object]] = set()
+        self._source_tasks: set[asyncio.Task[object]] = set()
         self._semaphore = asyncio.Semaphore(max(1, max_concurrent_conversations or 2**31 - 1))
         self._policy = policy or (
             lambda _type, _actor, _input, _event: PolicyDecision(
@@ -178,7 +168,7 @@ class AcpApp:
         self._hooks = hooks or AcpHooks(on_event_accepted=on_event)
         if on_event is not None and self._hooks.on_event_accepted is None:
             self._hooks.on_event_accepted = on_event
-        self._store = store or InMemoryStore()
+        self._store = store
         self._started = False
         self._accepting = True
         self._approval_timeout = max(0, default_approval_timeout_ms) / 1000
@@ -193,7 +183,7 @@ class AcpApp:
     def register_agent(self, agent: AgentDefinition) -> None:
         self._host.register(agent)
 
-    def register_action(self, action: ActionDefinition) -> None:
+    def register_action(self, action: AnyActionDefinition) -> None:
         if action.type in self._actions:
             raise ValueError(f"ACP action is already registered: {action.type}")
         self._actions[action.type] = action
@@ -255,7 +245,10 @@ class AcpApp:
         if task is not None:
             self._inflight.add(task)
         try:
-            lock = self._locks.setdefault(self._conversation_key(event), asyncio.Lock())
+            key = self._conversation_key(event)
+            lock = self._locks.get(key)
+            if lock is None:
+                lock = self._locks[key] = asyncio.Lock()
             async with lock, self._semaphore:
                 await self._host.handle(event)
             await self._run_hook(self._hooks.on_event_processed, event)
@@ -267,8 +260,8 @@ class AcpApp:
     async def receive(
         self,
         provider: str,
-        value: Any,
-        metadata: Mapping[str, Any] | None = None,
+        value: object,
+        metadata: Mapping[str, object] | None = None,
     ) -> list[IngestResult]:
         if not self._accepting:
             raise AcpError("ACP app is stopping", stage="accept", retryable=True)
@@ -367,7 +360,7 @@ class AcpApp:
             raise classified from error
 
     async def _request_action(
-        self, action: Mapping[str, Any], event: EventEnvelope
+        self, action: Mapping[str, object], event: EventEnvelope
     ) -> ActionResult:
         action_type = str(action.get("type", ""))
         definition = self._actions.get(action_type)
@@ -377,7 +370,7 @@ class AcpApp:
             )
             await self._report_error(error)
             raise error
-        action_id = str(action.get("actionId", f"action:{uuid4()}"))
+        action_id = str(action["actionId"]) if "actionId" in action else f"action:{uuid4()}"
         previous = self._action_results.get(action_id)
         if previous is not None:
             return previous
@@ -388,11 +381,14 @@ class AcpApp:
                 error=ActionError("ACP action has already been claimed", action_id=action_id),
             )
         self._claimed_actions.add(action_id)
-        value = action.get("input", action.get("parameters", {}))
+        value: object = action.get("input", action.get("parameters", {}))
         try:
-            value = definition.validate(value)
+            if definition.validate is not None:
+                value = definition.validate(value)
             actor = event.actor or ActorRef("")
-            decision = await _maybe_await(self._policy(action_type, actor, value, event))
+            decision = self._policy(action_type, actor, value, event)
+            if isinstance(decision, Awaitable):
+                decision = await decision
             if not decision.allowed:
                 result = ActionResult(action_id, "blocked", reason=decision.reason)
                 self._action_results[action_id] = result
@@ -411,11 +407,7 @@ class AcpApp:
             classified = (
                 error
                 if isinstance(error, ActionError)
-                else ActionError(
-                    str(error),
-                    action_id=action_id,
-                    cause=error if isinstance(error, BaseException) else None,
-                )
+                else ActionError(str(error), action_id=action_id, cause=error)
             )
             result = ActionResult(action_id, "failed", error=classified)
             self._action_results[action_id] = result
@@ -459,11 +451,7 @@ class AcpApp:
             classified = (
                 error
                 if isinstance(error, ActionError)
-                else ActionError(
-                    str(error),
-                    action_id=pending.action_id,
-                    cause=error if isinstance(error, BaseException) else None,
-                )
+                else ActionError(str(error), action_id=pending.action_id, cause=error)
             )
             failed_event = EventEnvelope(
                 actor=pending.actor,
@@ -509,7 +497,7 @@ class AcpApp:
         await self._run_hook(self._hooks.on_event_processed, event)
         return True
 
-    async def _run_hook(self, hook: Hook | None, value: Any) -> None:
+    async def _run_hook(self, hook: Hook | None, value: object) -> None:
         if hook is None:
             return
         try:
@@ -531,7 +519,3 @@ class AcpApp:
             return f"conversation:{event.conversation['id']}"
         channel = event.channel or {}
         return f"channel:{channel.get('provider', '')}:{channel.get('channelId', '')}:{channel.get('threadId', '')}"
-
-
-async def _maybe_await(value: Any) -> Any:
-    return await value if inspect.isawaitable(value) else value
