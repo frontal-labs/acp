@@ -1,8 +1,34 @@
-export type { EventInput, EventName, EventPayload } from "./events.js";
+export {
+  type ActionExecutedInput,
+  type ActionFailedInput,
+  type ApprovalRequestedInput,
+  actionExecuted,
+  actionFailed,
+  approvalRequested,
+  type EventBuilderBase,
+  type MessageReceivedInput,
+  type MessageSentInput,
+  messageReceived,
+  messageSent,
+} from "./builders.js";
 export {
   ACP_PROTOCOL_VERSION,
-  createEvent,
+  ACP_PROTOCOL_VERSIONS,
+  ACP_V2_PROTOCOL_VERSION,
   EVENT_TYPES,
+  type ProtocolVersion,
+} from "./constants.js";
+export {
+  type AcpEvent,
+  createEvent,
+  type EnvelopeFor,
+  type EventInput,
+  type EventName,
+  type EventPayload,
+  eventTypeOf,
+  isV1Event,
+  isV2Event,
+  type V2EventEnvelope,
   validateEvent,
 } from "./events.js";
 export type {
@@ -75,34 +101,5 @@ export {
   eventFromJson,
   eventToBinary,
   eventToJson,
-} from "./serialization.js";
-export type {
-  ActionExecutedInput,
-  ActionFailedInput,
-  ApprovalRequestedInput,
-  LegacyV1EventEnvelope,
-  MessageReceivedInput,
-  MessageSentInput,
-  V2EventBuilderBase,
-  V2EventEnvelope,
-  V2EventInput,
-  V2EventName,
-  V2EventPayload,
-} from "./v2.js";
-export {
-  ACP_V2_PROTOCOL_VERSION,
-  actionExecuted,
-  actionFailed,
-  approvalRequested,
-  createV2Event,
-  messageReceived,
-  messageSent,
   parseEvent,
-  V2_EVENT_TYPES,
-  v2EventFromBinary,
-  v2EventFromJson,
-  v2EventToBinary,
-  v2EventToJson,
-  v2EventType,
-  validateV2Event,
-} from "./v2.js";
+} from "./serialization.js";

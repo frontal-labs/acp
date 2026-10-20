@@ -2,7 +2,7 @@
 
 Canonical ACP protobuf schema, generated multi-language bindings, event builders, event validation, and ProtoJSON/binary serialization helpers.
 
-New integrations should use the v2 envelope helpers (`createV2Event`, `v2EventType`, and the `v2Event*` serialization functions). The v2 envelope derives event identity from its typed payload oneof instead of storing a second event-type string. The v1 helpers remain available for legacy consumers.
+There is one event API for both protocol versions. `createEvent`, the typed builders (`messageReceived`, `messageSent`, `approvalRequested`, `actionExecuted`, `actionFailed`), and the serialization functions take a `protocolVersion` of `"0.1"` (default) or `"0.2"`. The v0.2 envelope derives event identity from its typed payload oneof instead of storing a second event-type string; `eventTypeOf()` returns the friendly name for either version. Use `isV1Event` and `isV2Event` to narrow an `AcpEvent`.
 
 Runtime boundaries use Zod schemas (`EventInputSchema`, `EventEnvelopeJsonSchema`, and `EventPayloadInputSchema`) before values are decoded into generated protobuf messages. Protocol failures use the classified errors exported by `@acp/core`.
 

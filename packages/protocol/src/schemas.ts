@@ -1,7 +1,7 @@
 import type { JsonValue } from "@bufbuild/protobuf";
 import { z } from "zod";
 
-import { EVENT_TYPES } from "./constants.js";
+import { ACP_PROTOCOL_VERSIONS, EVENT_TYPES } from "./constants.js";
 
 const actorRefJsonSchema = z
   .object({
@@ -71,7 +71,7 @@ export const EventInputSchema = z
     idempotencyKey: z.string().optional(),
     occurredAt: z.unknown().optional(),
     payload: EventPayloadInputSchema,
-    protocolVersion: z.string().optional(),
+    protocolVersion: z.enum(ACP_PROTOCOL_VERSIONS).optional(),
     recipient: actorRefJsonSchema.optional(),
     source: actorRefJsonSchema.optional(),
   })
