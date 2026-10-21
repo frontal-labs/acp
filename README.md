@@ -1,4 +1,4 @@
-# OpenChannel Protocol (OCP)
+# Open Channel Protocol (OCP)
 
 ![Frontal Banner](./banner.jpg)
 
