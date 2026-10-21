@@ -3,7 +3,7 @@
 ## Stack
 
 - TypeScript packages are orchestrated with pnpm and Turborepo.
-- Protobuf schemas live in `proto/v1`; generated bindings live in `proto/gen`.
+- Protobuf schemas live in `proto/ocp`; generated bindings live in `proto/gen`.
 - Python and Rust SDKs use their native test/build tooling.
 - Biome/Ultracite owns JavaScript, TypeScript, JSON, and YAML formatting/linting.
 
@@ -35,7 +35,7 @@ adapter owns transport details; an agent harness owns model and tool execution.
 
 Keep those boundaries explicit:
 
-- `proto/v1` is the canonical wire contract. Never edit generated files under
+- `proto/ocp` is the canonical wire contract. Never edit generated files under
   `proto/gen` by hand.
 - `packages/protocol` owns event construction, validation, ProtoJSON, and
   generated type exports.
@@ -55,7 +55,7 @@ belong in an adapter or example. Do not leak them into protocol packages.
 1. Read the relevant skill in `skills/` before changing protocol, policy,
    adapter, agent, test, or example behavior.
 2. Preserve protobuf field numbers and package names. Add fields; do not
-   renumber or reuse fields on the v0.1 compatibility line.
+   renumber or reuse fields on the 0.2 line. Field 2 (`event_type`) is reserved.
 3. Export public TypeScript APIs explicitly from the owning package's
    `src/index.ts`.
 4. Use stable `agent:`, `human:`, `system:`, `channel:`, and `conversation:`
@@ -101,7 +101,7 @@ the example's own manifest or requirements file.
 
 ## Protocol changes
 
-Read `docs/SPEC_V0_1.md` and `skills/ocp-protocol/SKILL.md`, edit only canonical
+Read `docs/SPEC.md` and `skills/ocp-protocol/SKILL.md`, edit only canonical
 schemas and hand-written helpers, update all language bindings, run
 `pnpm generate`, inspect the generated diff, and then run Buf, typecheck, and
 test verification. Do not claim a schema change is complete while generated

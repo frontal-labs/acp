@@ -49,13 +49,13 @@ Slack event (signed)
   → 200 acknowledged                Slack retries unacknowledged events
   → app.receive("slack", payload)   normalize to message.received, dedupe by event_id
   → AgentHost routes to the agent   by recipient (set in createSlackChannel)
-  → agent handler replies           context.reply(...)
+  → agent handler replies           ctx.reply(...)
   → message.sent through the sink   Slack chat.postMessage, threaded when Slack sent a thread
 ```
 
 The agent never calls Slack directly. Outbound delivery is the channel's job,
 and any action the agent needs beyond replying would go through
-`context.actions.request(...)`, which applies policy and approvals first.
+`ctx.request(...)`, which applies policy and approvals first.
 
 ## Production notes
 

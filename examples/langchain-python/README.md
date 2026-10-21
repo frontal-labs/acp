@@ -1,7 +1,7 @@
 # LangChain Python + OCP
 
 This example uses LangChain v1 `create_agent` behind the OCP Python
-`AgentHost`. The OCP bridge converts the incoming `message.received` text into
+agent context. The OCP bridge converts the incoming `message.received` text into
 the LangChain message list and converts the final model message into
 `message.sent`.
 
@@ -21,7 +21,7 @@ production key or destructive tools while experimenting.
 ## OCP mapping
 
 - OCP actor, recipient, channel, conversation, and correlation data enter the
-  `AgentHost` context.
+  OCP agent context.
 - `context.message.text` becomes LangChain's user message.
 - `result["messages"][-1].content` becomes the OCP reply text.
 - LangChain tools that mutate state must call an OCP action boundary rather

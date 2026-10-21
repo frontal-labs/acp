@@ -7,12 +7,12 @@ language-specific:
 
 | SDK | Distribution | Import/module | Primary API |
 | --- | --- | --- | --- |
-| [`typescript/`](./typescript/) | npm `@frontal-labs/open-channel` | `@frontal-labs/open-channel` | `createOcp`, `AgentHost` |
-| [`python/`](./python/) | PyPI `open-channel` | `open_channel` | `OcpApp`, `AgentHost` |
-| [`rust/`](./rust/) | crates.io `open-channel` | `open_channel` | `OcpAppBuilder`, `AgentHost` |
+| [`typescript/`](./typescript/) | npm `@frontal-labs/open-channel` | `@frontal-labs/open-channel` | `openChannel`, `AgentHost` |
+| [`python/`](./python/) | PyPI `open-channel` | `open_channel` | `OpenChannel`, `AgentHost` |
+| [`rust/`](./rust/) | crates.io `open-channel` | `open_channel` | `OpenChannelBuilder`, `AgentHost` |
 
 All SDKs expose one event API for both wire versions: `0.2` is the canonical
-envelope in `proto/v2`, and `0.1` (the default) remains available from `proto/v1`.
+envelope in `proto/ocp`. There is one envelope and one protocol version, `0.2`.
 Generated bindings live under `proto/gen`.
 They expose transport-neutral application APIs; provider SDKs,
 credentials, and framework-specific orchestration belong in adapters or the

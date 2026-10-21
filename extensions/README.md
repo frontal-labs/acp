@@ -32,11 +32,11 @@ experimental protocol path and is not required by these packages.
 ## Example
 
 ```ts
-import { createOcp } from "@frontal-labs/open-channel";
+import { openChannel } from "@frontal-labs/open-channel";
 import { createSlackChannel } from "@frontal-labs/open-channel-ext-slack";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 
-const app = createOcp({
+const app = openChannel({
   channels: [
     createSlackChannel({
       transport: {

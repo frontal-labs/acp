@@ -16,33 +16,36 @@ The TypeScript SDK lives in [`sdks/typescript`](../../sdks/typescript). Its
 public entrypoint is an explicit exporter in `src/index.ts`; implementation
 belongs in separate modules.
 
-Register agents through `AgentHost` and an `AgentDefinition`:
+Register agents in the `openChannel()` configuration with an `AgentDefinition`:
 
 ```ts
-const host = new AgentHost({ runtime, gateway });
-
-host.register({
-  id: "agent:support",
-  name: "Support Agent",
-  skills: [{ id: "support", name: "Support" }],
-  async onMessage(context) {
-    await context.reply(`Received: ${context.message.text}`);
-  },
+const app = openChannel({
+  agents: [
+    {
+      id: "agent:support",
+      name: "Support Agent",
+      skills: [{ id: "support", name: "Support" }],
+      async onMessage(ctx) {
+        await ctx.reply(`Received: ${ctx.message.text}`);
+      },
+    },
+  ],
+  policy,
+  store,
 });
-
-const detach = host.attach();
+await app.start();
 ```
 
-Use `listAgentCards()` and `getAgentCard()` for discovery. A card describes
+Use `app.agentCards()` for discovery. A card describes
 identity, version, capabilities, and skills; it is not permission to invoke
 arbitrary actions.
 
 ## Message and action rules
 
 - Agents handle `message.received` events addressed to their actor ID.
-- Use `context.reply()` so replies retain the inbound channel, conversation,
+- Use `ctx.reply()` so replies retain the inbound channel, conversation,
   correlation, and causation context and are dispatched through the gateway.
-- Use `context.requestAction()` for side effects. The runtime must evaluate
+- Use `ctx.request()` for side effects. The runtime must evaluate
   policy before an action is authorized or placed into approval.
 - Never call a provider SDK directly from an agent implementation. Provider
   delivery belongs in an adapter.

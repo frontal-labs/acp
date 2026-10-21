@@ -1,4 +1,4 @@
-# OCP Protocol Specification v0.1
+# OCP Protocol Specification 0.2
 
 ## 1. Scope
 
@@ -6,9 +6,11 @@ OCP defines an event protocol for communication between agents, humans, and comp
 
 ## 2. Envelope
 
-`ocp.v1.api.EventEnvelope` is the canonical wire object. Producers MUST populate `event_id`, `event_type`, `protocol_version`, `occurred_at`, and exactly one payload. Producers SHOULD populate actor, recipient, channel, conversation, correlation, causation, and idempotency fields when available.
+`ocp.api.EventEnvelope` is the only wire object. Producers MUST populate `event_id`, `protocol_version`, `occurred_at`, and exactly one payload. Producers SHOULD populate actor, recipient, channel, conversation, correlation, causation, and idempotency fields when available.
 
-The protocol version for this release is `0.1`. The protobuf field numbers in `proto/v1/api/events.proto` and `proto/v1/types/*.proto` are stable for the v0.1 compatibility line.
+The protocol version is `0.2`. Consumers MUST reject an envelope whose `protocol_version` is not `0.2`.
+
+The event name is derived from the payload `oneof`; the envelope does not store a second copy. Field 2 was the former `event_type` string and is `reserved`; its number and name MUST NOT be reused. The protobuf field numbers in `proto/ocp/api/events.proto` and `proto/ocp/types/*.proto` are stable.
 
 ## 3. Event and payload mapping
 
@@ -28,13 +30,17 @@ The protocol version for this release is `0.1`. The protobuf field numbers in `p
 | `action.executed` | `actionExecuted` |
 | `action.failed` | `actionFailed` |
 
-Consumers MUST reject an event with an unknown event type or a mismatched payload case. Consumers MAY preserve unknown extension fields for forward compatibility.
+Consumers MUST reject an event whose payload is missing or unknown. The event name is always derived from the payload, so a mismatched name cannot be expressed. Consumers MAY preserve unknown extension fields for forward compatibility.
 
 ## 4. Approval and escalation
 
 An agent requests approval by emitting `approval.requested` with an action, reason, approver, and deadline. The action MUST NOT execute until the owning system receives an explicit approval outcome and chooses to execute it.
 
 When the deadline passes without a decision, the runtime emits `approval.expired`, followed by `escalation.triggered` targeting the configured approver or escalation target. Implementations may add richer escalation routing without changing the core event contract.
+
+## 4a. Restart recovery
+
+An implementation MUST rebuild approval state from its event store before accepting new work. Only approval events whose `source` is the runtime actor are trusted; approval lifecycle events received from outside MUST be rejected at ingest and MUST NOT be restored. Unresolved `approval.requested` events are tracked again and their expiry is rescheduled at the stored deadline; a deadline that passed while the process was down expires immediately. A `approval.granted` event with no terminal action event for its action MUST be executed once, and recovery MUST NOT re-run an action that already reached `action.executed` or `action.failed`.
 
 ## 5. Policy
 
@@ -54,27 +60,10 @@ An adapter translates provider-native messages into `message.received` envelopes
 
 The reference gateway keeps ingestion and dispatch separate: inbound events enter the runtime through `ingest`, while outbound events are explicitly sent through `dispatch`. This avoids treating a stored event as proof that a provider-side delivery succeeded and leaves retry/outbox policy to the host application.
 
-## 8. Protocol versions and the unified event API
+## 8. Serialization
 
-The repository contains two envelopes for the same domain payloads. Both are
-created, validated, and serialized through one API; the protocol version selects
-the envelope shape:
+Events serialize to ProtoJSON (`toJson` / `fromJson`) and to binary protobuf (`toBinary` / `fromBinary`). Both encodings carry the same envelope, so decoding needs no version argument. Untrusted input MUST be validated on decode.
 
-- `0.1` (default) uses `ocp.v1.api.EventEnvelope`, which stores an `event_type`
-  string that must match the payload case.
-- `0.2` uses `ocp.v2.api.EventEnvelope`, which removes the duplicated
-  `event_type` string. The payload `oneof` is the canonical event discriminant,
-  and `eventTypeOf()` derives the friendly dot-separated name from it.
+## 9. Compatibility
 
-The TypeScript API is `createEvent({ ..., protocolVersion: "0.2" })` together
-with the typed builders (`messageReceived`, `messageSent`,
-`approvalRequested`, `actionExecuted`, `actionFailed`). Each builder accepts the
-same `protocolVersion` option. Serialization (`eventToJson`, `eventFromJson`,
-`eventToBinary`, `eventFromBinary`) selects the envelope from the version. Binary
-does not carry a version, so decoding it requires the version explicitly.
-
-The v2 envelope reuses the v1 domain messages and payload cases. It is not a
-wire-compatible replacement for the v1 envelope because the envelope fields
-and field numbers differ. Applications should choose one envelope version at a
-boundary and preserve that version when serializing, validating, or replaying
-events.
+Version `0.2` replaces the two earlier envelopes. Earlier binary payloads that have no `event_type` field decode unchanged. Earlier ProtoJSON payloads that include `eventType` are rejected by `fromJson`, and must be re-serialized from the typed builders.

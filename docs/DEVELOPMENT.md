@@ -35,7 +35,7 @@ pnpm fix         # safe repository-wide Ultracite fixes
 
 Biome is configured in `biome.json`; it extends the Ultracite presets and the shared project settings in `ultracite.json`. The editor configuration uses the Biome extension as the TypeScript formatter and enables format-on-save.
 
-`pnpm generate` produces all language bindings: Buf/protoc-gen-es writes TypeScript, `protoc` writes Python, and the Rust SDK's `prost-build` writes Rust modules. The canonical schema is split between `proto/v1` for the legacy envelope and `proto/v2` for the typed envelope, with shared domain messages under `proto/v1/types`.
+`pnpm generate` produces all language bindings: Buf/protoc-gen-es writes TypeScript, `protoc` writes Python, and the Rust SDK's `prost-build` writes Rust modules. The canonical schema lives in `proto/ocp`; and `proto/v2` for the typed envelope, with shared domain messages under `proto/v1/types`.
 
 The shared `@frontal-labs/open-channel-testing` package provides deterministic OCP fixtures, event inspection, async coordination, buffered CLI I/O, and in-memory state doubles. Package-local tests and the root integration suite use the same Vitest configuration and aliases.
 
@@ -43,30 +43,30 @@ The published SDK distributions are all named `open-channel` in their registries
 install with `pnpm add @frontal-labs/open-channel`, `python -m pip install open-channel`, or
 `cargo add open-channel`. The Rust import is `open_channel`; the Python import is `open_channel`.
 
-Public TypeScript entrypoints use explicit named exports, and shared failures are represented by `@frontal-labs/open-channel-core` error classes. Validate untrusted event JSON with `eventFromJson()` or the exported Zod schemas before handing it to an agent or runtime.
+Public TypeScript entrypoints use explicit named exports, and shared failures are represented by `@frontal-labs/open-channel-core` error classes. Validate untrusted event JSON with `fromJson()` or the exported Zod schemas before handing it to an agent or runtime.
 
 ## Adding an agent
 
-For new applications, use the config-first `createOcp` facade. It composes the runtime, agent host, channel source/sink registration, action registry, lifecycle, and hooks. Use `AgentHost` directly when you need lower-level composition. This keeps agent discovery and execution separate from channel transport, similar to the useful parts of A2A without importing an A2A transport requirement.
+For new applications, use the config-first `openChannel` facade. It composes the runtime, agent host, channel source/sink registration, action registry, lifecycle, and hooks. Use `AgentHost` directly when you need lower-level composition. This keeps agent discovery and execution separate from channel transport, similar to the useful parts of A2A without importing an A2A transport requirement.
 
 ```ts
-import { createOcp } from "@frontal-labs/open-channel";
+import { openChannel } from "@frontal-labs/open-channel";
 
-const app = createOcp({
+const app = openChannel({
   policy,
   agents: [{
     id: "agent:triage",
     name: "Triage Agent",
     skills: [{ id: "triage", name: "Triage" }],
-    async onMessage(context) {
-      await context.reply("I am looking into this.");
+    async onMessage(ctx) {
+      await ctx.reply("I am looking into this.");
     },
   }],
 });
 await app.start();
 ```
 
-Use `listAgentCards()` for discovery, `context.actions.request()` for typed
-policy-controlled actions, and `context.reply()` for channel-aware responses.
+Use `agentCards()` for discovery, `ctx.request()` for typed
+policy-controlled actions, and `ctx.reply()` for channel-aware responses.
 Implement provider integrations as a `ChannelSource` for inbound normalization
 and a `ChannelSink` for outbound delivery.

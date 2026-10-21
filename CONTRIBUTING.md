@@ -20,11 +20,11 @@ Use `pnpm fix` before opening a change. Use `pnpm check` before submitting it.
 
 ## Changes
 
-Keep protocol changes in `proto/v1/api` or `proto/v1/types` and update all generated bindings with `pnpm generate`. Add tests under `tests/` for TypeScript event semantics and under the relevant SDK's native test directory for language-specific behavior. TypeScript package public APIs must be exported through that package's `src/index.ts`.
+Keep protocol changes in `proto/ocp/api` or `proto/ocp/types` and update all generated bindings with `pnpm generate`. Add tests under `tests/` for TypeScript event semantics and under the relevant SDK's native test directory for language-specific behavior. TypeScript package public APIs must be exported through that package's `src/index.ts`.
 
 ## Before you start
 
-Read [AGENTS.md](./AGENTS.md), [the protocol specification](./docs/SPEC_V0_1.md),
+Read [AGENTS.md](./AGENTS.md), [the protocol specification](./docs/SPEC.md),
 [the security policy](./SECURITY.md), and the narrowest matching skill under
 [`skills/`](./skills/). Open an issue first for wire-contract, public SDK,
 provider-semantic, or security-model changes; small documentation, test, and
@@ -32,7 +32,7 @@ example fixes can usually go directly to a pull request.
 
 ## Where changes belong
 
-- Protocol and compatibility: `proto/v1`, `packages/protocol`, and the spec.
+- Protocol and compatibility: `proto/ocp`, `packages/protocol`, and the spec.
 - Runtime and approvals: `packages/runtime` and `packages/policy`.
 - Provider transport: `packages/adapter` or `extensions/`.
 - Agent hosts: the matching TypeScript, Python, or Rust SDK.

@@ -1,105 +1,81 @@
 # open-channel
 
-The Rust distribution is published as `open-channel` on crates.io. Rust imports use
-the generated identifier `open_channel`. It provides a synchronous,
-transport-neutral agent host with A2A-like agent cards, skills, and typed
-message context.
-
-Add the dependency to an application with:
+The Rust distribution of the OpenChannel Protocol (OCP) is published as `open-channel` on crates.io.
+Rust imports use the identifier `open_channel`. It provides one event envelope, one protocol version
+(`PROTOCOL_VERSION`, `0.2`), an agent host with A2A-like agent cards, and the `OpenChannel` application.
 
 ```bash
 cargo add open-channel
 ```
 
-For application composition, use `OcpAppBuilder` to register agents, actions, channels, and policy:
+## Build an application
 
 ```rust
-use open_channel::{OcpAppBuilder, AgentCard, AgentDefinition};
+use open_channel::{AgentCard, AgentDefinition, MemoryEventStore, OpenChannel};
 
-let mut app = OcpAppBuilder::new()
+let mut app = OpenChannel::builder()
     .agent(AgentDefinition::new(
         AgentCard::new("agent:support", "Support Agent"),
         |context| {
-            context.reply("I am looking into this.");
+            ctx.reply("I am looking into this.");
             Ok(())
         },
     ))?
+    .policy(Box::new(my_policy))            // ActionPolicy; required for actions to run
+    .store(Box::new(MemoryEventStore::default())) // optional; in-memory by default
     .build();
 
 app.start()?;
-let result = app.ingest(event)?;
+app.ingest(event)?;                          // or app.receive(provider, input, &metadata)
+app.approve("action:1:approval", &approver, "ok")?;
 app.stop()?;
 ```
 
-```rust
-use open_channel::{AgentCard, AgentDefinition, AgentHost};
+`OpenChannel` methods: `start`, `stop`, `ingest`, `receive`, `approve`, `deny`, `on`, `agent_cards`,
+`add_agent`, `add_action`, `add_channel`, `events`, `concurrency`.
 
-let mut host = AgentHost::new();
-host.register(AgentDefinition::new(
-    AgentCard::new("agent:support", "Support Agent"),
-    |context| {
-        context.reply("I am looking into this.");
-        Ok(())
-    },
-))?;
-let result = host.handle(&event)?;
-```
+`on("approval.granted", |event| ...)` observes events of one name as they are accepted or emitted.
 
-Events for both protocol versions use one set of constructors. The version is the
-first argument; `ProtocolVersion::default()` is `0.1`:
+## Events
+
+There is one envelope. Its payload is the event kind, and `event_type()` derives the dot-separated name:
 
 ```rust
-use open_channel::{message_received, event_type_of, EventEnvelope, ProtocolVersion};
+use open_channel::{approval_decided, message_received, ApprovalOutcome, EventEnvelope};
 
-let v1 = message_received(ProtocolVersion::V0_1, "hello"); // stores eventType
-let v2 = message_received(ProtocolVersion::V0_2, "hello"); // name derived from payload
-assert_eq!(event_type_of(&v2), "message.received");
+let event = message_received("hello");
+assert_eq!(event.event_type(), "message.received");
 
-let bytes = v2.to_binary()?;
-let decoded = EventEnvelope::from_binary(&bytes, ProtocolVersion::V0_2)?;
+let json = event.to_json()?;                  // ProtoJSON
+let same = EventEnvelope::from_json(&json)?;
+
+let bytes = event.to_binary()?;               // protobuf; no version argument
+let decoded = EventEnvelope::from_binary(&bytes)?;
+
+let decision = approval_decided("approval:1", ApprovalOutcome::Granted, &approver, "ok");
+assert_eq!(decision.event_type(), "approval.granted");
 ```
 
-Binary protobuf requires the expected version because the bytes carry no discriminator.
-Every payload kind (15 event names) encodes to real protobuf in both versions, byte-compatible
-with the TypeScript SDK; the parity fixture in `packages/protocol/tests/fixtures` is checked by
-`tests/parity.rs`.
+Every encode and decode validates the envelope. Binary output is byte-identical to the TypeScript
+and Python SDKs; `tests/parity.rs` checks that against the shared fixture in
+`packages/protocol/tests/fixtures`.
 
-Approval, policy, action, task, handoff, and escalation constructors all take the version first:
+## Protobuf
 
-```rust
-use open_channel::{approval_requested, ActionInvocation, ActorRef, ProtocolVersion};
-
-let action = ActionInvocation {
-    action_id: "action:refund-1".into(),
-    input: serde_json::json!({ "amount": 250 }), // sent as parameters["input"] (JSON string)
-    action_type: "refund".into(),
-    target: "customer:42".into(),
-    ..ActionInvocation::default()
-};
-let approval = approval_requested(
-    ProtocolVersion::V0_2,
-    &action,
-    "approval:refund-1",
-    "refund over the agent limit",
-    &ActorRef::agent("agent:support", "Support"),
-    &approver, // &ActorRef of the human approver
-    Some("2030-01-01T00:00:00Z".to_owned()), // deadline, RFC 3339 UTC; None if none
-);
-```
-
-`approval_decided(version, approval_id, ApprovalOutcome::Granted | Denied, &approver, reason)`
-emits `approval.granted` or `approval.denied`. `policy_evaluated(version, allowed,
-approval_required, reason, action_type, &recipient, policy_id)` emits `policy.allowed` or
-`policy.blocked`. `action_executed` and `action_failed` take the same `&ActionInvocation`.
-Timestamps keep the precision the source provides (milliseconds, microseconds, or nanoseconds).
-
-The crate also generates Rust protobuf bindings into `proto/gen/rust` during
-the build. The SDK model layer remains ergonomic and transport-neutral while
-the generated module is available as `open_channel::generated` for integrations
-that need the wire types.
+The build generates Rust bindings for `proto/ocp` into `src/generated`. The envelope is
+`ocp::api::EventEnvelope`; domain messages are `ocp::types`. Field numbers are stable, and
+`event_type` (field 2) is reserved.
 
 ## Development
 
 ```bash
 cargo test --manifest-path sdks/rust/Cargo.toml
+cargo clippy --manifest-path sdks/rust/Cargo.toml --all-targets --all-features -- -D warnings
 ```
+
+## Recovery, audit, and logging
+
+- **Restart recovery.** `start()` restores approval state from the store. Unresolved approvals are tracked again, a deadline that passed while the process was down expires at start, and a granted approval with no terminal action event runs once. Only decisions written by the runtime, or by the designated approver before the source change, are honoured.
+- **Audit.** `app.store()` returns the event store for queries.
+- **Logging.** `ctx.logger()` has four levels. Warnings and errors go to stderr by default. Pass a logger to the builder to replace it.
+

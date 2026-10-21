@@ -21,7 +21,7 @@ framework input -> OCP message.received -> harness/model/tool run
 OCP owns identity, correlation, event types, policy signals, approval state,
 and transport-neutral context. The harness owns prompts, model calls, tools,
 memory, handoffs, and framework-native state. Do not make a model callback a
-replacement for `OcpRuntime`, `AgentHost`, or provider adapters.
+replacement for `OpenChannelRuntime`, `AgentHost`, or provider adapters.
 
 ## Example contract
 
@@ -47,7 +47,7 @@ maintained package. Their dependencies must not alter the core lockfile.
    and causation context in the bridge or run context.
 3. Convert only the final harness response into `message.sent`; do not expose
    provider-specific message classes in OCP packages.
-4. Map tool calls that can change state to `context.requestAction()` or the
+4. Map tool calls that can change state to `context.request()` or the
    runtime action path. A harness approval callback is not an OCP approval
    unless it emits the corresponding OCP event.
 5. Normalize framework errors into a visible failure result and retain the
@@ -66,7 +66,7 @@ maintained package. Their dependencies must not alter the core lockfile.
 - LlamaIndex: map `FunctionAgent.run` output and keep document/tool context in
   the harness, not in shared protocol payloads.
 - Vercel AI SDK: map `generateText` or stream completion output to one OCP
-  response, and document the streaming limitations of OCP v0.1.
+  response, and document the streaming limitations of OCP 0.2.
 - MCP: treat `callTool` as an external tool boundary. Validate arguments,
   apply policy, and never treat a successful MCP response as authorization.
 

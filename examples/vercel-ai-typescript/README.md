@@ -1,7 +1,7 @@
 # Vercel AI SDK + OCP
 
 This example maps AI SDK Core's `generateText` response into the shared OCP
-TypeScript bridge. It demonstrates a request/response path; OCP v0.1 does not
+TypeScript bridge. It demonstrates a request/response path; OCP 0.2 does not
 yet standardize token streaming, so streaming requires an application-specific
 extension and explicit event mapping.
 

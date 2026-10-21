@@ -48,9 +48,8 @@ message.received
 ## Repository layout
 
 ```text
-proto/v1/api/                  Legacy v1 API/envelope protobuf definitions
-proto/v2/api/                  Oneof-discriminated v2 API envelope
-proto/v1/types/                Versioned shared domain protobuf definitions
+proto/ocp/api/                  The single EventEnvelope protobuf definition
+proto/ocp/types/                Shared domain protobuf definitions
 proto/gen/                     Generated TypeScript, Python, and Rust bindings
 packages/protocol/             Generated types, builders, and serialization helpers
 packages/runtime/              Event routing and approval lifecycle
@@ -68,7 +67,7 @@ skills/                        OCP-specific instructions for agents and contribu
 tests/                         Cross-package Vitest conformance tests
 skills/                        Project-local OCP skills for agent workflows
 skills.sh.json                 skills.sh grouping and discovery metadata
-docs/SPEC_V0_1.md              Normative behavior and compatibility rules
+docs/SPEC.md                  Normative behavior and compatibility rules
 docs/DEVELOPMENT.md             Local development and agent SDK guide
 proto/README.md                Schema and generated-code workflow
 turbo.json                     Root Turborepo task graph
@@ -87,12 +86,9 @@ Every OCP event is an `EventEnvelope` with:
 - a typed protobuf `oneof` payload;
 - ProtoJSON support for logs, fixtures, and HTTP-oriented integrations.
 
-In v1, the event type must agree with its payload case. In v2, the payload
-oneof is canonical and the friendly event name is derived from it. For example,
-`message.received` contains a `messageReceived` payload, while `approval.granted`
-and `approval.denied` use `approvalDecided` with different outcomes.
+The payload oneof is the event kind, and the friendly name is derived from it. For example, `message.received` contains a `messageReceived` payload, while `approval.granted` and `approval.denied` both use `approvalDecided` with different outcomes. `eventType(event)` returns the friendly name.
 
-Both versions share one API. Pass `protocolVersion: "0.2"` to `createEvent` or any typed builder to get the envelope where the payload oneof is the canonical event kind; `eventTypeOf()` derives the friendly event name for either version. The default is `"0.1"`.
+There is one envelope and one protocol version, `0.2`. Build events with the typed builders (`messageReceived`, `approvalRequested`, and so on) or `newEvent()`. Serialize with `toJson` / `fromJson` or `toBinary` / `fromBinary`.
 
 ## Safety semantics
 
@@ -105,7 +101,7 @@ Both versions share one API. Pass `protocolVersion: "0.2"` to `createEvent` or a
 - Event IDs make processing idempotent for replayed inbound events.
 - The runtime exposes an append-only event store interface for durable implementations.
 - `ChannelGateway.ingest()` handles inbound events and `ChannelGateway.dispatch()` sends outbound events through a registered provider adapter.
-- `OcpRuntime.decideApproval()` creates and processes a validated approval outcome without requiring callers to handcraft protobuf envelopes.
+- `OpenChannelRuntime.decideApproval()` creates and processes a validated approval outcome without requiring callers to handcraft protobuf envelopes.
 
 ## A2A relationship
 
@@ -113,6 +109,6 @@ OCP uses compatible concepts such as actors, tasks, artifacts, correlation IDs, 
 
 ## Contributing
 
-The canonical schema lives under `proto/`. Run `pnpm generate` after changing it, then run `pnpm check`. New provider integrations should implement `ChannelSource` and/or `ChannelSink` and translate provider-native events into OCP envelopes without leaking provider-specific fields into the core payloads. Application code should prefer `createOcp()` from `open-channel`.
+The canonical schema lives under `proto/`. Run `pnpm generate` after changing it, then run `pnpm check`. New provider integrations should implement `ChannelSource` and/or `ChannelSink` and translate provider-native events into OCP envelopes without leaking provider-specific fields into the core payloads. Application code should prefer `openChannel()` from `open-channel`.
 
 Use `pnpm fix` for safe formatting and lint fixes. Package-level task configuration is inherited from the root `turbo.json`; each package also contains a local `turbo.json` so ownership and future task overrides stay close to the package.

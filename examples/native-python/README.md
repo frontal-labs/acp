@@ -1,6 +1,6 @@
 # Native Python OCP
 
-This example uses the Python SDK's `AgentHost` and `EventEnvelope` directly.
+This example uses the Python SDK's `open_channel()` app and `EventEnvelope` directly.
 It is deterministic and does not require a model provider or credentials.
 
 ## Run

@@ -6,7 +6,7 @@ Small provider-neutral primitives shared by OCP runtimes and integrations.
 
 - `EventBus` and `InMemoryEventBus` for asynchronous event subscriptions.
 - `createIdentifier`, `createCorrelationId`, and `createActionId` for namespaced application-level identifiers.
-- `OcpError` and classified validation, protocol, transport, conflict, and not-found errors.
+- `OpenChannelError` and classified validation, protocol, transport, conflict, and not-found errors.
 
 The core package intentionally does not own provider transport, persistence, policy decisions, or agent orchestration. Its event bus is generic so protocol packages can depend on the shared errors without a dependency cycle.
 
