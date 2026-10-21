@@ -57,8 +57,14 @@ const updateLockVersion = (file, packageName) => {
     return;
   }
   const content = readFileSync(path, "utf8");
-  const pattern = new RegExp(`(name = "${packageName}"\\nversion = ")[^"]+("`);
-  const updated = content.replace(pattern, `$1${releaseVersion}$2`);
+  const marker = `name = "${packageName}"\nversion = "`;
+  const valueStart = content.indexOf(marker);
+  if (valueStart === -1) {
+    return;
+  }
+  const versionStart = valueStart + marker.length;
+  const versionEnd = content.indexOf('"', versionStart);
+  const updated = `${content.slice(0, versionStart)}${releaseVersion}${content.slice(versionEnd)}`;
   if (updated !== content) {
     writeFileSync(path, updated);
   }
