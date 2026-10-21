@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-ext-email",
-  "version": "3.0.0",
+  "version": "2.0.0",
   "description": "SMTP and IMAP email source and sink integration for the OpenChannel Protocol",
   "keywords": [
     "openchannel-protocol",
