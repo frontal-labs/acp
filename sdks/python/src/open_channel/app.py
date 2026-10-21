@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Generic, Literal, Protocol, TypeVar
 from uuid import uuid4
 
-from .errors import ActionError, DeliveryError, OcpError, as_ocp_error
+from .errors import ActionError, AuthorizationError, DeliveryError, OcpError, as_ocp_error
 from .host import AgentDefinition, AgentHost, _maybe_await
 from .models import ActorRef, AgentCard, EventEnvelope
 
@@ -56,6 +56,8 @@ class PolicyDecision:
     allowed: bool
     approval_required: bool = False
     reason: str = ""
+    # Actor allowed to approve or deny when approval_required is set; defaults to the app's default approver.
+    approver: ActorRef | None = None
 
 
 ActionStatus = Literal["blocked", "approval_required", "executed", "failed"]
@@ -122,6 +124,7 @@ class _PendingAction:
     actor: ActorRef
     event: EventEnvelope
     input: object
+    approver: ActorRef
     expiry: asyncio.Task[None] | None = None
 
 
@@ -149,6 +152,7 @@ class OcpApp:
         on_event: Hook | None = None,
         max_concurrent_conversations: int | None = None,
         default_approval_timeout_ms: int = 60_000,
+        default_approver: ActorRef | None = None,
     ) -> None:
         self._actions = {action.type: action for action in actions or []}
         self._channels = {channel.provider: channel for channel in channels or []}
@@ -172,6 +176,9 @@ class OcpApp:
         self._started = False
         self._accepting = True
         self._approval_timeout = max(0, default_approval_timeout_ms) / 1000
+        self._default_approver = default_approver or ActorRef(
+            "ocp.runtime", type="ACTOR_TYPE_SYSTEM", display_name="OCP Runtime"
+        )
         self._host = AgentHost(
             agents=agents,
             dispatch=self._dispatch,
@@ -281,28 +288,34 @@ class OcpApp:
         events = normalized if isinstance(normalized, list) else [normalized]
         return [await self.ingest(event) for event in events]
 
-    async def approve(
-        self, approval_id: str, approver: ActorRef | None = None, reason: str = "Approved"
-    ) -> ActionResult:
-        del approver
-        pending = self._pending.pop(approval_id, None)
+    def _take_pending_approval(self, approval_id: str, approver: ActorRef) -> _PendingAction:
+        # Check the decider before removing the entry, so a rejected attempt leaves the approval pending.
+        pending = self._pending.get(approval_id)
         if pending is None:
             raise KeyError(f"OCP approval was not found: {approval_id}")
+        if approver.id != pending.approver.id:
+            raise AuthorizationError(
+                f"OCP approval {approval_id} can only be decided by {pending.approver.id}",
+                approval_id=approval_id,
+                stage="approval",
+            )
+        del self._pending[approval_id]
         if pending.expiry is not None:
             pending.expiry.cancel()
+        return pending
+
+    async def approve(
+        self, approval_id: str, approver: ActorRef, reason: str = "Approved"
+    ) -> ActionResult:
+        pending = self._take_pending_approval(approval_id, approver)
         result = await self._execute(pending)
         await self._run_hook(self._hooks.on_action_completed, result)
         return result
 
     async def deny(
-        self, approval_id: str, approver: ActorRef | None = None, reason: str = "Denied"
+        self, approval_id: str, approver: ActorRef, reason: str = "Denied"
     ) -> ActionResult:
-        del approver
-        pending = self._pending.pop(approval_id, None)
-        if pending is None:
-            raise KeyError(f"OCP approval was not found: {approval_id}")
-        if pending.expiry is not None:
-            pending.expiry.cancel()
+        pending = self._take_pending_approval(approval_id, approver)
         result = ActionResult(pending.action_id, "blocked", approval_id=approval_id, reason=reason)
         self._action_results[pending.action_id] = result
         await self._run_hook(self._hooks.on_action_completed, result)
@@ -393,7 +406,15 @@ class OcpApp:
                 result = ActionResult(action_id, "blocked", reason=decision.reason)
                 self._action_results[action_id] = result
                 return result
-            pending = _PendingAction(action_id, "", definition, actor, event, value)
+            pending = _PendingAction(
+                action_id,
+                "",
+                definition,
+                actor,
+                event,
+                value,
+                decision.approver or self._default_approver,
+            )
             if decision.approval_required:
                 approval_id = f"{action_id}:approval"
                 pending.approval_id = approval_id

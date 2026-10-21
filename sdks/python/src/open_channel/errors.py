@@ -36,6 +36,10 @@ class DeliveryError(OcpError):
     code = "OCP_TRANSPORT"
 
 
+class AuthorizationError(OcpError):
+    code = "OCP_AUTHORIZATION"
+
+
 def as_ocp_error(
     error: BaseException,
     *,
