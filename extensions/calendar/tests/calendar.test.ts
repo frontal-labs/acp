@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createCalendarActions } from "../src/index.js";
 
-describe("@acp/ext-calendar", () => {
+describe("@frontal-labs/open-channel-ext-calendar", () => {
   it("creates SDK action definitions with Zod validation", () => {
     const actions = createCalendarActions({
       cancel: async () => ({ cancelled: true }),

@@ -1,7 +1,7 @@
 {
-  "name": "@acp/example-native-typescript",
+  "name": "@frontal-labs/open-channel-example-native-typescript",
   "version": "0.1.0",
   "private": true,
-  "description": "Native TypeScript ACP agent and approval examples",
+  "description": "Native TypeScript OCP agent and approval examples",
   "type": "module"
 }

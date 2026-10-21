@@ -1,18 +1,18 @@
-/** A stable error code emitted by an ACP package. */
-export type AcpErrorCode =
-  | "ACP_ACTION"
-  | "ACP_AUTHORIZATION"
-  | "ACP_CONFLICT"
-  | "ACP_NOT_FOUND"
-  | "ACP_PROTOCOL"
-  | "ACP_TRANSPORT"
-  | "ACP_VALIDATION";
+/** A stable error code emitted by an OCP package. */
+export type OcpErrorCode =
+  | "OCP_ACTION"
+  | "OCP_AUTHORIZATION"
+  | "OCP_CONFLICT"
+  | "OCP_NOT_FOUND"
+  | "OCP_PROTOCOL"
+  | "OCP_TRANSPORT"
+  | "OCP_VALIDATION";
 
-/** Structured metadata attached to an ACP error. */
-export type AcpErrorDetails = Record<string, unknown>;
+/** Structured metadata attached to an OCP error. */
+export type OcpErrorDetails = Record<string, unknown>;
 
-/** Lifecycle stage at which an ACP operation failed. */
-export type AcpErrorStage =
+/** Lifecycle stage at which an OCP operation failed. */
+export type OcpErrorStage =
   | "accept"
   | "action"
   | "approval"
@@ -24,32 +24,32 @@ export type AcpErrorStage =
   | "validation"
   | (string & {});
 
-/** Options shared by all ACP error constructors. */
-export interface AcpErrorOptions {
+/** Options shared by all OCP error constructors. */
+export interface OcpErrorOptions {
   actionId?: string;
   approvalId?: string;
   cause?: unknown;
-  details?: AcpErrorDetails;
+  details?: OcpErrorDetails;
   eventId?: string;
   provider?: string;
   retryable?: boolean;
-  stage?: AcpErrorStage;
+  stage?: OcpErrorStage;
 }
 
 /** Base class for errors that are safe to classify at an application boundary. */
-export class AcpError extends Error {
-  readonly code: AcpErrorCode;
-  readonly details: AcpErrorDetails;
+export class OcpError extends Error {
+  readonly code: OcpErrorCode;
+  readonly details: OcpErrorDetails;
   readonly actionId?: string;
   readonly approvalId?: string;
   readonly eventId?: string;
   readonly provider?: string;
   readonly retryable: boolean;
-  readonly stage?: AcpErrorStage;
+  readonly stage?: OcpErrorStage;
 
-  constructor(code: AcpErrorCode, message: string, options: AcpErrorOptions = {}) {
+  constructor(code: OcpErrorCode, message: string, options: OcpErrorOptions = {}) {
     super(message, { cause: options.cause });
-    this.name = "AcpError";
+    this.name = "OcpError";
     this.code = code;
     this.actionId = options.actionId;
     this.approvalId = options.approvalId;
@@ -70,34 +70,34 @@ export class AcpError extends Error {
 }
 
 /** Indicates that a registered action could not be executed. */
-export class ActionError extends AcpError {
-  constructor(message: string, options: AcpErrorOptions = {}) {
-    super("ACP_ACTION", message, { ...options, stage: options.stage ?? "action" });
+export class ActionError extends OcpError {
+  constructor(message: string, options: OcpErrorOptions = {}) {
+    super("OCP_ACTION", message, { ...options, stage: options.stage ?? "action" });
     this.name = "ActionError";
   }
 }
 
-/** Indicates that an input does not satisfy the ACP contract. */
-export class ValidationError extends AcpError {
-  constructor(message: string, options: AcpErrorOptions = {}) {
-    super("ACP_VALIDATION", message, options);
+/** Indicates that an input does not satisfy the OCP contract. */
+export class ValidationError extends OcpError {
+  constructor(message: string, options: OcpErrorOptions = {}) {
+    super("OCP_VALIDATION", message, options);
     this.name = "ValidationError";
   }
 }
 
-/** Indicates that an ACP event or protocol operation is invalid. */
-export class ProtocolError extends AcpError {
-  constructor(message: string, options: AcpErrorOptions = {}) {
-    super("ACP_PROTOCOL", message, options);
+/** Indicates that an OCP event or protocol operation is invalid. */
+export class ProtocolError extends OcpError {
+  constructor(message: string, options: OcpErrorOptions = {}) {
+    super("OCP_PROTOCOL", message, options);
     this.name = "ProtocolError";
   }
 }
 
 /** Indicates that an operation conflicts with the current resource state. */
-export class ConflictError extends AcpError {
-  constructor(resource: string, identifier: string, options: AcpErrorOptions = {}) {
+export class ConflictError extends OcpError {
+  constructor(resource: string, identifier: string, options: OcpErrorOptions = {}) {
     super(
-      "ACP_CONFLICT",
+      "OCP_CONFLICT",
       `${resource} already exists or is in a conflicting state: ${identifier}`,
       {
         ...options,
@@ -108,18 +108,18 @@ export class ConflictError extends AcpError {
   }
 }
 
-/** Indicates that the actor is not allowed to perform the requested ACP operation. */
-export class AuthorizationError extends AcpError {
-  constructor(message: string, options: AcpErrorOptions = {}) {
-    super("ACP_AUTHORIZATION", message, options);
+/** Indicates that the actor is not allowed to perform the requested OCP operation. */
+export class AuthorizationError extends OcpError {
+  constructor(message: string, options: OcpErrorOptions = {}) {
+    super("OCP_AUTHORIZATION", message, options);
     this.name = "AuthorizationError";
   }
 }
 
-/** Indicates that a requested ACP resource does not exist. */
-export class NotFoundError extends AcpError {
-  constructor(resource: string, identifier: string, options: AcpErrorOptions = {}) {
-    super("ACP_NOT_FOUND", `${resource} was not found: ${identifier}`, {
+/** Indicates that a requested OCP resource does not exist. */
+export class NotFoundError extends OcpError {
+  constructor(resource: string, identifier: string, options: OcpErrorOptions = {}) {
+    super("OCP_NOT_FOUND", `${resource} was not found: ${identifier}`, {
       ...options,
       details: { ...options.details, identifier, resource },
     });
@@ -127,10 +127,10 @@ export class NotFoundError extends AcpError {
   }
 }
 
-/** Indicates that a provider channel could not accept an ACP operation. */
-export class TransportError extends AcpError {
-  constructor(message: string, options: AcpErrorOptions = {}) {
-    super("ACP_TRANSPORT", message, options);
+/** Indicates that a provider channel could not accept an OCP operation. */
+export class TransportError extends OcpError {
+  constructor(message: string, options: OcpErrorOptions = {}) {
+    super("OCP_TRANSPORT", message, options);
     this.name = "TransportError";
   }
 }

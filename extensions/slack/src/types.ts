@@ -1,5 +1,5 @@
-import type { ActorRef } from "@acp/protocol";
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ActorRef } from "@frontal-labs/open-channel-protocol";
 
 /** Outbound message accepted by a Slack transport implementation. */
 export interface SlackSendInput {
@@ -27,7 +27,7 @@ export interface SlackSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete Slack channel configuration for `createAcp({ channels })`. */
+/** Complete Slack channel configuration for `createOcp({ channels })`. */
 export interface SlackChannelOptions extends SlackSourceOptions {
   transport: SlackTransport;
 }
@@ -38,5 +38,5 @@ export interface SlackWebhookRequest {
   headers: Record<string, string | undefined>;
 }
 
-/** Creates a config-first ACP channel definition for Slack. */
+/** Creates a config-first OCP channel definition for Slack. */
 export type SlackChannel = ChannelDefinition;

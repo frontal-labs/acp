@@ -1,6 +1,10 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { AcpError, TransportError } from "@acp/core";
-import type { EventEnvelope } from "@acp/protocol";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { OcpError, TransportError } from "@frontal-labs/open-channel-core";
+import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
 
 /** Creates a sink with consistent provider transport error classification. */
 export function createProviderSink(
@@ -19,10 +23,10 @@ export function createProviderSink(
           }
         );
       } catch (error) {
-        if (error instanceof AcpError) {
+        if (error instanceof OcpError) {
           throw error;
         }
-        throw new TransportError(`Unable to deliver ACP event through ${provider}`, {
+        throw new TransportError(`Unable to deliver OCP event through ${provider}`, {
           cause: error,
           eventId: event.eventId,
           provider,

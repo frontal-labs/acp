@@ -1,1 +1,1 @@
-"""Generated ACP shared protobuf modules."""
+"""Generated OCP shared protobuf modules."""

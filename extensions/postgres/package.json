@@ -1,21 +1,21 @@
 {
-  "name": "@acp/ext-postgres",
+  "name": "@frontal-labs/open-channel-ext-postgres",
   "version": "0.1.0",
-  "description": "PostgreSQL event store for the Agent Communication Protocol runtime",
+  "description": "PostgreSQL event store for the OpenChannel Protocol runtime",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "postgres",
     "event-store",
     "audit"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "extensions/postgres"
   },
   "license": "Apache-2.0",
@@ -43,12 +43,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/core": "workspace:*",
-    "@acp/protocol": "workspace:*",
-    "@acp/runtime": "workspace:*"
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*",
+    "@frontal-labs/open-channel-runtime": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "@types/pg": "^8.23.1",
     "pg": "^8.23.1",
     "vitest": "^4.1.12"

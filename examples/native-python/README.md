@@ -1,4 +1,4 @@
-# Native Python ACP
+# Native Python OCP
 
 This example uses the Python SDK's `AgentHost` and `EventEnvelope` directly.
 It is deterministic and does not require a model provider or credentials.
@@ -11,6 +11,6 @@ From the repository root:
 PYTHONPATH=sdks/python/src:examples/_shared/python python3 examples/native-python/main.py
 ```
 
-The output shows an ACP agent card, a routed `message.received` event, and the
+The output shows an OCP agent card, a routed `message.received` event, and the
 resulting `message.sent` event. Replace the lambda with a framework invocation
-while preserving the same `run_acp_text_agent` boundary.
+while preserving the same `run_ocp_text_agent` boundary.

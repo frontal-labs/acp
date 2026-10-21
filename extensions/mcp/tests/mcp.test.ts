@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createMcpActions } from "../src/index.js";
 
-describe("@acp/ext-mcp", () => {
+describe("@frontal-labs/open-channel-ext-mcp", () => {
   it("creates a policy-controlled MCP action", async () => {
     const calls: string[] = [];
     const [action] = createMcpActions({

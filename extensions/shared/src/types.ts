@@ -1,4 +1,9 @@
-import type { ActorRef, EventEnvelope, EventName, EventPayload } from "@acp/protocol";
+import type {
+  ActorRef,
+  EventEnvelope,
+  EventName,
+  EventPayload,
+} from "@frontal-labs/open-channel-protocol";
 
 /** Provider-neutral input metadata supplied by a webhook, queue, or poller. */
 export interface ProviderReceiveMetadata {
@@ -7,7 +12,7 @@ export interface ProviderReceiveMetadata {
   receivedAt?: Date;
 }
 
-/** Common fields used to construct a normalized ACP event. */
+/** Common fields used to construct a normalized OCP event. */
 export interface ProviderEventOptions {
   actor?: ActorRef;
   address?: string;
@@ -27,8 +32,8 @@ export interface ProviderEventOptions {
 /** Minimal JSON object accepted at an untrusted provider boundary. */
 export type ProviderRecord = Record<string, unknown>;
 
-/** A provider transport can send a normalized ACP event. */
+/** A provider transport can send a normalized OCP event. */
 export type ProviderSend = (
   event: EventEnvelope,
   options?: { idempotencyKey?: string; signal?: AbortSignal },
-) => Promise<import("@acp/adapter").DeliveryReceipt | undefined>;
+) => Promise<import("@frontal-labs/open-channel-adapter").DeliveryReceipt | undefined>;

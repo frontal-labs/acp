@@ -1,18 +1,19 @@
 # Release guide
 
-ACP uses Changesets for JavaScript package versioning and release orchestration. The public release surface is:
+OCP uses Changesets for JavaScript package versioning and release orchestration. The public release surface is:
 
-- npm: `acp-cli` and `acp-sdk`;
-- crates.io: `acp-sdk`;
-- PyPI: `acp-sdk`;
+- npm: `@frontal-labs/open-channel-cli` and `@frontal-labs/open-channel`;
+- crates.io: `open-channel`;
+- PyPI: `open-channel`;
 
-The SDK package name is unified as `acp-sdk`; the language-specific import
-identifiers are `acp-sdk` for TypeScript, `acp` for Python, and `acp_sdk` for
-Rust.
+The SDK distribution name is `open-channel` on crates.io and PyPI, and
+`@frontal-labs/open-channel` on npm (npm requires a scope for this name). The
+language-specific import identifiers are `@frontal-labs/open-channel` for
+TypeScript, `open_channel` for Python, and `open_channel` for Rust.
 
-Release image/container identifiers retain ecosystem suffixes (`acp-sdk-ts`,
-`acp-sdk-py`, and `acp-sdk-rs`) even though the published SDK package names are
-unified as `acp-sdk`.
+Release image/container identifiers retain ecosystem suffixes (`open-channel-ts`,
+`open-channel-py`, and `open-channel-rs`) even though the published SDK package names are
+unified as `open-channel`.
 
 ## Prepare a release
 
@@ -29,9 +30,9 @@ lands on `main`, it publishes the TypeScript CLI/SDK, Rust SDK, and Python SDK.
 
 Configure these repository secrets before enabling publishing:
 
-- `NPM_TOKEN` — npm publish token for `acp-cli` and `acp-sdk`;
-- `CARGO_REGISTRY_TOKEN` — crates.io token for `acp-sdk`;
-- `PYPI_API_TOKEN` — PyPI token for `acp-sdk`.
+- `NPM_TOKEN` — npm publish token for `@frontal-labs/open-channel-cli` and `@frontal-labs/open-channel`;
+- `CARGO_REGISTRY_TOKEN` — crates.io token for `open-channel`;
+- `PYPI_API_TOKEN` — PyPI token for `open-channel`.
 
 Run `pnpm release:publish:sdk -- --dry-run` locally to package and validate the
 Rust and Python SDK distributions without uploading them. Never commit registry

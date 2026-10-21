@@ -1,4 +1,4 @@
-# ACP protobuf schema
+# OCP protobuf schema
 
 The canonical wire schema is split by responsibility and version:
 
@@ -17,7 +17,7 @@ proto/
     rust/
 ```
 
-Keep package names versioned (`acp.v1.api`, `acp.v1.types`, and `acp.v2.api`) while keeping the repository layout easy to navigate. The `PACKAGE_DIRECTORY_MATCH` and `PACKAGE_VERSION_SUFFIX` Buf rules are intentionally disabled because the requested layout uses versioned directories without repeating the full package name.
+Keep package names versioned (`ocp.v1.api`, `ocp.v1.types`, and `ocp.v2.api`) while keeping the repository layout easy to navigate. The `PACKAGE_DIRECTORY_MATCH` and `PACKAGE_VERSION_SUFFIX` Buf rules are intentionally disabled because the requested layout uses versioned directories without repeating the full package name.
 
 Run `pnpm generate` from the repository root after changing a schema. The root scripts pass `proto/buf.yaml` and `proto/buf.gen.yaml` explicitly, so Buf configuration stays next to the schema while generated output remains under `proto/gen`. It runs:
 

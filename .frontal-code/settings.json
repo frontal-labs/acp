@@ -1,8 +1,8 @@
 {
   "version": "1.0",
   "workspace": {
-    "name": "acp",
-    "description": "Agent Communication Protocol reference implementation",
+    "name": "ocp",
+    "description": "OpenChannel Protocol reference implementation",
     "guidance": [
       "Run `pnpm doctor` before landing changes.",
       "Keep `.frontal-code/settings.local.json` for machine-specific overrides."
@@ -101,7 +101,7 @@
     "check": {
       "kind": "mixed",
       "command": "pnpm check",
-      "description": "Run the complete ACP verification pipeline"
+      "description": "Run the complete OCP verification pipeline"
     }
   }
 }

@@ -1,6 +1,6 @@
-# @acp/adapter
+# @frontal-labs/open-channel-adapter
 
-Provider-neutral channel adapter contracts for ACP.
+Provider-neutral channel adapter contracts for OCP.
 
 ## API
 
@@ -10,11 +10,11 @@ Provider-neutral channel adapter contracts for ACP.
 - `ChannelAdapter` remains an alias for the outbound sink contract.
 - `InMemoryChannelAdapter` captures outbound events for tests and local demos.
 
-Adapters should translate provider-specific identifiers into `ChannelRef` and keep provider SDK details outside ACP core packages.
+Adapters should translate provider-specific identifiers into `ChannelRef` and keep provider SDK details outside OCP core packages.
 
 ## Development
 
 ```bash
-pnpm --filter @acp/adapter build
-pnpm --filter @acp/adapter typecheck
+pnpm --filter @frontal-labs/open-channel-adapter build
+pnpm --filter @frontal-labs/open-channel-adapter typecheck
 ```

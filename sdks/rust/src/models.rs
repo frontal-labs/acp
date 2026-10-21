@@ -151,7 +151,7 @@ pub struct ActionInvocation {
     pub parameters: BTreeMap<String, String>,
 }
 
-/// ProtoJSON shape of `acp.v1.types.ActionRequest`.
+/// ProtoJSON shape of `ocp.v1.types.ActionRequest`.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ActionRequestJson {
@@ -219,7 +219,7 @@ pub struct ActionError {
 impl ActionError {
     fn from_agent_error(action_id: impl Into<String>, error: &AgentError) -> Self {
         Self {
-            code: "ACP_ACTION".to_owned(),
+            code: "OCP_ACTION".to_owned(),
             message: error.to_string(),
             action_id: action_id.into(),
             retryable: false,
@@ -295,17 +295,17 @@ impl ActionDefinition {
 
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum AgentError {
-    #[error("ACP agent is already registered: {0}")]
+    #[error("OCP agent is already registered: {0}")]
     DuplicateAgent(String),
-    #[error("ACP action is not registered: {0}")]
+    #[error("OCP action is not registered: {0}")]
     UnknownAction(String),
-    #[error("ACP agent is not registered: {0}")]
+    #[error("OCP agent is not registered: {0}")]
     UnknownAgent(String),
-    #[error("ACP provider is not registered: {0}")]
+    #[error("OCP provider is not registered: {0}")]
     UnknownProvider(String),
-    #[error("ACP handler failed: {0}")]
+    #[error("OCP handler failed: {0}")]
     Handler(String),
-    #[error("ACP action failed: {0}")]
+    #[error("OCP action failed: {0}")]
     Action(String),
 }
 
@@ -497,7 +497,7 @@ fn action_id(result: &ActionResult) -> String {
     }
 }
 
-pub struct AcpAppBuilder {
+pub struct OcpAppBuilder {
     host: AgentHost,
     actions: BTreeMap<String, ActionDefinition>,
     channels: Vec<ChannelDefinition>,
@@ -505,7 +505,7 @@ pub struct AcpAppBuilder {
     max_concurrent_conversations: usize,
 }
 
-impl Default for AcpAppBuilder {
+impl Default for OcpAppBuilder {
     fn default() -> Self {
         Self {
             host: AgentHost::new(),
@@ -517,7 +517,7 @@ impl Default for AcpAppBuilder {
     }
 }
 
-impl AcpAppBuilder {
+impl OcpAppBuilder {
     pub fn new() -> Self {
         Self::default()
     }
@@ -553,8 +553,8 @@ impl AcpAppBuilder {
         self
     }
 
-    pub fn build(self) -> AcpApp {
-        AcpApp {
+    pub fn build(self) -> OcpApp {
+        OcpApp {
             host: self.host,
             actions: self.actions,
             channels: self.channels,
@@ -569,7 +569,7 @@ impl AcpAppBuilder {
     }
 }
 
-pub struct AcpApp {
+pub struct OcpApp {
     host: AgentHost,
     actions: BTreeMap<String, ActionDefinition>,
     channels: Vec<ChannelDefinition>,
@@ -582,7 +582,7 @@ pub struct AcpApp {
     audit_events: Vec<EventEnvelope>,
 }
 
-impl AcpApp {
+impl OcpApp {
     pub fn start(&mut self) -> Result<(), AgentError> {
         for channel in &mut self.channels {
             if let Some(source) = channel.source.as_mut() {
@@ -829,8 +829,8 @@ mod tests {
         }
     }
 
-    fn approval_app() -> AcpApp {
-        AcpAppBuilder::new()
+    fn approval_app() -> OcpApp {
+        OcpAppBuilder::new()
             .agent(AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
                 context.request_action("refund", serde_json::json!({ "amount": 10 }));
                 Ok(())

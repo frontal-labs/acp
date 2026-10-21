@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createOpenTelemetryHooks } from "../src/index.js";
 
-describe("@acp/ext-opentelemetry", () => {
-  it("creates hooks compatible with AcpApp", async () => {
+describe("@frontal-labs/open-channel-ext-opentelemetry", () => {
+  it("creates hooks compatible with OcpApp", async () => {
     const spans: string[] = [];
     const hooks = createOpenTelemetryHooks({
       tracer: { startActiveSpan: (name, callback) => callback({ end: () => spans.push(name) }) },
@@ -12,6 +12,6 @@ describe("@acp/ext-opentelemetry", () => {
       eventType: "message.received",
       protocolVersion: "0.1",
     } as never);
-    expect(spans).toEqual(["acp.event.accepted"]);
+    expect(spans).toEqual(["ocp.event.accepted"]);
   });
 });

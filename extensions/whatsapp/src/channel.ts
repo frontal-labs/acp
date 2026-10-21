@@ -1,10 +1,10 @@
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
 
 import { createWhatsAppSink } from "./sink.js";
 import { createWhatsAppSource } from "./source.js";
 import type { WhatsAppChannelOptions } from "./types.js";
 
-/** Creates the WhatsApp source/sink pair consumed by `createAcp()`. */
+/** Creates the WhatsApp source/sink pair consumed by `createOcp()`. */
 export function createWhatsAppChannel(options: WhatsAppChannelOptions): ChannelDefinition {
   return {
     provider: "whatsapp",

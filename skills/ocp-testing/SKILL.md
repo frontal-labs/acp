@@ -1,9 +1,9 @@
 ---
-name: acp-testing
-description: Add and maintain deterministic ACP Vitest coverage with shared fixtures, event selectors, clocks, state doubles, and workspace validation.
+name: ocp-testing
+description: Add and maintain deterministic OCP Vitest coverage with shared fixtures, event selectors, clocks, state doubles, and workspace validation.
 ---
 
-# ACP testing
+# OCP testing
 
 Use this skill when adding tests, creating test doubles, diagnosing a failing
 event flow, or validating changes across the pnpm/Turborepo workspace.
@@ -21,7 +21,7 @@ event flow, or validating changes across the pnpm/Turborepo workspace.
 
 ## Shared helpers
 
-Import from `@acp/testing` instead of recreating fixtures:
+Import from `@frontal-labs/open-channel-testing` instead of recreating fixtures:
 
 - `createTestHuman`, `createTestAgent`, `createTestActor` for stable identities;
 - `createTestChannel`, `createTestConversation`, and `createTestEvent` for
@@ -31,7 +31,7 @@ Import from `@acp/testing` instead of recreating fixtures:
   assertions;
 - `createTestRecorder`, `createTestEventStore`, and `createTestEventBus` for
   observable state doubles;
-- `ManualClock` from `@acp/runtime` for deadlines and timers;
+- `ManualClock` from `@frontal-labs/open-channel-runtime` for deadlines and timers;
 - `createDeferred`, `waitFor`, and buffered test I/O for coordination without
   real sleeps or terminal side effects.
 
@@ -42,8 +42,8 @@ the behavior requires them.
 
 ## Package dependency boundary
 
-`@acp/testing` is intended for downstream package and integration tests. Keep
-`@acp/core` and `@acp/protocol` as dependency roots to avoid a workspace
+`@frontal-labs/open-channel-testing` is intended for downstream package and integration tests. Keep
+`@frontal-labs/open-channel-core` and `@frontal-labs/open-channel-protocol` as dependency roots to avoid a workspace
 cycle. Their low-level behavior belongs in their own focused tests or the root
 integration suite.
 

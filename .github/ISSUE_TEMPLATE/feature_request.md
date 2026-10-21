@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an improvement to ACP
+about: Suggest an improvement to OCP
 title: "feat: "
 labels: enhancement
 ---
@@ -15,4 +15,4 @@ Describe the API, protocol, documentation, or tooling change you would like.
 
 ## Compatibility
 
-How should this preserve provider neutrality and ACP wire compatibility?
+How should this preserve provider neutrality and OCP wire compatibility?

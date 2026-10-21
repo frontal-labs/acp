@@ -4,13 +4,13 @@ import inspect
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from acp import ActorRef, AgentDefinition, AgentHost, EventEnvelope
+from open_channel import ActorRef, AgentDefinition, AgentHost, EventEnvelope
 
 TextAgent = Callable[[str], str | Awaitable[str]]
 
 
-async def run_acp_text_agent(name: str, handler: TextAgent) -> None:
-    """Run a text harness behind the ACP Python AgentHost."""
+async def run_ocp_text_agent(name: str, handler: TextAgent) -> None:
+    """Run a text harness behind the OCP Python AgentHost."""
 
     dispatched: list[EventEnvelope] = []
 
@@ -25,7 +25,7 @@ async def run_acp_text_agent(name: str, handler: TextAgent) -> None:
             AgentDefinition(
                 id=f"agent:{name}",
                 name=name,
-                description=f"ACP bridge for {name}",
+                description=f"OCP bridge for {name}",
                 on_message=on_message,
             )
         ],
@@ -34,12 +34,12 @@ async def run_acp_text_agent(name: str, handler: TextAgent) -> None:
     event = EventEnvelope.message_received(
         actor=ActorRef(id="human:example", type="ACTOR_TYPE_HUMAN", display_name="Example User"),
         recipient=ActorRef(id=f"agent:{name}", display_name=name),
-        text="Explain why ACP keeps policy outside the model prompt.",
+        text="Explain why OCP keeps policy outside the model prompt.",
     )
 
     handled = await host.handle(event)
     if not handled or not dispatched:
-        raise RuntimeError("The ACP bridge did not dispatch a message.sent reply")
+        raise RuntimeError("The OCP bridge did not dispatch a message.sent reply")
 
     print(
         {

@@ -1,4 +1,4 @@
-use acp_sdk::{
+use open_channel::{
     approval_requested, event_type_of, message_received, ActionInvocation, ActorRef, ActorType,
     AgentCard, AgentDefinition, AgentHost, EventEnvelope, ProtocolVersion,
 };
@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut event = message_received(
         ProtocolVersion::default(),
-        "Explain why ACP keeps policy outside the model prompt.",
+        "Explain why OCP keeps policy outside the model prompt.",
     );
     event.actor = Some(ActorRef {
         actor_type: ActorType::Human,

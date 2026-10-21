@@ -1,6 +1,6 @@
-# ACP extensions
+# OCP extensions
 
-Optional integrations for the ACP TypeScript SDK. Every channel extension keeps provider-specific
+Optional integrations for the OCP TypeScript SDK. Every channel extension keeps provider-specific
 payloads at the boundary and exposes the SDK-native `ChannelSource`, `ChannelSink`, or
 `ChannelDefinition` contracts. Normalized events use the stable v1 `EventEnvelope`; v2 remains an
 experimental protocol path and is not required by these packages.
@@ -9,34 +9,34 @@ experimental protocol path and is not required by these packages.
 
 | Package | Provider | Main exports |
 | --- | --- | --- |
-| `@acp/ext-slack` | Slack Events API/Web API | `createSlackChannel`, webhook verification |
-| `@acp/ext-microsoft-teams` | Microsoft Teams | `createTeamsChannel`, approval-card normalization |
-| `@acp/ext-google-chat` | Google Chat | `createGoogleChatChannel`, token verification |
-| `@acp/ext-email` | SMTP/IMAP-compatible hosts | `createEmailChannel`, polling lifecycle |
-| `@acp/ext-whatsapp` | WhatsApp Business Cloud | `createWhatsAppChannel`, HMAC/challenge verification |
-| `@acp/ext-a2a` | A2A-compatible transports | `createA2AChannel`, agent-card port |
+| `@frontal-labs/open-channel-ext-slack` | Slack Events API/Web API | `createSlackChannel`, webhook verification |
+| `@frontal-labs/open-channel-ext-microsoft-teams` | Microsoft Teams | `createTeamsChannel`, approval-card normalization |
+| `@frontal-labs/open-channel-ext-google-chat` | Google Chat | `createGoogleChatChannel`, token verification |
+| `@frontal-labs/open-channel-ext-email` | SMTP/IMAP-compatible hosts | `createEmailChannel`, polling lifecycle |
+| `@frontal-labs/open-channel-ext-whatsapp` | WhatsApp Business Cloud | `createWhatsAppChannel`, HMAC/challenge verification |
+| `@frontal-labs/open-channel-ext-a2a` | A2A-compatible transports | `createA2AChannel`, agent-card port |
 
 ## Runtime extensions
 
 | Package | Purpose |
 | --- | --- |
-| `@acp/ext-calendar` | Zod-validated, policy-controlled calendar actions |
-| `@acp/ext-mcp` | Zod-validated, policy-controlled MCP tool actions |
-| `@acp/ext-postgres` | Durable PostgreSQL `EventStore` and migration |
-| `@acp/ext-opentelemetry` | Provider-neutral SDK lifecycle hooks and spans/counters |
-| `@acp/ext-directory` | Cached directory lookup ports for Google/Microsoft hosts |
-| `@acp/ext-policy-opa` | OPA decision adapter for the synchronous policy contract |
-| `@acp/ext-policy-cedar` | Cedar evaluator adapter |
-| `@acp/ext-shared` | Boundary validation, event construction, signatures, and error classification |
+| `@frontal-labs/open-channel-ext-calendar` | Zod-validated, policy-controlled calendar actions |
+| `@frontal-labs/open-channel-ext-mcp` | Zod-validated, policy-controlled MCP tool actions |
+| `@frontal-labs/open-channel-ext-postgres` | Durable PostgreSQL `EventStore` and migration |
+| `@frontal-labs/open-channel-ext-opentelemetry` | Provider-neutral SDK lifecycle hooks and spans/counters |
+| `@frontal-labs/open-channel-ext-directory` | Cached directory lookup ports for Google/Microsoft hosts |
+| `@frontal-labs/open-channel-ext-policy-opa` | OPA decision adapter for the synchronous policy contract |
+| `@frontal-labs/open-channel-ext-policy-cedar` | Cedar evaluator adapter |
+| `@frontal-labs/open-channel-ext-shared` | Boundary validation, event construction, signatures, and error classification |
 
 ## Example
 
 ```ts
-import { createAcp } from "acp-sdk";
-import { createSlackChannel } from "@acp/ext-slack";
-import { RuleBasedPolicyEngine } from "@acp/policy";
+import { createOcp } from "@frontal-labs/open-channel";
+import { createSlackChannel } from "@frontal-labs/open-channel-ext-slack";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 
-const app = createAcp({
+const app = createOcp({
   channels: [
     createSlackChannel({
       transport: {

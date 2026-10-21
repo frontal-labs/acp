@@ -1,8 +1,8 @@
-import { createTestEvent } from "@acp/testing";
+import { createTestEvent } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { createPostgresEventStore } from "../src/index.js";
 
-describe("@acp/ext-postgres", () => {
+describe("@frontal-labs/open-channel-ext-postgres", () => {
   it("uses appendIfAbsent for runtime idempotency", async () => {
     let inserted = false;
     const store = createPostgresEventStore({

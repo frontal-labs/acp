@@ -1,5 +1,5 @@
-import type { ActorRef } from "@acp/protocol";
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ActorRef } from "@frontal-labs/open-channel-protocol";
 
 /** Outbound Google Chat message accepted by a Chat API transport. */
 export interface GoogleChatSendInput {
@@ -24,7 +24,7 @@ export interface GoogleChatSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete Google Chat channel configuration for `createAcp()`. */
+/** Complete Google Chat channel configuration for `createOcp()`. */
 export interface GoogleChatChannelOptions extends GoogleChatSourceOptions {
   transport: GoogleChatTransport;
 }
@@ -34,5 +34,5 @@ export interface GoogleChatWebhookRequest {
   headers: Record<string, string | undefined>;
 }
 
-/** ACP channel definition for Google Chat. */
+/** OCP channel definition for Google Chat. */
 export type GoogleChatChannel = ChannelDefinition;

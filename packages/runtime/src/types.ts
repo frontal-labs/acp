@@ -1,6 +1,11 @@
-import type { ChannelAdapter } from "@acp/adapter";
-import type { PolicyDecision, PolicyEngine } from "@acp/policy";
-import type { ActionRequest, ActorRef, ApprovalOutcome, EventEnvelope } from "@acp/protocol";
+import type { ChannelAdapter } from "@frontal-labs/open-channel-adapter";
+import type { PolicyDecision, PolicyEngine } from "@frontal-labs/open-channel-policy";
+import type {
+  ActionRequest,
+  ActorRef,
+  ApprovalOutcome,
+  EventEnvelope,
+} from "@frontal-labs/open-channel-protocol";
 
 /** Append-only event store contract used by the runtime. */
 export interface EventStore {
@@ -35,7 +40,7 @@ export interface Clock {
   schedule: (delayMs: number, callback: () => void | Promise<void>) => unknown;
 }
 
-/** Dependencies and defaults used to construct an ACP runtime. */
+/** Dependencies and defaults used to construct an OCP runtime. */
 export interface RuntimeOptions {
   clock?: Clock;
   defaultApprovalTimeoutMs?: number;

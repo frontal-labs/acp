@@ -1,21 +1,21 @@
 {
-  "name": "@acp/core",
+  "name": "@frontal-labs/open-channel-core",
   "version": "0.1.0",
-  "description": "Core identifiers, events, and transport-neutral primitives for Agent Communication Protocol implementations",
+  "description": "Core identifiers, events, and transport-neutral primitives for OpenChannel Protocol implementations",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "events",
     "event-bus",
     "identifiers"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "packages/core"
   },
   "license": "Apache-2.0",

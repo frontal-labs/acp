@@ -1,4 +1,4 @@
-//! ACP event envelopes for both wire protocol versions.
+//! OCP event envelopes for both wire protocol versions.
 //!
 //! - `0.1` stores the event name in `eventType` next to the payload.
 //! - `0.2` has no `eventType`; the payload oneof is the event kind.
@@ -62,11 +62,11 @@ impl fmt::Display for ProtocolVersion {
 
 #[derive(Debug, Error)]
 pub enum EventError {
-    #[error("invalid ACP event: {0}")]
+    #[error("invalid OCP event: {0}")]
     Invalid(String),
-    #[error("ACP event JSON error: {0}")]
+    #[error("OCP event JSON error: {0}")]
     Json(#[from] serde_json::Error),
-    #[error("ACP binary event cannot be decoded: {0}")]
+    #[error("OCP binary event cannot be decoded: {0}")]
     Decode(#[from] prost::DecodeError),
 }
 
@@ -238,7 +238,7 @@ fn require_text(value: &str, context: &str, key: &str) -> Result<(), EventError>
     }
 }
 
-/// An ACP envelope for either protocol version.
+/// An OCP envelope for either protocol version.
 ///
 /// The shape follows the version: `event_type` is `Some` for `0.1` and `None` for `0.2`.
 /// Use [`EventEnvelope::validate`] (also run by the JSON and binary codecs) to check it.
@@ -381,7 +381,7 @@ impl EventEnvelope {
         Ok(event)
     }
 
-    /// Encodes as binary protobuf (`acp.v1.api.EventEnvelope` for 0.1, `acp.v2.api.EventEnvelope`
+    /// Encodes as binary protobuf (`ocp.v1.api.EventEnvelope` for 0.1, `ocp.v2.api.EventEnvelope`
     /// for 0.2). Every payload kind has a protobuf encoding.
     pub fn to_binary(&self) -> Result<Vec<u8>, EventError> {
         self.validate()?;
@@ -818,7 +818,7 @@ mod tests {
     use prost::Message as _;
 
     use super::*;
-    use crate::generated::acp::{
+    use crate::generated::ocp::{
         v1::api::EventEnvelope as V1Envelope, v2::api::EventEnvelope as V2Envelope,
     };
     use crate::models::{ActorType, ArtifactRef};
@@ -904,7 +904,7 @@ mod tests {
             ),
             (action_executed(ProtocolVersion::V0_1, &action(), Value::Null), "action.executed"),
             (
-                action_failed(ProtocolVersion::V0_1, &action(), "ACP_ACTION", "boom", false),
+                action_failed(ProtocolVersion::V0_1, &action(), "OCP_ACTION", "boom", false),
                 "action.failed",
             ),
         ];
@@ -936,7 +936,7 @@ mod tests {
             ),
             (action_executed(ProtocolVersion::V0_2, &action(), Value::Null), "action.executed"),
             (
-                action_failed(ProtocolVersion::V0_2, &action(), "ACP_ACTION", "boom", true),
+                action_failed(ProtocolVersion::V0_2, &action(), "OCP_ACTION", "boom", true),
                 "action.failed",
             ),
         ];

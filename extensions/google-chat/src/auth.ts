@@ -1,4 +1,8 @@
-import { createKeyCache, publicKeysFromPem, verifyRs256Jwt } from "@acp/ext-shared";
+import {
+  createKeyCache,
+  publicKeysFromPem,
+  verifyRs256Jwt,
+} from "@frontal-labs/open-channel-ext-shared";
 
 import type { GoogleChatWebhookRequest } from "./types.js";
 

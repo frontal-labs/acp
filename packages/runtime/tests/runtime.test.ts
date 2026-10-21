@@ -1,5 +1,5 @@
-import { RuleBasedPolicyEngine } from "@acp/policy";
-import { ActorType, ApprovalOutcome } from "@acp/protocol";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { ActorType, ApprovalOutcome } from "@frontal-labs/open-channel-protocol";
 import {
   createTestAction,
   createTestAgent,
@@ -7,14 +7,14 @@ import {
   createTestEventStore,
   createTestHuman,
   eventTypes,
-} from "@acp/testing";
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
-import { AcpRuntime, ManualClock } from "../src/index.js";
+import { ManualClock, OcpRuntime } from "../src/index.js";
 
-describe("@acp/runtime", () => {
+describe("@frontal-labs/open-channel-runtime", () => {
   it("expires approval requests and emits escalation", async () => {
     const clock = new ManualClock(new Date("2026-10-19T14:00:00.000Z"));
-    const runtime = new AcpRuntime({
+    const runtime = new OcpRuntime({
       clock,
       defaultApprovalTimeoutMs: 1000,
       eventStore: createTestEventStore(),
@@ -43,7 +43,7 @@ describe("@acp/runtime", () => {
   });
 
   it("deduplicates events and resolves an approval", async () => {
-    const runtime = new AcpRuntime({
+    const runtime = new OcpRuntime({
       eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [{ actionType: "send_reply", allowed: true, id: "review", requiresApproval: true }],

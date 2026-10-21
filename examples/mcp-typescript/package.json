@@ -1,8 +1,8 @@
 {
-  "name": "@acp/example-mcp-typescript",
+  "name": "@frontal-labs/open-channel-example-mcp-typescript",
   "version": "0.1.0",
   "private": true,
-  "description": "MCP tool result bridged into an ACP response",
+  "description": "MCP tool result bridged into an OCP response",
   "type": "module",
   "scripts": {
     "start": "tsx main.ts"

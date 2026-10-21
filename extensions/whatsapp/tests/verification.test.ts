@@ -1,8 +1,8 @@
-import { ValidationError } from "@acp/core";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 import { describe, expect, it } from "vitest";
 import { verifyWhatsAppChallenge } from "../src/index.js";
 
-describe("@acp/ext-whatsapp challenge verification", () => {
+describe("@frontal-labs/open-channel-ext-whatsapp challenge verification", () => {
   it("returns the challenge when mode and verify token match", () => {
     expect(verifyWhatsAppChallenge("subscribe", "verify-me", "123", "verify-me")).toBe("123");
   });

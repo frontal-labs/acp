@@ -1,6 +1,4 @@
 from .app import (
-    AcpApp,
-    AcpHooks,
     ActionDefinition,
     ActionExecutionContext,
     ActionResult,
@@ -10,14 +8,16 @@ from .app import (
     DeliveryReceipt,
     DurableStore,
     IngestResult,
+    OcpApp,
+    OcpHooks,
     PolicyDecision,
 )
-from .errors import AcpError, ActionError, DeliveryError
+from .errors import ActionError, DeliveryError, OcpError
 from .host import AgentActions, AgentContext, AgentDefinition, AgentHooks, AgentHost
 from .models import (
-    ACP_PROTOCOL_VERSION,
-    ACP_PROTOCOL_VERSIONS,
-    ACP_V2_PROTOCOL_VERSION,
+    OCP_PROTOCOL_VERSION,
+    OCP_PROTOCOL_VERSIONS,
+    OCP_V2_PROTOCOL_VERSION,
     ActorRef,
     AgentCapabilities,
     AgentCard,
@@ -39,18 +39,18 @@ from .models import (
 )
 
 __all__ = [
-    "ACP_PROTOCOL_VERSION",
-    "ACP_PROTOCOL_VERSIONS",
-    "ACP_V2_PROTOCOL_VERSION",
+    "OCP_PROTOCOL_VERSION",
+    "OCP_PROTOCOL_VERSIONS",
+    "OCP_V2_PROTOCOL_VERSION",
     "AgentCapabilities",
     "AgentCard",
     "AgentContext",
     "AgentDefinition",
     "AgentHooks",
     "AgentHost",
-    "AcpApp",
-    "AcpError",
-    "AcpHooks",
+    "OcpApp",
+    "OcpError",
+    "OcpHooks",
     "ActionDefinition",
     "ActionError",
     "ActionExecutionContext",

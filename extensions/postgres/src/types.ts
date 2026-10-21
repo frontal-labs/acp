@@ -23,7 +23,7 @@ export interface PostgresEventStoreOptions {
   tableName?: string;
 }
 
-/** Database row shape for persisted ACP events. */
+/** Database row shape for persisted OCP events. */
 export interface PostgresEventRow {
   causation_id: string;
   correlation_id: string;

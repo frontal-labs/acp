@@ -1,22 +1,22 @@
 {
-  "name": "@acp/runtime",
+  "name": "@frontal-labs/open-channel-runtime",
   "version": "0.1.0",
-  "description": "Agent Communication Protocol runtime orchestration for requests, approvals, escalation, and audit events",
+  "description": "OpenChannel Protocol runtime orchestration for requests, approvals, escalation, and audit events",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "runtime",
     "approvals",
     "escalation",
     "audit"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "packages/runtime"
   },
   "license": "Apache-2.0",
@@ -44,14 +44,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/core": "workspace:*",
-    "@acp/policy": "workspace:*",
-    "@acp/protocol": "workspace:*",
-    "@bufbuild/protobuf": "^2.2.5"
+    "@bufbuild/protobuf": "^2.2.5",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-policy": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

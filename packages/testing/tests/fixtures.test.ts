@@ -1,4 +1,4 @@
-import { ActorType } from "@acp/protocol";
+import { ActorType } from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,7 +9,7 @@ import {
   createTestMessage,
 } from "../src/index.js";
 
-describe("@acp/testing fixtures", () => {
+describe("@frontal-labs/open-channel-testing fixtures", () => {
   it("creates reusable actors and message payloads", () => {
     expect(createTestHuman().type).toBe(ActorType.HUMAN);
     expect(createTestAgent().id).toBe("agent:test");

@@ -1,9 +1,9 @@
 import { createHmac } from "node:crypto";
-import { createTestMessageReceived } from "@acp/testing";
+import { createTestMessageReceived } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { providerActor, providerEvent, verifyHmacSignature } from "../src/index.js";
 
-describe("@acp/ext-shared", () => {
+describe("@frontal-labs/open-channel-ext-shared", () => {
   it("creates a valid provider event with deterministic metadata", () => {
     const actor = providerActor("slack:user", "Slack User");
     const event = providerEvent(
@@ -12,7 +12,7 @@ describe("@acp/ext-shared", () => {
         channelId: "C123",
         conversationId: "slack:C123",
         eventType: "message.received",
-        extensions: { "acp.provider": "slack" },
+        extensions: { "ocp.provider": "slack" },
         payload: { case: "messageReceived", value: createTestMessageReceived("hello") },
       },
       { eventId: "provider-event", idempotencyKey: "provider-event" },

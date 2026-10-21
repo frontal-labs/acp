@@ -1,5 +1,7 @@
-import { AuthorizationError, ConflictError, NotFoundError } from "@acp/core";
-import type { PolicyContext } from "@acp/policy";
+import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import { AuthorizationError, ConflictError, NotFoundError } from "@frontal-labs/open-channel-core";
+import type { PolicyContext } from "@frontal-labs/open-channel-policy";
 import {
   ActionRequestSchema,
   type ActorRef,
@@ -12,9 +14,7 @@ import {
   type EventEnvelope,
   type EventName,
   PolicyEvaluatedSchema,
-} from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+} from "@frontal-labs/open-channel-protocol";
 
 import { SYSTEM_ACTOR } from "./actors.js";
 import { SystemClock } from "./clock.js";
@@ -39,8 +39,8 @@ const APPROVAL_LIFECYCLE_EVENTS: ReadonlySet<string> = new Set([
   "approval.expired",
 ]);
 
-/** Processes ACP events and manages policy-controlled approvals. */
-export class AcpRuntime {
+/** Processes OCP events and manages policy-controlled approvals. */
+export class OcpRuntime {
   readonly eventStore: EventStore;
   readonly clock: Clock;
   private readonly policy: RuntimeOptions["policy"];
@@ -149,7 +149,7 @@ export class AcpRuntime {
   async process(event: EventEnvelope): Promise<RuntimeResult> {
     if (APPROVAL_LIFECYCLE_EVENTS.has(event.eventType)) {
       throw new AuthorizationError(
-        `ACP ${event.eventType} events are produced by the runtime; use submitAction() or decideApproval()`,
+        `OCP ${event.eventType} events are produced by the runtime; use submitAction() or decideApproval()`,
         { stage: "approval" },
       );
     }
@@ -291,16 +291,16 @@ export class AcpRuntime {
   async decideApproval(input: DecideApprovalInput): Promise<RuntimeResult> {
     const pending = this.pendingApprovals[input.approvalId];
     if (!pending) {
-      throw new NotFoundError("ACP approval", input.approvalId);
+      throw new NotFoundError("OCP approval", input.approvalId);
     }
     if (pending.status !== "pending") {
-      throw new ConflictError("ACP approval", input.approvalId, {
+      throw new ConflictError("OCP approval", input.approvalId, {
         details: { status: pending.status },
       });
     }
     if (pending.approver && pending.approver.id !== input.approver.id) {
       throw new AuthorizationError(
-        `ACP approval ${input.approvalId} can only be decided by ${pending.approver.id}`,
+        `OCP approval ${input.approvalId} can only be decided by ${pending.approver.id}`,
         { approvalId: input.approvalId, stage: "approval" },
       );
     }

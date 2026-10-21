@@ -1,21 +1,21 @@
 {
-  "name": "@acp/ext-whatsapp",
+  "name": "@frontal-labs/open-channel-ext-whatsapp",
   "version": "0.1.0",
-  "description": "WhatsApp Business Cloud source and sink integration for the Agent Communication Protocol",
+  "description": "WhatsApp Business Cloud source and sink integration for the OpenChannel Protocol",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "whatsapp",
     "agents",
     "messaging"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "extensions/whatsapp"
   },
   "license": "Apache-2.0",
@@ -43,15 +43,15 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/core": "workspace:*",
-    "@acp/ext-shared": "workspace:*",
-    "@acp/protocol": "workspace:*",
     "@bufbuild/protobuf": "^2.2.5",
-    "acp-sdk": "workspace:*"
+    "@frontal-labs/open-channel": "workspace:*",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-ext-shared": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

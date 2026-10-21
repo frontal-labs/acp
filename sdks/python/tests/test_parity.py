@@ -4,7 +4,7 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
-from acp import (
+from open_channel import (
     ActorRef,
     EventEnvelope,
     action_executed,

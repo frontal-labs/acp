@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
-import { ValidationError } from "@acp/core";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 
 /** Verifies a provider HMAC signature using a constant-time comparison. */
 export function verifyHmacSignature(

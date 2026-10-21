@@ -1,23 +1,23 @@
-# acp-cli
+# open-channel-cli
 
-The `acp` command-line tool for inspecting and validating ACP events.
+The `ocp` command-line tool for inspecting and validating OCP events.
 
 Install the published npm package with:
 
 ```bash
-pnpm add --global acp-cli
+pnpm add --global open-channel-cli
 ```
 
 ## Commands
 
 ```bash
-acp help
-acp version
-acp validate event.json
-cat event.json | acp validate
+ocp help
+ocp version
+ocp validate event.json
+cat event.json | ocp validate
 ```
 
-`validate` accepts ACP ProtoJSON and validates both the protobuf envelope and ACP event/payload invariants.
+`validate` accepts OCP ProtoJSON and validates both the protobuf envelope and OCP event/payload invariants.
 
 The command exits with status `0` for a valid event and status `1` for invalid
 JSON, an invalid envelope, or an event/payload mismatch.
@@ -26,5 +26,5 @@ JSON, an invalid envelope, or an event/payload mismatch.
 
 ```bash
 pnpm cli -- version
-pnpm --filter acp-cli build
+pnpm --filter @frontal-labs/open-channel-cli build
 ```

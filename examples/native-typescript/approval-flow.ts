@@ -1,13 +1,18 @@
-import { RuleBasedPolicyEngine } from "@acp/policy";
-import { ActionRequestSchema, ActorRefSchema, ActorType, ApprovalOutcome } from "@acp/protocol";
-import { AcpRuntime } from "@acp/runtime";
 import { create } from "@bufbuild/protobuf";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import {
+  ActionRequestSchema,
+  ActorRefSchema,
+  ActorType,
+  ApprovalOutcome,
+} from "@frontal-labs/open-channel-protocol";
+import { OcpRuntime } from "@frontal-labs/open-channel-runtime";
 
 import { createExampleEventStore } from "../_shared/typescript/example-kit.js";
 
 const agent = create(ActorRefSchema, { id: "agent:operator", type: ActorType.AGENT });
 const approver = create(ActorRefSchema, { id: "human:approver", type: ActorType.HUMAN });
-const runtime = new AcpRuntime({
+const runtime = new OcpRuntime({
   eventStore: createExampleEventStore(),
   policy: new RuleBasedPolicyEngine({
     rules: [

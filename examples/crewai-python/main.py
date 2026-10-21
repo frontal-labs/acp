@@ -1,16 +1,16 @@
 import asyncio
 
-from acp_demo import run_acp_text_agent
 from crewai import Agent, Crew, Task
+from ocp_demo import run_ocp_text_agent
 
 worker = Agent(
-    role="ACP response agent",
-    goal="Answer one incoming ACP message clearly and safely",
+    role="OCP response agent",
+    goal="Answer one incoming OCP message clearly and safely",
     backstory="You work behind a provider-neutral protocol boundary.",
     verbose=False,
 )
 task = Task(
-    description="Answer the incoming ACP message: {message}",
+    description="Answer the incoming OCP message: {message}",
     expected_output="A concise text answer.",
     agent=worker,
 )
@@ -22,7 +22,7 @@ async def main() -> None:
         result = await crew.akickoff(inputs={"message": text})
         return str(getattr(result, "raw", result))
 
-    await run_acp_text_agent("CrewAI Agent", handle)
+    await run_ocp_text_agent("CrewAI Agent", handle)
 
 
 if __name__ == "__main__":

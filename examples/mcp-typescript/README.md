@@ -1,7 +1,7 @@
-# MCP TypeScript + ACP
+# MCP TypeScript + OCP
 
 This example connects to a local MCP server, calls one tool, and maps text
-content into an ACP `message.sent` event. It makes the tool boundary visible;
+content into an OCP `message.sent` event. It makes the tool boundary visible;
 the MCP response is not authorization to perform a state-changing operation.
 
 ## Install and run
@@ -22,6 +22,6 @@ npm start --prefix examples/mcp-typescript
 
 ## Safety boundary
 
-Before `client.callTool`, production code should submit a typed ACP action to
+Before `client.callTool`, production code should submit a typed OCP action to
 the runtime policy engine when the tool changes state. If approval is required,
 pause the harness and resume only after an explicit `approval.granted` event.

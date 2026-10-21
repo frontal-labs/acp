@@ -1,19 +1,19 @@
-import { RuleBasedPolicyEngine } from "@acp/policy";
-import { AcpRuntime, ChannelGateway } from "@acp/runtime";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { ChannelGateway, OcpRuntime } from "@frontal-labs/open-channel-runtime";
 import {
   createTestAgent,
   createTestChannel,
   createTestChannelAdapter,
   createTestEvent,
   createTestEventStore,
-} from "@acp/testing";
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
-describe("ACP channel gateway", () => {
+describe("OCP channel gateway", () => {
   it("dispatches an outbound event to the adapter for its provider", async () => {
     const adapter = createTestChannelAdapter();
     const gateway = new ChannelGateway(
-      new AcpRuntime({
+      new OcpRuntime({
         eventStore: createTestEventStore(),
         policy: new RuleBasedPolicyEngine({ rules: [] }),
       }),
@@ -23,7 +23,7 @@ describe("ACP channel gateway", () => {
       actor: createTestAgent("agent:support", "Support Agent"),
       channel: createTestChannel("channel-1"),
       eventType: "message.sent",
-      text: "Hello from ACP",
+      text: "Hello from OCP",
     });
 
     await gateway.dispatch(event);
@@ -34,7 +34,7 @@ describe("ACP channel gateway", () => {
 
   it("fails clearly when no provider adapter is registered", async () => {
     const gateway = new ChannelGateway(
-      new AcpRuntime({
+      new OcpRuntime({
         eventStore: createTestEventStore(),
         policy: new RuleBasedPolicyEngine({ rules: [] }),
       }),
@@ -46,7 +46,7 @@ describe("ACP channel gateway", () => {
     });
 
     await expect(gateway.dispatch(event)).rejects.toThrow(
-      "No ACP adapter registered for provider: missing",
+      "No OCP adapter registered for provider: missing",
     );
   });
 });

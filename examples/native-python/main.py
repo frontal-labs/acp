@@ -1,10 +1,10 @@
 import asyncio
 
-from acp_demo import run_acp_text_agent
+from ocp_demo import run_ocp_text_agent
 
 
 async def main() -> None:
-    await run_acp_text_agent(
+    await run_ocp_text_agent(
         "Native Python Agent",
         lambda text: f"Deterministic response to: {text}",
     )

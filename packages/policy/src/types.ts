@@ -1,4 +1,4 @@
-import type { ActorRef, ActorType } from "@acp/protocol";
+import type { ActorRef, ActorType } from "@frontal-labs/open-channel-protocol";
 
 /** Inputs used by a policy engine to authorize an action. */
 export interface PolicyContext {

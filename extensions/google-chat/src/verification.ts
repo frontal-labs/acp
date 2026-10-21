@@ -1,4 +1,4 @@
-import { ValidationError } from "@acp/core";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 
 import type { GoogleChatWebhookRequest } from "./types.js";
 

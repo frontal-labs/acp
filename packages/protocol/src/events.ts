@@ -1,26 +1,26 @@
 import { randomUUID } from "node:crypto";
-import { ValidationError } from "@acp/core";
 import { create } from "@bufbuild/protobuf";
 import { timestampNow } from "@bufbuild/protobuf/wkt";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 import {
   type EventEnvelope as GeneratedV2EventEnvelope,
   EventEnvelopeSchema as V2EventEnvelopeSchema,
 } from "../../../proto/gen/typescript/v2/api/events_pb.js";
 
 import {
-  ACP_PROTOCOL_VERSION,
-  ACP_V2_PROTOCOL_VERSION,
   type EVENT_TYPES,
+  OCP_PROTOCOL_VERSION,
+  OCP_V2_PROTOCOL_VERSION,
   type ProtocolVersion,
 } from "./constants.js";
 import { ApprovalOutcome, type EventEnvelope, EventEnvelopeSchema } from "./generated.js";
 import { EventInputSchema } from "./schemas.js";
 
 export {
-  ACP_PROTOCOL_VERSION,
-  ACP_PROTOCOL_VERSIONS,
-  ACP_V2_PROTOCOL_VERSION,
   EVENT_TYPES,
+  OCP_PROTOCOL_VERSION,
+  OCP_PROTOCOL_VERSIONS,
+  OCP_V2_PROTOCOL_VERSION,
   type ProtocolVersion,
 } from "./constants.js";
 
@@ -30,8 +30,8 @@ export type EventName = (typeof EVENT_TYPES)[number];
 export type EventPayload = Exclude<EventEnvelope["payload"], { case: undefined }>;
 /** Envelope for the v0.2 payload-discriminated wire format. */
 export type V2EventEnvelope = GeneratedV2EventEnvelope;
-/** Any ACP envelope, regardless of protocol version. */
-export type AcpEvent = EventEnvelope | V2EventEnvelope;
+/** Any OCP envelope, regardless of protocol version. */
+export type OcpEvent = EventEnvelope | V2EventEnvelope;
 /** The envelope type produced for a given protocol version. */
 export type EnvelopeFor<V extends ProtocolVersion> = V extends "0.2"
   ? V2EventEnvelope
@@ -75,7 +75,7 @@ const EVENT_TYPE_BY_PAYLOAD_CASE: Record<PayloadCase, EventName> = {
 };
 
 /**
- * Input used to construct and validate an ACP event envelope for any protocol version.
+ * Input used to construct and validate an OCP event envelope for any protocol version.
  * `eventType` is required in both versions: v0.1 stores it, v0.2 uses it to select and check the payload.
  */
 export interface EventInput<V extends ProtocolVersion = ProtocolVersion> {
@@ -96,12 +96,12 @@ export interface EventInput<V extends ProtocolVersion = ProtocolVersion> {
 }
 
 /** Returns true when the envelope uses the v0.2 layout, where the payload oneof is the event kind. */
-export function isV2Event(event: AcpEvent): event is V2EventEnvelope {
+export function isV2Event(event: OcpEvent): event is V2EventEnvelope {
   return !("eventType" in event);
 }
 
 /** Returns true when the envelope uses the v0.1 layout, which stores the event name. */
-export function isV1Event(event: AcpEvent): event is EventEnvelope {
+export function isV1Event(event: OcpEvent): event is EventEnvelope {
   return !isV2Event(event);
 }
 
@@ -118,10 +118,10 @@ function payloadEventType(payload: EventPayload): EventName {
   return EVENT_TYPE_BY_PAYLOAD_CASE[payload.case as PayloadCase];
 }
 
-/** Returns the dot-separated event name for any ACP envelope, derived from its payload. */
-export function eventTypeOf(event: AcpEvent): EventName {
+/** Returns the dot-separated event name for any OCP envelope, derived from its payload. */
+export function eventTypeOf(event: OcpEvent): EventName {
   if (!event.payload.case) {
-    throw new ValidationError("ACP event must have a payload");
+    throw new ValidationError("OCP event must have a payload");
   }
   return payloadEventType(event.payload);
 }
@@ -131,30 +131,30 @@ function assertAssertedEventType(eventType: EventName, payload: EventPayload): v
   const expectedCase = PAYLOAD_CASE_BY_EVENT_TYPE[eventType];
   if (payload.case !== expectedCase) {
     throw new ValidationError(
-      `ACP event ${eventType} requires payload case ${expectedCase}, received ${payload.case ?? "none"}`,
+      `OCP event ${eventType} requires payload case ${expectedCase}, received ${payload.case ?? "none"}`,
     );
   }
   const derived = payloadEventType(payload);
   if (derived !== eventType) {
-    throw new ValidationError(`ACP event ${eventType} does not match payload event ${derived}`);
+    throw new ValidationError(`OCP event ${eventType} does not match payload event ${derived}`);
   }
 }
 
 /** Creates a validated envelope for the requested protocol version (default v0.1). */
-export function createEvent<V extends ProtocolVersion = typeof ACP_PROTOCOL_VERSION>(
+export function createEvent<V extends ProtocolVersion = typeof OCP_PROTOCOL_VERSION>(
   input: EventInput<V>,
 ): EnvelopeFor<V> {
   let validatedInput: EventInput<V>;
   try {
     validatedInput = EventInputSchema.parse(input) as unknown as EventInput<V>;
   } catch (error) {
-    throw new ValidationError("Invalid ACP event input", {
+    throw new ValidationError("Invalid OCP event input", {
       cause: error,
       details: { issues: error instanceof Error ? error.message : String(error) },
     });
   }
 
-  const protocolVersion = validatedInput.protocolVersion ?? ACP_PROTOCOL_VERSION;
+  const protocolVersion = validatedInput.protocolVersion ?? OCP_PROTOCOL_VERSION;
   const shared = {
     actor: validatedInput.actor,
     causationId: validatedInput.causationId ?? "",
@@ -170,11 +170,11 @@ export function createEvent<V extends ProtocolVersion = typeof ACP_PROTOCOL_VERS
     recipient: validatedInput.recipient,
     source: validatedInput.source,
   };
-  if (protocolVersion === ACP_V2_PROTOCOL_VERSION) {
+  if (protocolVersion === OCP_V2_PROTOCOL_VERSION) {
     assertAssertedEventType(validatedInput.eventType, validatedInput.payload);
   }
-  const event: AcpEvent =
-    protocolVersion === ACP_V2_PROTOCOL_VERSION
+  const event: OcpEvent =
+    protocolVersion === OCP_V2_PROTOCOL_VERSION
       ? create(V2EventEnvelopeSchema, shared)
       : create(EventEnvelopeSchema, { ...shared, eventType: validatedInput.eventType });
 
@@ -184,38 +184,38 @@ export function createEvent<V extends ProtocolVersion = typeof ACP_PROTOCOL_VERS
 
 /** Validates identity, protocol version, payload mapping, and approval/policy invariants for any version. */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Validation keeps envelope invariants at one protocol boundary.
-export function validateEvent(event: AcpEvent): void {
+export function validateEvent(event: OcpEvent): void {
   if (!event.eventId.trim()) {
-    throw new ValidationError("ACP event must have an event_id");
+    throw new ValidationError("OCP event must have an event_id");
   }
   if (!event.protocolVersion.trim()) {
-    throw new ValidationError("ACP event must have a protocol_version");
+    throw new ValidationError("OCP event must have a protocol_version");
   }
   const v2 = isV2Event(event);
-  const expectedVersion = v2 ? ACP_V2_PROTOCOL_VERSION : ACP_PROTOCOL_VERSION;
+  const expectedVersion = v2 ? OCP_V2_PROTOCOL_VERSION : OCP_PROTOCOL_VERSION;
   if (event.protocolVersion !== expectedVersion) {
     throw new ValidationError(
-      `ACP ${v2 ? "v0.2" : "v0.1"} envelope requires protocol_version ${expectedVersion}, received ${event.protocolVersion}`,
+      `OCP ${v2 ? "v0.2" : "v0.1"} envelope requires protocol_version ${expectedVersion}, received ${event.protocolVersion}`,
     );
   }
   if (!event.occurredAt) {
-    throw new ValidationError("ACP event must have occurred_at");
+    throw new ValidationError("OCP event must have occurred_at");
   }
   if (!event.payload.case) {
-    throw new ValidationError("ACP event must have a payload");
+    throw new ValidationError("OCP event must have a payload");
   }
   if (!(v2 || event.eventType.trim())) {
-    throw new ValidationError("ACP event must have an event_type");
+    throw new ValidationError("OCP event must have an event_type");
   }
 
   const name = v2 ? payloadEventType(event.payload) : event.eventType;
   if (!(name in PAYLOAD_CASE_BY_EVENT_TYPE)) {
-    throw new ValidationError(`Unsupported ACP event type: ${name}`);
+    throw new ValidationError(`Unsupported OCP event type: ${name}`);
   }
   const expectedPayloadCase = PAYLOAD_CASE_BY_EVENT_TYPE[name as EventName];
   if (event.payload.case !== expectedPayloadCase) {
     throw new ValidationError(
-      `ACP event ${name} requires payload case ${expectedPayloadCase}, received ${event.payload.case}`,
+      `OCP event ${name} requires payload case ${expectedPayloadCase}, received ${event.payload.case}`,
     );
   }
 

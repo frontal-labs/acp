@@ -1,5 +1,5 @@
-import type { ActorRef } from "@acp/protocol";
-import type { AgentCard, ChannelDefinition } from "acp-sdk";
+import type { AgentCard, ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ActorRef } from "@frontal-labs/open-channel-protocol";
 
 /** Outbound A2A message; `taskId` and `contextId` correlate follow-up turns. */
 export interface A2ASendInput {
@@ -22,7 +22,7 @@ export interface A2ASourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete A2A channel configuration for `createAcp()`. */
+/** Complete A2A channel configuration for `createOcp()`. */
 export interface A2AChannelOptions extends A2ASourceOptions {
   transport: A2ATransport;
 }
@@ -32,5 +32,5 @@ export interface AgentCardRegistry {
   listAgentCards: () => AgentCard[];
 }
 
-/** ACP channel definition for A2A. */
+/** OCP channel definition for A2A. */
 export type A2AChannel = ChannelDefinition;

@@ -1,4 +1,5 @@
-import type { ChannelSource } from "@acp/adapter";
+import { create } from "@bufbuild/protobuf";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
 import {
   createProviderSource,
   optionalRecord,
@@ -6,16 +7,15 @@ import {
   providerActor,
   providerEvent,
   sourceRecord,
-} from "@acp/ext-shared";
-import { MessageReceivedSchema } from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-ext-shared";
+import { MessageReceivedSchema } from "@frontal-labs/open-channel-protocol";
 
 import type { SlackSourceOptions } from "./types.js";
 
-/** Normalizes Slack Events API message payloads into v1 ACP events. */
+/** Normalizes Slack Events API message payloads into v1 OCP events. */
 export async function normalizeSlackEvent(
   input: unknown,
-  metadata: import("@acp/ext-shared").ProviderReceiveMetadata = {},
+  metadata: import("@frontal-labs/open-channel-ext-shared").ProviderReceiveMetadata = {},
   options: SlackSourceOptions = {},
 ) {
   const envelope = sourceRecord(input, "Slack");
@@ -53,7 +53,7 @@ export async function normalizeSlackEvent(
       conversationParticipants: [actor],
       eventType: "message.received",
       extensions: {
-        "acp.provider": "slack",
+        "ocp.provider": "slack",
         ...(optionalString(event, "ts")
           ? { "slack.message_ts": optionalString(event, "ts") as string }
           : {}),
@@ -69,7 +69,7 @@ export async function normalizeSlackEvent(
   );
 }
 
-/** Creates a Slack `ChannelSource` for `createAcp({ channels })`. */
+/** Creates a Slack `ChannelSource` for `createOcp({ channels })`. */
 export function createSlackSource(options: SlackSourceOptions = {}): ChannelSource {
   return createProviderSource("slack", (input, metadata) =>
     normalizeSlackEvent(input, metadata, options),

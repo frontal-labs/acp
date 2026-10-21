@@ -2,14 +2,14 @@ import asyncio
 import os
 from typing import Any
 
-from acp_demo import run_acp_text_agent
 from langchain.agents import create_agent
 from langchain_openai import ChatOpenAI
+from ocp_demo import run_ocp_text_agent
 
 model = ChatOpenAI(model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"))
 agent = create_agent(
     model=model,
-    system_prompt="You are a concise assistant operating behind an ACP message boundary.",
+    system_prompt="You are a concise assistant operating behind an OCP message boundary.",
 )
 
 
@@ -28,7 +28,7 @@ async def main() -> None:
         result = await agent.ainvoke({"messages": [{"role": "user", "content": text}]})
         return response_text(result)
 
-    await run_acp_text_agent("LangChain Python Agent", handle)
+    await run_ocp_text_agent("LangChain Python Agent", handle)
 
 
 if __name__ == "__main__":

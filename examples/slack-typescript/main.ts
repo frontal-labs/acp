@@ -1,11 +1,15 @@
 import { createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
-import { createSlackChannel, type SlackTransport, verifySlackWebhook } from "@acp/ext-slack";
-import { RuleBasedPolicyEngine } from "@acp/policy";
-import { ActorRefSchema, ActorType } from "@acp/protocol";
 import { create } from "@bufbuild/protobuf";
-import { createAcp } from "acp-sdk";
+import { createOcp } from "@frontal-labs/open-channel";
+import {
+  createSlackChannel,
+  type SlackTransport,
+  verifySlackWebhook,
+} from "@frontal-labs/open-channel-ext-slack";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { ActorRefSchema, ActorType } from "@frontal-labs/open-channel-protocol";
 
 import { createExampleEventStore } from "../_shared/typescript/example-kit.js";
 
@@ -33,10 +37,10 @@ export function createSlackWebApiTransport(token: string, apiBase: string): Slac
   };
 }
 
-/** The ACP app: a Slack channel, one helper agent, and a policy that starts with no actions. */
+/** The OCP app: a Slack channel, one helper agent, and a policy that starts with no actions. */
 export function createSlackApp(options: { botUserId?: string; transport: SlackTransport }) {
   const helper = create(ActorRefSchema, { id: "agent:slack-helper", type: ActorType.AGENT });
-  return createAcp({
+  return createOcp({
     agents: [
       {
         description: "Replies to Slack messages sent to the workspace",
@@ -55,7 +59,7 @@ export function createSlackApp(options: { botUserId?: string; transport: SlackTr
         transport: options.transport,
       }),
     ],
-    // Example only. Production deployments use a durable store such as @acp/ext-postgres.
+    // Example only. Production deployments use a durable store such as @frontal-labs/open-channel-ext-postgres.
     eventStore: createExampleEventStore(),
     policy: new RuleBasedPolicyEngine({ rules: [] }),
   });
@@ -93,7 +97,7 @@ function respond(response: ServerResponse, status: number, body?: unknown): void
   response.end(body === undefined ? "" : JSON.stringify(body));
 }
 
-/** Serves Slack Events API requests: verify the signature, acknowledge, then hand off to ACP. */
+/** Serves Slack Events API requests: verify the signature, acknowledge, then hand off to OCP. */
 export function createWebhookServer(options: {
   app: ReturnType<typeof createSlackApp>;
   signingSecret: string;
@@ -145,7 +149,7 @@ export function createWebhookServer(options: {
     // Slack retries unacknowledged deliveries, so acknowledge first and process after.
     respond(response, 200);
     options.app.receive("slack", payload, { eventId: payload.event_id }).catch((error: unknown) => {
-      console.error("ACP could not process the Slack event:", error);
+      console.error("OCP could not process the Slack event:", error);
     });
   });
 }
@@ -276,7 +280,7 @@ async function serve(): Promise<void> {
   const host = process.env.HOST ?? "127.0.0.1";
   const server = createWebhookServer({ app, signingSecret: secret });
   server.listen(port, host, () => {
-    console.log(`ACP Slack agent listening on http://${host}:${port} (POST /slack/events)`);
+    console.log(`OCP Slack agent listening on http://${host}:${port} (POST /slack/events)`);
   });
 
   // Stop accepting webhooks, then let in-flight conversations finish before the process exits.

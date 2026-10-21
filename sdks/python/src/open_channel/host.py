@@ -6,7 +6,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from typing import Protocol, TypedDict
 
-from .errors import AcpError, ActionError
+from .errors import ActionError, OcpError
 from .models import (
     ActorRef,
     AgentCapabilities,
@@ -100,9 +100,9 @@ class AgentActions:
 
 @dataclass(slots=True)
 class AgentHooks:
-    on_error: Callable[[AcpError], object] | None = None
+    on_error: Callable[[OcpError], object] | None = None
 
-    async def report(self, error: AcpError) -> None:
+    async def report(self, error: OcpError) -> None:
         if self.on_error is not None:
             await _maybe_await(self.on_error(error))
 
@@ -155,7 +155,7 @@ class AgentContext:
         """Ask the app to run an action for the current event (policy and approval apply)."""
 
         if self._action_handler is None:
-            raise ActionError("ACP action handling is not configured for this host")
+            raise ActionError("OCP action handling is not configured for this host")
         return await _maybe_await(self._action_handler(action, self.event))
 
 
@@ -166,7 +166,7 @@ class AgentHost:
         agents: list[AgentDefinition] | None = None,
         dispatch: Dispatch | None = None,
         action_handler: ActionHandler | None = None,
-        on_error: Callable[[AcpError], object] | None = None,
+        on_error: Callable[[OcpError], object] | None = None,
         max_concurrent_conversations: int | None = None,
     ) -> None:
         self._agents: dict[str, AgentDefinition] = {}
@@ -180,7 +180,7 @@ class AgentHost:
 
     def register(self, agent: AgentDefinition) -> AgentHost:
         if agent.id in self._agents:
-            raise ValueError(f"ACP agent is already registered: {agent.id}")
+            raise ValueError(f"OCP agent is already registered: {agent.id}")
         self._agents[agent.id] = agent
         return self
 
@@ -250,5 +250,5 @@ class AgentHost:
         return (
             await _maybe_await(self._action_handler(action, event))
             if self._action_handler
-            else ActionError("ACP action handling is not configured for this host")
+            else ActionError("OCP action handling is not configured for this host")
         )

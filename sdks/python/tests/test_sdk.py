@@ -1,8 +1,7 @@
 import unittest
 from datetime import datetime
 
-from acp import (
-    AcpApp,
+from open_channel import (
     ActionDefinition,
     ActorRef,
     AgentDefinition,
@@ -10,11 +9,13 @@ from acp import (
     ChannelDefinition,
     DeliveryReceipt,
     EventEnvelope,
+    OcpApp,
     PolicyDecision,
     event_from_binary,
     event_to_binary,
     message_received,
 )
+from open_channel.errors import AuthorizationError
 from support import InMemoryStore
 
 
@@ -65,7 +66,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(result.status, "executed")
 
-        app = AcpApp(
+        app = OcpApp(
             store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:app", name="App", on_message=on_message)],
             actions=[
@@ -86,6 +87,67 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertTrue(await app.ingest(event))
         self.assertEqual(executions, [2])
+
+    async def _request_approval(self, approver: ActorRef | None, executions: list[int]):
+        approvals: dict[str, object] = {}
+
+        async def on_message(context) -> None:
+            result = await context.request_action(
+                {"type": "counter.increment", "input": {"value": 1}}
+            )
+            approvals["result"] = result
+
+        app = OcpApp(
+            store=InMemoryStore(),
+            agents=[AgentDefinition(id="agent:approve", name="Approve", on_message=on_message)],
+            actions=[
+                ActionDefinition(
+                    type="counter.increment",
+                    execute=lambda value, _event: (
+                        executions.append(value["value"]) or value["value"] + 1
+                    ),
+                )
+            ],
+            policy=lambda *_args: PolicyDecision(
+                allowed=True, approval_required=True, approver=approver
+            ),
+        )
+        event = EventEnvelope.message_received(
+            actor=ActorRef("human:requester", type="ACTOR_TYPE_HUMAN"),
+            recipient=ActorRef("agent:approve"),
+            text="increment",
+        )
+        await app.ingest(event)
+        result = approvals["result"]
+        self.assertEqual(result.status, "approval_required")
+        return app, result.approval_id
+
+    async def test_approval_is_only_decided_by_designated_approver(self) -> None:
+        executions: list[int] = []
+        approver = ActorRef("human:approver", type="ACTOR_TYPE_HUMAN")
+        app, approval_id = await self._request_approval(approver, executions)
+
+        intruder = ActorRef("human:intruder", type="ACTOR_TYPE_HUMAN")
+        with self.assertRaises(AuthorizationError):
+            await app.approve(approval_id, intruder)
+        with self.assertRaises(AuthorizationError):
+            await app.deny(approval_id, intruder)
+        self.assertEqual(executions, [])
+
+        # A rejected attempt must not consume the pending approval.
+        result = await app.approve(approval_id, approver)
+        self.assertEqual(result.status, "executed")
+        self.assertEqual(executions, [1])
+
+    async def test_approval_without_designated_approver_uses_runtime_actor(self) -> None:
+        executions: list[int] = []
+        app, approval_id = await self._request_approval(None, executions)
+
+        with self.assertRaises(AuthorizationError):
+            await app.deny(approval_id, ActorRef("human:intruder", type="ACTOR_TYPE_HUMAN"))
+        result = await app.deny(approval_id, ActorRef("ocp.runtime", type="ACTOR_TYPE_SYSTEM"))
+        self.assertEqual(result.status, "blocked")
+        self.assertEqual(executions, [])
 
     async def test_v2_builder_round_trips_without_duplicate_event_type(self) -> None:
         event = message_received(
@@ -133,7 +195,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         async def on_message(context) -> None:
             await context.reply("reply")
 
-        app = AcpApp(
+        app = OcpApp(
             store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:source", name="Source", on_message=on_message)],
             channels=[ChannelDefinition("memory", source=Source(), sink=Sink())],

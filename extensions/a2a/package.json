@@ -1,21 +1,21 @@
 {
-  "name": "@acp/ext-a2a",
+  "name": "@frontal-labs/open-channel-ext-a2a",
   "version": "0.1.0",
-  "description": "A2A-compatible source and sink bridge for the Agent Communication Protocol TypeScript SDK",
+  "description": "A2A-compatible source and sink bridge for the OpenChannel Protocol TypeScript SDK",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "a2a",
     "agents",
     "tasks"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "extensions/a2a"
   },
   "license": "Apache-2.0",
@@ -43,14 +43,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/ext-shared": "workspace:*",
-    "@acp/protocol": "workspace:*",
     "@bufbuild/protobuf": "^2.2.5",
-    "acp-sdk": "workspace:*"
+    "@frontal-labs/open-channel": "workspace:*",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-ext-shared": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

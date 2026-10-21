@@ -1,21 +1,21 @@
 {
-  "name": "acp-cli",
+  "name": "@frontal-labs/open-channel-cli",
   "version": "0.1.0",
-  "description": "Command-line tools for validating and inspecting Agent Communication Protocol messages",
+  "description": "Command-line tools for validating and inspecting OpenChannel Protocol messages",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "cli",
     "protobuf",
     "validation"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "cli"
   },
   "license": "Apache-2.0",
@@ -32,7 +32,7 @@
     }
   },
   "bin": {
-    "acp": "./dist/main.js"
+    "ocp": "./dist/main.js"
   },
   "files": [
     "dist"
@@ -46,11 +46,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/protocol": "workspace:*",
-    "@bufbuild/protobuf": "^2.2.5"
+    "@bufbuild/protobuf": "^2.2.5",
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

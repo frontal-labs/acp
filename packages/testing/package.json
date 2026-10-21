@@ -1,22 +1,22 @@
 {
-  "name": "@acp/testing",
+  "name": "@frontal-labs/open-channel-testing",
   "version": "0.1.0",
   "private": true,
-  "description": "Testing fixtures and utilities for Agent Communication Protocol implementations",
+  "description": "Testing fixtures and utilities for OpenChannel Protocol implementations",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "testing",
     "fixtures",
     "vitest"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "packages/testing"
   },
   "license": "Apache-2.0",
@@ -44,9 +44,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/core": "workspace:*",
-    "@acp/protocol": "workspace:*",
-    "@bufbuild/protobuf": "^2.2.5"
+    "@bufbuild/protobuf": "^2.2.5",
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.12"

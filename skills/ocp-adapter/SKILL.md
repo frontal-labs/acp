@@ -1,13 +1,13 @@
 ---
-name: acp-adapter
-description: Implement provider-neutral ACP channel adapters, gateway routing, inbound normalization, and outbound dispatch behavior.
+name: ocp-adapter
+description: Implement provider-neutral OCP channel adapters, gateway routing, inbound normalization, and outbound dispatch behavior.
 ---
 
-# ACP channel adapters
+# OCP channel adapters
 
-Use this skill when connecting ACP to Slack, Teams, Google Chat, email,
+Use this skill when connecting OCP to Slack, Teams, Google Chat, email,
 WhatsApp, or another communication provider. The adapter boundary should make
-provider differences explicit while keeping ACP events portable.
+provider differences explicit while keeping OCP events portable.
 
 ## Boundaries
 
@@ -20,7 +20,7 @@ provider differences explicit while keeping ACP events portable.
   serialization; it must not depend on provider SDKs.
 - Provider identifiers belong in `ChannelRef.provider`, `channelId`,
   `threadId`, or extensions. Do not add Slack/Teams-specific fields to shared
-  ACP payloads unless the protocol itself is intentionally extended.
+  OCP payloads unless the protocol itself is intentionally extended.
 
 The current adapter contract is outbound-oriented:
 
@@ -56,6 +56,6 @@ Use `InMemoryChannelAdapter` for runtime and agent tests. A provider adapter
 should have focused tests for inbound normalization, thread/conversation
 mapping, outbound payload construction, provider errors, and retry identity.
 Do not require live provider credentials in unit tests. Assert that
-`ChannelGateway.dispatch()` rejects a missing provider with a shared ACP error
+`ChannelGateway.dispatch()` rejects a missing provider with a shared OCP error
 and sends to the adapter selected by `channel.provider`.
 

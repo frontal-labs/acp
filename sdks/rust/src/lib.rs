@@ -1,6 +1,4 @@
-pub mod generated {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../proto/gen/rust/mod.rs"));
-}
+pub mod generated;
 
 mod binary;
 mod events;
@@ -14,11 +12,11 @@ pub use events::{
     EventPayload, ProtocolVersion,
 };
 pub use models::{
-    AcpApp, AcpAppBuilder, ActionDefinition, ActionError, ActionExecutionContext, ActionInvocation,
-    ActionPolicy, ActionResult, ActorRef, ActorType, AgentCapabilities, AgentCard, AgentContext,
-    AgentDefinition, AgentHost, AgentSkill, ArtifactRef, ChannelDefinition, ChannelRef,
-    ChannelSink, ChannelSource, ConversationRef, DeliveryReceipt, HandleResult, JsonObject,
-    MessageReceived, MessageSent, PolicyDecision,
+    ActionDefinition, ActionError, ActionExecutionContext, ActionInvocation, ActionPolicy,
+    ActionResult, ActorRef, ActorType, AgentCapabilities, AgentCard, AgentContext, AgentDefinition,
+    AgentHost, AgentSkill, ArtifactRef, ChannelDefinition, ChannelRef, ChannelSink, ChannelSource,
+    ConversationRef, DeliveryReceipt, HandleResult, JsonObject, MessageReceived, MessageSent,
+    OcpApp, OcpAppBuilder, PolicyDecision,
 };
 pub use payloads::{
     ActionExecuted, ActionFailed, ApprovalDecided, ApprovalExpired, ApprovalOutcome,

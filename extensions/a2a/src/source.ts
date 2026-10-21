@@ -1,4 +1,5 @@
-import type { ChannelSource } from "@acp/adapter";
+import { create } from "@bufbuild/protobuf";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
 import {
   createProviderSource,
   optionalRecord,
@@ -6,16 +7,15 @@ import {
   providerActor,
   providerEvent,
   sourceRecord,
-} from "@acp/ext-shared";
-import { ActorType, MessageReceivedSchema } from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-ext-shared";
+import { ActorType, MessageReceivedSchema } from "@frontal-labs/open-channel-protocol";
 
 import type { A2ASourceOptions } from "./types.js";
 
-/** Normalizes a minimal A2A message/task payload into an ACP message event. */
+/** Normalizes a minimal A2A message/task payload into an OCP message event. */
 export function normalizeA2AEvent(
   input: unknown,
-  metadata: import("@acp/ext-shared").ProviderReceiveMetadata = {},
+  metadata: import("@frontal-labs/open-channel-ext-shared").ProviderReceiveMetadata = {},
   options: A2ASourceOptions = {},
 ) {
   const body = sourceRecord(input, "A2A");
@@ -47,7 +47,7 @@ export function normalizeA2AEvent(
       conversationParticipants: [actor],
       eventType: "message.received",
       extensions: {
-        "acp.provider": "a2a",
+        "ocp.provider": "a2a",
         ...(taskId ? { "a2a.task_id": taskId } : {}),
       },
       payload: { case: "messageReceived", value: create(MessageReceivedSchema, { text }) },
@@ -58,7 +58,7 @@ export function normalizeA2AEvent(
   );
 }
 
-/** Creates an A2A source for `createAcp({ channels })`. */
+/** Creates an A2A source for `createOcp({ channels })`. */
 export function createA2ASource(options: A2ASourceOptions = {}): ChannelSource {
   return createProviderSource("a2a", (input, metadata) =>
     normalizeA2AEvent(input, metadata, options),

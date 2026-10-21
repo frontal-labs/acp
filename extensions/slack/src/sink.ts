@@ -1,10 +1,14 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { createProviderSink } from "@acp/ext-shared";
-import { deliveryReceipt } from "acp-sdk";
+import { deliveryReceipt } from "@frontal-labs/open-channel";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { SlackTransport } from "./types.js";
 
-/** Creates a Slack `ChannelSink` for `createAcp({ channels })`. */
+/** Creates a Slack `ChannelSink` for `createOcp({ channels })`. */
 export function createSlackSink(transport: SlackTransport): ChannelSink {
   return createProviderSink(
     "slack",

@@ -1,5 +1,5 @@
-import type { ActorRef } from "@acp/protocol";
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ActorRef } from "@frontal-labs/open-channel-protocol";
 
 /** Outbound Teams message accepted by a Bot Framework or Graph transport. */
 export interface TeamsSendInput {
@@ -24,7 +24,7 @@ export interface TeamsSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete Teams channel configuration for `createAcp()`. */
+/** Complete Teams channel configuration for `createOcp()`. */
 export interface TeamsChannelOptions extends TeamsSourceOptions {
   transport: TeamsTransport;
 }
@@ -34,5 +34,5 @@ export interface TeamsWebhookRequest {
   headers: Record<string, string | undefined>;
 }
 
-/** ACP channel definition for Microsoft Teams. */
+/** OCP channel definition for Microsoft Teams. */
 export type TeamsChannel = ChannelDefinition;

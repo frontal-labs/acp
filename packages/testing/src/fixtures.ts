@@ -1,3 +1,5 @@
+import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import type {
   ActionRequest,
   ActorRef,
@@ -5,7 +7,7 @@ import type {
   EventInput,
   EventName,
   EventPayload,
-} from "@acp/protocol";
+} from "@frontal-labs/open-channel-protocol";
 import {
   ActionExecutedSchema,
   ActionFailedSchema,
@@ -29,11 +31,9 @@ import {
   PolicyEvaluatedSchema,
   TaskAssignedSchema,
   TaskCreatedSchema,
-} from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+} from "@frontal-labs/open-channel-protocol";
 
-/** Creates a deterministic human fixture for ACP tests. */
+/** Creates a deterministic human fixture for OCP tests. */
 export function createTestHuman(
   id = "human:test",
   displayName = "Test Human",
@@ -42,7 +42,7 @@ export function createTestHuman(
   return createTestActor(id, ActorType.HUMAN, displayName, [], authority);
 }
 
-/** Creates a deterministic agent fixture for ACP tests. */
+/** Creates a deterministic agent fixture for OCP tests. */
 export function createTestAgent(
   id = "agent:test",
   displayName = "Test Agent",
@@ -51,7 +51,7 @@ export function createTestAgent(
   return createTestActor(id, ActorType.AGENT, displayName, capabilities, "agent");
 }
 
-/** Creates an ACP actor fixture with explicit identity and capabilities. */
+/** Creates an OCP actor fixture with explicit identity and capabilities. */
 export function createTestActor(
   id: string,
   type: ActorType,
@@ -114,7 +114,7 @@ export function createTestMessageSent(text = "Test response") {
   return create(MessageSentSchema, { text });
 }
 
-/** Options shared by the ACP event fixtures. */
+/** Options shared by the OCP event fixtures. */
 export interface TestEventOptions
   extends Partial<Omit<EventInput<"0.1">, "eventType" | "payload" | "protocolVersion">> {
   eventType?: EventName;
@@ -122,7 +122,7 @@ export interface TestEventOptions
   text?: string;
 }
 
-/** Creates a valid ACP event with predictable test defaults. */
+/** Creates a valid OCP event with predictable test defaults. */
 export function createTestEvent(options: TestEventOptions = {}): EventEnvelope {
   const {
     eventType = "message.received",
@@ -265,7 +265,7 @@ function createTestPayload(eventType: EventName, actor: ActorRef, text: string):
         }),
       };
     default:
-      throw new Error(`Unsupported ACP test event type: ${eventType}`);
+      throw new Error(`Unsupported OCP test event type: ${eventType}`);
   }
 }
 
@@ -276,6 +276,6 @@ export function createTestArtifact(id = "artifact:test") {
     mediaType: "text/plain",
     sourceOfTruth: "test",
     title: "Test artifact",
-    uri: `acp://test/${id}`,
+    uri: `ocp://test/${id}`,
   });
 }

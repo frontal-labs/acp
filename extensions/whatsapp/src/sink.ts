@@ -1,10 +1,14 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { createProviderSink } from "@acp/ext-shared";
-import { deliveryReceipt } from "acp-sdk";
+import { deliveryReceipt } from "@frontal-labs/open-channel";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { WhatsAppTransport } from "./types.js";
 
-/** Creates a WhatsApp Business sink for ACP message.sent events. */
+/** Creates a WhatsApp Business sink for OCP message.sent events. */
 export function createWhatsAppSink(
   transport: WhatsAppTransport,
   phoneNumberId: string,

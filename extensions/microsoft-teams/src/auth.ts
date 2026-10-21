@@ -1,4 +1,8 @@
-import { createKeyCache, publicKeysFromJwks, verifyRs256Jwt } from "@acp/ext-shared";
+import {
+  createKeyCache,
+  publicKeysFromJwks,
+  verifyRs256Jwt,
+} from "@frontal-labs/open-channel-ext-shared";
 
 /** Bot Framework issuer for tokens that Microsoft Teams sends to a bot's messaging endpoint. */
 export const BOT_FRAMEWORK_ISSUER = "https://api.botframework.com";

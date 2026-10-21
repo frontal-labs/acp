@@ -1,22 +1,22 @@
-# acp-sdk
+# open-channel
 
-The Rust distribution is published as `acp-sdk` on crates.io. Rust imports use
-the generated identifier `acp_sdk`. It provides a synchronous,
+The Rust distribution is published as `open-channel` on crates.io. Rust imports use
+the generated identifier `open_channel`. It provides a synchronous,
 transport-neutral agent host with A2A-like agent cards, skills, and typed
 message context.
 
 Add the dependency to an application with:
 
 ```bash
-cargo add acp-sdk
+cargo add open-channel
 ```
 
-For application composition, use `AcpAppBuilder` to register agents, actions, channels, and policy:
+For application composition, use `OcpAppBuilder` to register agents, actions, channels, and policy:
 
 ```rust
-use acp_sdk::{AcpAppBuilder, AgentCard, AgentDefinition};
+use open_channel::{OcpAppBuilder, AgentCard, AgentDefinition};
 
-let mut app = AcpAppBuilder::new()
+let mut app = OcpAppBuilder::new()
     .agent(AgentDefinition::new(
         AgentCard::new("agent:support", "Support Agent"),
         |context| {
@@ -32,7 +32,7 @@ app.stop()?;
 ```
 
 ```rust
-use acp_sdk::{AgentCard, AgentDefinition, AgentHost};
+use open_channel::{AgentCard, AgentDefinition, AgentHost};
 
 let mut host = AgentHost::new();
 host.register(AgentDefinition::new(
@@ -49,7 +49,7 @@ Events for both protocol versions use one set of constructors. The version is th
 first argument; `ProtocolVersion::default()` is `0.1`:
 
 ```rust
-use acp_sdk::{message_received, event_type_of, EventEnvelope, ProtocolVersion};
+use open_channel::{message_received, event_type_of, EventEnvelope, ProtocolVersion};
 
 let v1 = message_received(ProtocolVersion::V0_1, "hello"); // stores eventType
 let v2 = message_received(ProtocolVersion::V0_2, "hello"); // name derived from payload
@@ -67,7 +67,7 @@ with the TypeScript SDK; the parity fixture in `packages/protocol/tests/fixtures
 Approval, policy, action, task, handoff, and escalation constructors all take the version first:
 
 ```rust
-use acp_sdk::{approval_requested, ActionInvocation, ActorRef, ProtocolVersion};
+use open_channel::{approval_requested, ActionInvocation, ActorRef, ProtocolVersion};
 
 let action = ActionInvocation {
     action_id: "action:refund-1".into(),
@@ -95,7 +95,7 @@ Timestamps keep the precision the source provides (milliseconds, microseconds, o
 
 The crate also generates Rust protobuf bindings into `proto/gen/rust` during
 the build. The SDK model layer remains ergonomic and transport-neutral while
-the generated module is available as `acp_sdk::generated` for integrations
+the generated module is available as `open_channel::generated` for integrations
 that need the wire types.
 
 ## Development

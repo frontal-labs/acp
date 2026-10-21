@@ -1,6 +1,6 @@
-# ACP repository guidance
+# OCP repository guidance
 
-Follow [`AGENTS.md`](./AGENTS.md) for architecture, generated-file boundaries, and verification. Prefer the smallest change that preserves the provider-neutral ACP event model.
+Follow [`AGENTS.md`](./AGENTS.md) for architecture, generated-file boundaries, and verification. Prefer the smallest change that preserves the provider-neutral OCP event model.
 
 Before handing off a change, run:
 

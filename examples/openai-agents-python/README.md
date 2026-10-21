@@ -1,8 +1,8 @@
-# OpenAI Agents Python + ACP
+# OpenAI Agents Python + OCP
 
-This example maps the OpenAI Agents SDK `Runner.run` result into an ACP reply.
+This example maps the OpenAI Agents SDK `Runner.run` result into an OCP reply.
 It deliberately does not auto-approve SDK interruptions: an interruption or
-approval request must be represented by an ACP policy/approval event and then
+approval request must be represented by an OCP policy/approval event and then
 resumed explicitly.
 
 ## Install and run
@@ -17,7 +17,7 @@ PYTHONPATH=sdks/python/src:examples/_shared/python python3 examples/openai-agent
 
 `OPENAI_MODEL` is optional. Use a disposable key and avoid destructive tools.
 
-## ACP mapping
+## OCP mapping
 
 `Runner.run(agent, text)` is the harness execution. `result.final_output` is
 converted to `message.sent`; `result.interruptions` stops the automatic path so

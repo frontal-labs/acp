@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Generic, Literal, Protocol, TypeVar
 from uuid import uuid4
 
-from .errors import AcpError, ActionError, DeliveryError, as_acp_error
+from .errors import ActionError, AuthorizationError, DeliveryError, OcpError, as_ocp_error
 from .host import AgentDefinition, AgentHost, _maybe_await
 from .models import ActorRef, AgentCard, EventEnvelope
 
@@ -56,6 +56,8 @@ class PolicyDecision:
     allowed: bool
     approval_required: bool = False
     reason: str = ""
+    # Actor allowed to approve or deny when approval_required is set; defaults to the app's default approver.
+    approver: ActorRef | None = None
 
 
 ActionStatus = Literal["blocked", "approval_required", "executed", "failed"]
@@ -75,7 +77,7 @@ class ActionResult:
 class ActionExecutionContext:
     actor: ActorRef
     event: EventEnvelope
-    app: AcpApp
+    app: OcpApp
 
 
 @dataclass(frozen=True, slots=True)
@@ -97,7 +99,7 @@ Hook = Callable[..., object]
 
 
 @dataclass(slots=True)
-class AcpHooks:
+class OcpHooks:
     on_event_accepted: Hook | None = None
     on_event_processed: Hook | None = None
     on_action_started: Hook | None = None
@@ -122,6 +124,7 @@ class _PendingAction:
     actor: ActorRef
     event: EventEnvelope
     input: object
+    approver: ActorRef
     expiry: asyncio.Task[None] | None = None
 
 
@@ -134,8 +137,8 @@ class IngestResult:
         return not self.duplicate
 
 
-class AcpApp:
-    """Config-first, lifecycle-managed Python application facade for ACP."""
+class OcpApp:
+    """Config-first, lifecycle-managed Python application facade for OCP."""
 
     def __init__(
         self,
@@ -145,10 +148,11 @@ class AcpApp:
         actions: list[AnyActionDefinition] | None = None,
         channels: list[ChannelDefinition] | None = None,
         policy: Policy | None = None,
-        hooks: AcpHooks | None = None,
+        hooks: OcpHooks | None = None,
         on_event: Hook | None = None,
         max_concurrent_conversations: int | None = None,
         default_approval_timeout_ms: int = 60_000,
+        default_approver: ActorRef | None = None,
     ) -> None:
         self._actions = {action.type: action for action in actions or []}
         self._channels = {channel.provider: channel for channel in channels or []}
@@ -165,13 +169,16 @@ class AcpApp:
                 False, reason="No policy configured"
             )
         )
-        self._hooks = hooks or AcpHooks(on_event_accepted=on_event)
+        self._hooks = hooks or OcpHooks(on_event_accepted=on_event)
         if on_event is not None and self._hooks.on_event_accepted is None:
             self._hooks.on_event_accepted = on_event
         self._store = store
         self._started = False
         self._accepting = True
         self._approval_timeout = max(0, default_approval_timeout_ms) / 1000
+        self._default_approver = default_approver or ActorRef(
+            "ocp.runtime", type="ACTOR_TYPE_SYSTEM", display_name="OCP Runtime"
+        )
         self._host = AgentHost(
             agents=agents,
             dispatch=self._dispatch,
@@ -185,12 +192,12 @@ class AcpApp:
 
     def register_action(self, action: AnyActionDefinition) -> None:
         if action.type in self._actions:
-            raise ValueError(f"ACP action is already registered: {action.type}")
+            raise ValueError(f"OCP action is already registered: {action.type}")
         self._actions[action.type] = action
 
     def register_channel(self, channel: ChannelDefinition) -> None:
         if channel.provider in self._channels:
-            raise ValueError(f"ACP channel is already registered: {channel.provider}")
+            raise ValueError(f"OCP channel is already registered: {channel.provider}")
         self._channels[channel.provider] = channel
 
     def list_agent_cards(self) -> tuple[AgentCard, ...]:
@@ -200,7 +207,7 @@ class AcpApp:
         if self._started:
             return
         if not self._accepting:
-            raise AcpError("ACP app has already stopped", stage="shutdown")
+            raise OcpError("OCP app has already stopped", stage="shutdown")
         self._started = True
         for channel in self._channels.values():
             if channel.source is None or not hasattr(channel.source, "start"):
@@ -228,15 +235,15 @@ class AcpApp:
                 await asyncio.wait_for(_maybe_await(self._store.close()), timeout)
         except TimeoutError as error:
             await self._report_error(
-                AcpError("ACP shutdown timed out", stage="shutdown", retryable=True)
+                OcpError("OCP shutdown timed out", stage="shutdown", retryable=True)
             )
-            raise AcpError("ACP shutdown timed out", stage="shutdown", retryable=True) from error
+            raise OcpError("OCP shutdown timed out", stage="shutdown", retryable=True) from error
         finally:
             self._started = False
 
     async def ingest(self, event: EventEnvelope) -> IngestResult:
         if not self._accepting:
-            raise AcpError("ACP app is stopping", stage="accept", retryable=True)
+            raise OcpError("OCP app is stopping", stage="accept", retryable=True)
         if not await self._store.append_if_absent(event):
             return IngestResult(duplicate=True)
         self._events[event.event_id] = event
@@ -264,45 +271,51 @@ class AcpApp:
         metadata: Mapping[str, object] | None = None,
     ) -> list[IngestResult]:
         if not self._accepting:
-            raise AcpError("ACP app is stopping", stage="accept", retryable=True)
+            raise OcpError("OCP app is stopping", stage="accept", retryable=True)
         channel = self._channels.get(provider)
         if channel is None or channel.source is None:
             raise DeliveryError(
-                f"No ACP source registered for provider: {provider}",
+                f"No OCP source registered for provider: {provider}",
                 provider=provider,
                 stage="normalize",
             )
         try:
             normalized = await channel.source.normalize(value, metadata)
         except Exception as error:
-            classified = as_acp_error(error, provider=provider, stage="normalize", retryable=True)
+            classified = as_ocp_error(error, provider=provider, stage="normalize", retryable=True)
             await self._report_error(classified)
             raise classified from error
         events = normalized if isinstance(normalized, list) else [normalized]
         return [await self.ingest(event) for event in events]
 
-    async def approve(
-        self, approval_id: str, approver: ActorRef | None = None, reason: str = "Approved"
-    ) -> ActionResult:
-        del approver
-        pending = self._pending.pop(approval_id, None)
+    def _take_pending_approval(self, approval_id: str, approver: ActorRef) -> _PendingAction:
+        # Check the decider before removing the entry, so a rejected attempt leaves the approval pending.
+        pending = self._pending.get(approval_id)
         if pending is None:
-            raise KeyError(f"ACP approval was not found: {approval_id}")
+            raise KeyError(f"OCP approval was not found: {approval_id}")
+        if approver.id != pending.approver.id:
+            raise AuthorizationError(
+                f"OCP approval {approval_id} can only be decided by {pending.approver.id}",
+                approval_id=approval_id,
+                stage="approval",
+            )
+        del self._pending[approval_id]
         if pending.expiry is not None:
             pending.expiry.cancel()
+        return pending
+
+    async def approve(
+        self, approval_id: str, approver: ActorRef, reason: str = "Approved"
+    ) -> ActionResult:
+        pending = self._take_pending_approval(approval_id, approver)
         result = await self._execute(pending)
         await self._run_hook(self._hooks.on_action_completed, result)
         return result
 
     async def deny(
-        self, approval_id: str, approver: ActorRef | None = None, reason: str = "Denied"
+        self, approval_id: str, approver: ActorRef, reason: str = "Denied"
     ) -> ActionResult:
-        del approver
-        pending = self._pending.pop(approval_id, None)
-        if pending is None:
-            raise KeyError(f"ACP approval was not found: {approval_id}")
-        if pending.expiry is not None:
-            pending.expiry.cancel()
+        pending = self._take_pending_approval(approval_id, approver)
         result = ActionResult(pending.action_id, "blocked", approval_id=approval_id, reason=reason)
         self._action_results[pending.action_id] = result
         await self._run_hook(self._hooks.on_action_completed, result)
@@ -315,7 +328,7 @@ class AcpApp:
             raise
         except Exception as error:
             await self._report_error(
-                as_acp_error(error, provider=source.provider, stage="processing", retryable=True)
+                as_ocp_error(error, provider=source.provider, stage="processing", retryable=True)
             )
 
     async def _stop_sources(self) -> None:
@@ -330,7 +343,7 @@ class AcpApp:
         channel = self._channels.get(provider)
         if channel is None or channel.sink is None:
             error = DeliveryError(
-                f"No ACP sink registered for provider: {provider}",
+                f"No OCP sink registered for provider: {provider}",
                 event_id=event.event_id,
                 provider=provider,
                 retryable=True,
@@ -349,7 +362,7 @@ class AcpApp:
             await self._run_hook(self._hooks.on_delivery, result)
             return result
         except Exception as error:
-            classified = as_acp_error(
+            classified = as_ocp_error(
                 error,
                 event_id=event.event_id,
                 provider=provider,
@@ -366,7 +379,7 @@ class AcpApp:
         definition = self._actions.get(action_type)
         if definition is None:
             error = ActionError(
-                f"No ACP action is registered for type: {action_type}", stage="validation"
+                f"No OCP action is registered for type: {action_type}", stage="validation"
             )
             await self._report_error(error)
             raise error
@@ -378,7 +391,7 @@ class AcpApp:
             return ActionResult(
                 action_id,
                 "failed",
-                error=ActionError("ACP action has already been claimed", action_id=action_id),
+                error=ActionError("OCP action has already been claimed", action_id=action_id),
             )
         self._claimed_actions.add(action_id)
         value: object = action.get("input", action.get("parameters", {}))
@@ -393,7 +406,15 @@ class AcpApp:
                 result = ActionResult(action_id, "blocked", reason=decision.reason)
                 self._action_results[action_id] = result
                 return result
-            pending = _PendingAction(action_id, "", definition, actor, event, value)
+            pending = _PendingAction(
+                action_id,
+                "",
+                definition,
+                actor,
+                event,
+                value,
+                decision.approver or self._default_approver,
+            )
             if decision.approval_required:
                 approval_id = f"{action_id}:approval"
                 pending.approval_id = approval_id
@@ -504,9 +525,9 @@ class AcpApp:
             await _maybe_await(hook(value))
         except Exception as error:
             if hook is not self._hooks.on_error:
-                await self._report_error(as_acp_error(error, stage="processing"))
+                await self._report_error(as_ocp_error(error, stage="processing"))
 
-    async def _report_error(self, error: AcpError) -> None:
+    async def _report_error(self, error: OcpError) -> None:
         if self._hooks.on_error is not None:
             try:
                 await _maybe_await(self._hooks.on_error(error))

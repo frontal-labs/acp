@@ -7,7 +7,7 @@ import {
   createTestEventStore,
 } from "../src/index.js";
 
-describe("@acp/testing state helpers", () => {
+describe("@frontal-labs/open-channel-testing state helpers", () => {
   it("creates an event bus fixture", async () => {
     const bus = createTestEventBus<string>();
     const values: string[] = [];

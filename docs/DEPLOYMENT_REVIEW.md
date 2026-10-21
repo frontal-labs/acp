@@ -1,6 +1,6 @@
 # Development deployment review
 
-This reviews running ACP on a developer machine: the Slack quickstart, the TypeScript SDK in
+This reviews running OCP on a developer machine: the Slack quickstart, the TypeScript SDK in
 process, and an optional local PostgreSQL event store. It is not a production review. Production
 needs a target environment, which this document does not assume.
 
@@ -14,7 +14,7 @@ needs a target environment, which this document does not assume.
 | Loopback-only binding | Probed the server on the LAN address | Refused. The server binds to `127.0.0.1` by default. |
 | Graceful shutdown | Sent SIGINT to the running server | Logged the signal, closed the listener, stopped the app, exited. |
 | Postgres store logic | `extensions/postgres/tests/*.test.ts` without a database | Passes (7 tests). |
-| Postgres store against a live server | `ACP_POSTGRES_URL` with `live.test.ts`, run against PostgreSQL 18.6 in a Docker container | Passes: 12 of 12 tests, on three consecutive runs. The migration also upgrades a pre-existing action table that has no `claimed_at` column. |
+| Postgres store against a live server | `OCP_POSTGRES_URL` with `live.test.ts`, run against PostgreSQL 18.6 in a Docker container | Passes: 12 of 12 tests, on three consecutive runs. The migration also upgrades a pre-existing action table that has no `claimed_at` column. |
 
 ## Configuration
 
@@ -26,7 +26,7 @@ needs a target environment, which this document does not assume.
 | `SLACK_API_BASE` | Slack example | Optional. Defaults to `https://slack.com/api`. Point it at a fake server in tests. |
 | `PORT` | Slack example | Defaults to 3000. |
 | `HOST` | Slack example | Defaults to `127.0.0.1`. Set it only when a reverse proxy is in front. |
-| `ACP_POSTGRES_URL` | Postgres live test | Enables `live.test.ts`. Use a disposable local database. |
+| `OCP_POSTGRES_URL` | Postgres live test | Enables `live.test.ts`. Use a disposable local database. |
 
 No value is read from a tracked file. The self-test uses placeholder values that never reach Slack.
 

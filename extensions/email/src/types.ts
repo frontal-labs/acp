@@ -1,5 +1,5 @@
-import type { ActorRef } from "@acp/protocol";
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ActorRef } from "@frontal-labs/open-channel-protocol";
 
 /** Provider-neutral email message used by SMTP, IMAP, or webhook transports. */
 export interface EmailMessage {
@@ -42,10 +42,10 @@ export interface EmailSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete email channel configuration for `createAcp()`. */
+/** Complete email channel configuration for `createOcp()`. */
 export interface EmailChannelOptions extends EmailSourceOptions {
   transport: EmailTransport;
 }
 
-/** ACP channel definition for email. */
+/** OCP channel definition for email. */
 export type EmailChannel = ChannelDefinition;

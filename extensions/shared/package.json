@@ -1,21 +1,21 @@
 {
-  "name": "@acp/ext-shared",
+  "name": "@frontal-labs/open-channel-ext-shared",
   "version": "0.1.0",
-  "description": "Shared utilities for Agent Communication Protocol TypeScript extensions",
+  "description": "Shared utilities for OpenChannel Protocol TypeScript extensions",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "extensions",
     "webhooks",
     "validation"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "extensions/shared"
   },
   "license": "Apache-2.0",
@@ -43,14 +43,14 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/core": "workspace:*",
-    "@acp/protocol": "workspace:*",
     "@bufbuild/protobuf": "^2.2.5",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

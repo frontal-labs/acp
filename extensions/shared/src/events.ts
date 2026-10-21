@@ -1,4 +1,6 @@
-import type { ActorRef, EventEnvelope } from "@acp/protocol";
+import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import type { ActorRef, EventEnvelope } from "@frontal-labs/open-channel-protocol";
 import {
   ActorRefSchema,
   ActorType,
@@ -6,9 +8,7 @@ import {
   ConversationRefSchema,
   ConversationStatus,
   createEvent,
-} from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+} from "@frontal-labs/open-channel-protocol";
 
 import type { ProviderEventOptions, ProviderReceiveMetadata } from "./types.js";
 
@@ -23,7 +23,7 @@ export function providerActor(
   return create(ActorRefSchema, { authority, capabilities, displayName, id, type });
 }
 
-/** Creates a validated v1 ACP event from provider-normalized fields. */
+/** Creates a validated v1 OCP event from provider-normalized fields. */
 export function providerEvent(
   options: ProviderEventOptions,
   metadata: ProviderReceiveMetadata = {},
@@ -34,7 +34,7 @@ export function providerEvent(
       ? create(ChannelRefSchema, {
           address: options.address,
           channelId: options.channelId,
-          provider: options.extensions?.["acp.provider"] ?? "",
+          provider: options.extensions?.["ocp.provider"] ?? "",
           threadId: options.threadId,
         })
       : undefined);
@@ -50,7 +50,7 @@ export function providerEvent(
 
   return createEvent({
     actor: options.actor,
-    causationId: options.extensions?.["acp.causation_id"],
+    causationId: options.extensions?.["ocp.causation_id"],
     channel,
     conversation,
     eventId: metadata.eventId,

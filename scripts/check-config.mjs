@@ -14,7 +14,7 @@ const requiredFiles = [
   ".changeset/config.json",
   ".frontal-code/settings.json",
   ".cursor/mcp.json",
-  ".cursor/rules/acp-repository.mdc",
+  ".cursor/rules/ocp-repository.mdc",
   ".claude/settings.json",
   ".husky/pre-commit",
   ".husky/commit-msg",
@@ -31,8 +31,8 @@ const requiredFiles = [
   "docs/DEVELOPMENT.md",
   "docs/SPEC_V0_1.md",
   "examples/README.md",
-  "skills/acp-examples/SKILL.md",
-  "skills/acp-governance/SKILL.md",
+  "skills/ocp-examples/SKILL.md",
+  "skills/ocp-governance/SKILL.md",
 ];
 const packageJsonFiles = [
   "package.json",
@@ -60,18 +60,18 @@ const jsonFiles = [
   "skills.sh.json",
 ];
 const metadataTextChecks = {
-  "proto/buf.yaml": ["name: buf.build/frontal-labs/acp"],
+  "proto/buf.yaml": ["name: buf.build/frontal-labs/open-channel"],
   "sdks/python/pyproject.toml": [
-    'name = "acp-sdk"',
+    'name = "open-channel"',
     'readme = "README.md"',
     "[project.urls]",
-    'Repository = "https://github.com/frontal-labs/acp"',
+    'Repository = "https://github.com/frontal-labs/open-channel"',
   ],
   "sdks/rust/Cargo.toml": [
-    'name = "acp-sdk"',
+    'name = "open-channel"',
     'readme = "README.md"',
-    'repository = "https://github.com/frontal-labs/acp"',
-    'documentation = "https://docs.rs/acp-sdk"',
+    'repository = "https://github.com/frontal-labs/open-channel"',
+    'documentation = "https://docs.rs/open-channel"',
   ],
 };
 
@@ -119,9 +119,11 @@ for (const [file, metadata] of packageMetadata) {
   }
   if (
     typeof metadata.repository !== "object" ||
-    !metadata.repository.url?.includes("github.com/frontal-labs/acp")
+    !metadata.repository.url?.includes("github.com/frontal-labs/open-channel")
   ) {
-    packageMetadataFailures.push(`${file}: repository must point to github.com/frontal-labs/acp`);
+    packageMetadataFailures.push(
+      `${file}: repository must point to github.com/frontal-labs/open-channel`,
+    );
   }
   if (typeof metadata.bugs !== "object" || !metadata.bugs.url?.endsWith("/issues")) {
     packageMetadataFailures.push(`${file}: bugs.url must point to the repository issues page`);

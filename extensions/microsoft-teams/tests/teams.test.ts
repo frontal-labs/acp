@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createTeamsSource } from "../src/index.js";
 
-describe("@acp/ext-microsoft-teams", () => {
+describe("@frontal-labs/open-channel-ext-microsoft-teams", () => {
   it("normalizes a Teams message", async () => {
     const source = createTeamsSource();
     const event = await source.normalize({

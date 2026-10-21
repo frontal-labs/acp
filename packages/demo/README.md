@@ -1,9 +1,9 @@
-# @acp/demo
+# @frontal-labs/open-channel-demo
 
-Runnable ACP approval and action-execution scenario.
+Runnable OCP approval and action-execution scenario.
 
 The demo sends a message to a support agent, requests a customer-facing action,
-approves it through `AcpApp`, and prints the resulting delivery.
+approves it through `OcpApp`, and prints the resulting delivery.
 
 ```bash
 pnpm demo

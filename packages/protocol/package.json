@@ -1,21 +1,21 @@
 {
-  "name": "@acp/protocol",
+  "name": "@frontal-labs/open-channel-protocol",
   "version": "0.1.0",
-  "description": "Generated TypeScript protocol types and runtime schemas for the Agent Communication Protocol",
+  "description": "Generated TypeScript protocol types and runtime schemas for the OpenChannel Protocol",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "protobuf",
     "protojson",
     "events"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "packages/protocol"
   },
   "license": "Apache-2.0",
@@ -43,8 +43,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/core": "workspace:*",
     "@bufbuild/protobuf": "^2.2.5",
+    "@frontal-labs/open-channel-core": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {

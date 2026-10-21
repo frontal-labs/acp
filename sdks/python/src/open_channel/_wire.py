@@ -1,4 +1,4 @@
-"""Stdlib-only protobuf wire codec for ACP event envelopes (v0.1 and v0.2).
+"""Stdlib-only protobuf wire codec for OCP event envelopes (v0.1 and v0.2).
 
 The schema tables below mirror proto/v1/types/*.proto, proto/v1/api/events.proto (v0.1 envelope)
 and proto/v2/api/events.proto (v0.2 envelope). Messages are exchanged as ProtoJSON-shaped dicts
@@ -491,7 +491,7 @@ def encode_event(value: Mapping[str, object], protocol_version: str) -> bytes:
     """Encode a ProtoJSON-shaped event dict using the envelope for protocol_version ("0.1" or "0.2")."""
 
     if protocol_version not in _ENVELOPES:
-        raise ValueError(f"Unsupported ACP protocol_version: {protocol_version!r}")
+        raise ValueError(f"Unsupported OCP protocol_version: {protocol_version!r}")
     name, _ = _ENVELOPES[protocol_version]
     return _encode_message(name, value)
 
@@ -615,6 +615,6 @@ def decode_event(data: bytes, protocol_version: str) -> dict[str, object]:
     """
 
     if protocol_version not in _ENVELOPES:
-        raise ValueError(f"Unsupported ACP protocol_version: {protocol_version!r}")
+        raise ValueError(f"Unsupported OCP protocol_version: {protocol_version!r}")
     name, _ = _ENVELOPES[protocol_version]
     return _decode_message(name, bytes(data))

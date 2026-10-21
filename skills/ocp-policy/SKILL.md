@@ -1,9 +1,9 @@
 ---
-name: acp-policy
-description: Implement ACP policy decisions, approval lifecycles, escalations, and runtime safety behavior without bypassing authorization.
+name: ocp-policy
+description: Implement OCP policy decisions, approval lifecycles, escalations, and runtime safety behavior without bypassing authorization.
 ---
 
-# ACP policy and approvals
+# OCP policy and approvals
 
 Use this skill for changes to authorization, approval routing, deadline
 handling, escalation, or the runtime action lifecycle. Read
@@ -17,7 +17,7 @@ handling, escalation, or the runtime action lifecycle. Read
   events, tracks pending approvals, and emits expiry/escalation events.
 - [`packages/adapter`](../../packages/adapter) is responsible for provider
   delivery, not authorization.
-- Shared failure types come from [`@acp/core`](../../packages/core), including
+- Shared failure types come from [`@frontal-labs/open-channel-core`](../../packages/core), including
   `ValidationError`, `ProtocolError`, `ConflictError`, `NotFoundError`, and
   `TransportError`.
 
@@ -36,7 +36,7 @@ handling, escalation, or the runtime action lifecycle. Read
    target.
 6. Duplicate event IDs are idempotent and must not repeat state transitions or
    emitted events.
-7. Invalid resource state should fail with a shared ACP error rather than a
+7. Invalid resource state should fail with a shared OCP error rather than a
    provider-specific or ad hoc error.
 
 ## Implementation guidance
@@ -55,7 +55,7 @@ agent callback or adapter.
 
 Use `ManualClock` to advance approval deadlines without sleeping. Assert the
 event sequence and status, not private maps or timer implementation details.
-Use `@acp/testing` fixtures and selectors to inspect events. Cover at least:
+Use `@frontal-labs/open-channel-testing` fixtures and selectors to inspect events. Cover at least:
 
 - deny: `policy.blocked`, no approval;
 - allow without approval: `policy.allowed`, authorized result;

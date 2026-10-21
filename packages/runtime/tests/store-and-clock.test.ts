@@ -1,5 +1,5 @@
-import type { EventEnvelope, EventName } from "@acp/protocol";
-import { createTestEvent, createTestEventStore } from "@acp/testing";
+import type { EventEnvelope, EventName } from "@frontal-labs/open-channel-protocol";
+import { createTestEvent, createTestEventStore } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { ManualClock } from "../src/index.js";
 

@@ -1,5 +1,5 @@
-import type { ActorRef } from "@acp/protocol";
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ActorRef } from "@frontal-labs/open-channel-protocol";
 
 /** Outbound WhatsApp text message accepted by a transport. */
 export interface WhatsAppSendInput {
@@ -23,7 +23,7 @@ export interface WhatsAppSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete WhatsApp channel configuration for `createAcp()`. */
+/** Complete WhatsApp channel configuration for `createOcp()`. */
 export interface WhatsAppChannelOptions extends WhatsAppSourceOptions {
   phoneNumberId: string;
   transport: WhatsAppTransport;
@@ -35,5 +35,5 @@ export interface WhatsAppWebhookRequest {
   headers: Record<string, string | undefined>;
 }
 
-/** ACP channel definition for WhatsApp. */
+/** OCP channel definition for WhatsApp. */
 export type WhatsAppChannel = ChannelDefinition;

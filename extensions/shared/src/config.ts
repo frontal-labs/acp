@@ -1,7 +1,7 @@
-import { ValidationError } from "@acp/core";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 import type { z } from "zod";
 
-/** Parses extension configuration with a classified ACP validation error. */
+/** Parses extension configuration with a classified OCP validation error. */
 export function parseExtensionConfig<T>(provider: string, schema: z.ZodType<T>, value: unknown): T {
   try {
     return schema.parse(value);

@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package acp.v1.types;
+package ocp.v1.types;
 
 message ActionRequest {
   string action_id = 1;

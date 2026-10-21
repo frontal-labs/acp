@@ -1,4 +1,4 @@
-import type { ActionDefinition } from "acp-sdk";
+import type { ActionDefinition } from "@frontal-labs/open-channel";
 
 /** Input accepted by the calendar.create action. */
 export interface CalendarCreateInput {
@@ -39,5 +39,5 @@ export interface CalendarClient {
   update: (input: CalendarUpdateInput) => Promise<CalendarEvent>;
 }
 
-/** Action bundle registered through `createAcp({ actions })`. */
+/** Action bundle registered through `createOcp({ actions })`. */
 export type CalendarActions = ActionDefinition<unknown, unknown>[];
