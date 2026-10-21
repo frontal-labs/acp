@@ -29,7 +29,7 @@ const requiredFiles = [
   "rustfmt.toml",
   "docs/README.md",
   "docs/DEVELOPMENT.md",
-  "docs/SPEC_V0_1.md",
+  "docs/SPEC.md",
   "examples/README.md",
   "skills/ocp-examples/SKILL.md",
   "skills/ocp-governance/SKILL.md",
