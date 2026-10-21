@@ -26,11 +26,13 @@ reply = action(
     execute=lambda value, ctx: send_reply(value["ticketId"]),
 )
 
+
 async def on_message(ctx):
     await ctx.reply("I am looking into this.")
     result = await ctx.request("send_customer_reply", {"ticketId": "t-1"})
     if result.status == "approval_required":
         ...  # a human decides later with app.approve(result.approval_id, approver)
+
 
 app = open_channel(
     store=event_store,  # required: any durable store (append_if_absent, all, close)
@@ -51,14 +53,22 @@ await app.stop()
 ## Events
 
 ```python
-from open_channel import event_type, from_binary, from_json, message_received, new_event, to_binary, to_json
+from open_channel import (
+    event_type,
+    from_binary,
+    from_json,
+    message_received,
+    new_event,
+    to_binary,
+    to_json,
+)
 
 event = message_received(text="hi", actor=ActorRef("human:ada", type="ACTOR_TYPE_HUMAN"))
-event_type(event)              # "message.received", derived from the payload
-data = to_binary(event)        # protobuf wire bytes
-from_binary(data)              # validated; no version argument
-to_json(event)                 # ProtoJSON with protocolVersion "2.0"
-from_json(payload)             # rejects other versions and any eventType field
+event_type(event)  # "message.received", derived from the payload
+data = to_binary(event)  # protobuf wire bytes
+from_binary(data)  # validated; no version argument
+to_json(event)  # ProtoJSON with protocolVersion "2.0"
+from_json(payload)  # rejects other versions and any eventType field
 ```
 
 `new_event(payload={...})` builds any payload kind. The typed builders are
