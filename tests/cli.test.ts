@@ -1,5 +1,5 @@
 import { runCommand } from "@frontal-labs/open-channel-cli";
-import { eventToJson } from "@frontal-labs/open-channel-protocol";
+import { toJson } from "@frontal-labs/open-channel-protocol";
 import { createBufferedTestIO, createTestEvent } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
@@ -12,12 +12,12 @@ describe("OCP CLI", () => {
     const code = await runCommand(["version"], io);
 
     expect(code).toBe(0);
-    expect(stdout).toEqual(["0.1"]);
+    expect(stdout).toEqual(["2.0"]);
   });
 
   it("validates ProtoJSON read from stdin", async () => {
     const { io, stdout } = createBufferedTestIO(
-      JSON.stringify(eventToJson(createTestEvent({ text: "hello" }))),
+      JSON.stringify(toJson(createTestEvent({ text: "hello" }))),
     );
 
     const code = await runCommand(["validate"], io);

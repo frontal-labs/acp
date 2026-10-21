@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-cli",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Command-line tools for validating and inspecting OpenChannel Protocol messages",
   "keywords": [
     "openchannel-protocol",

@@ -45,7 +45,6 @@ export function normalizeA2AEvent(
       channelId: contextId,
       conversationId: `a2a:${contextId}`,
       conversationParticipants: [actor],
-      eventType: "message.received",
       extensions: {
         "ocp.provider": "a2a",
         ...(taskId ? { "a2a.task_id": taskId } : {}),
@@ -58,7 +57,7 @@ export function normalizeA2AEvent(
   );
 }
 
-/** Creates an A2A source for `createOcp({ channels })`. */
+/** Creates an A2A source for `openChannel({ channels })`. */
 export function createA2ASource(options: A2ASourceOptions = {}): ChannelSource {
   return createProviderSource("a2a", (input, metadata) =>
     normalizeA2AEvent(input, metadata, options),

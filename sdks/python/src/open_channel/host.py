@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import asyncio
 import inspect
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
-from typing import Protocol, TypedDict
+from datetime import datetime
 
-from .errors import ActionError, OcpError
+from .errors import OpenChannelError
+from .logger import Logger, StderrLogger
 from .models import (
     ActorRef,
     AgentCapabilities,
@@ -14,51 +14,69 @@ from .models import (
     AgentSkill,
     EventEnvelope,
     MessageReceived,
+    event_type,
     message_sent,
 )
 
 # Callbacks may be sync or async; their results are awaited when awaitable and otherwise ignored.
 Dispatch = Callable[[EventEnvelope], object]
-ActionHandler = Callable[[Mapping[str, object], EventEnvelope], object]
+ActionRequester = Callable[[str, object, Mapping[str, object] | None], Awaitable[object]]
 AgentHandler = Callable[["AgentContext"], object]
+
+# Keyword option -> key in the action mapping the app consumes.
+_ACTION_OPTION_KEYS = {
+    "action_id": "actionId",
+    "approver": "approver",
+    "reason": "reason",
+    "deadline": "deadline",
+    "target": "target",
+    "channel": "channel",
+    "conversation": "conversation",
+    "recipient": "recipient",
+}
+
+
+def action_mapping(
+    action_type: str, value: object, options: Mapping[str, object] | None = None
+) -> dict[str, object]:
+    """Build the action mapping the app consumes from a type, input, and keyword options."""
+
+    mapped: dict[str, object] = {"type": action_type, "input": value}
+    for name, item in (options or {}).items():
+        if item is not None:
+            mapped[_ACTION_OPTION_KEYS[name]] = item
+    return mapped
 
 
 async def _maybe_await(value: object) -> object:
     return (await value) if inspect.isawaitable(value) else value
 
 
-class ReplyOptions(TypedDict, total=False):
-    """Optional overrides for AgentContext.reply()."""
+class _Unset:
+    """Marks a ReplyOptions field the caller did not set, so the event's own routing applies."""
 
-    channel: Mapping[str, object] | None
-    conversation: Mapping[str, object] | None
-    recipient: ActorRef | None
-
-
-class AgentLogger(Protocol):
-    def debug(self, message: str, **details: object) -> None: ...
-
-    def error(self, message: str, **details: object) -> None: ...
-
-    def info(self, message: str, **details: object) -> None: ...
-
-    def warning(self, message: str, **details: object) -> None: ...
+    def __repr__(self) -> str:
+        return "UNSET"
 
 
-class NullLogger:
-    """Logger that discards every message."""
+UNSET = _Unset()
 
-    def debug(self, message: str, **details: object) -> None:
-        del message, details
 
-    def error(self, message: str, **details: object) -> None:
-        del message, details
+@dataclass(frozen=True, slots=True)
+class ReplyOptions:
+    """Routing overrides for `AgentContext.reply()`. Unset fields inherit the inbound event's routing."""
 
-    def info(self, message: str, **details: object) -> None:
-        del message, details
+    channel: Mapping[str, object] | None | _Unset = UNSET
+    conversation: Mapping[str, object] | None | _Unset = UNSET
+    recipient: ActorRef | None | _Unset = UNSET
 
-    def warning(self, message: str, **details: object) -> None:
-        del message, details
+
+def _reply_options(options: ReplyOptions | Mapping[str, object] | None) -> ReplyOptions:
+    if options is None:
+        return ReplyOptions()
+    if isinstance(options, ReplyOptions):
+        return options
+    return ReplyOptions(**dict(options))
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,7 +85,7 @@ class AgentDefinition:
     name: str
     on_message: AgentHandler
     description: str = ""
-    version: str = "1.0.0"
+    version: str = "2.0.0"
     url: str = ""
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
     skills: tuple[AgentSkill, ...] = ()
@@ -86,43 +104,17 @@ class AgentDefinition:
 
 
 @dataclass(slots=True)
-class AgentActions:
-    _requester: Callable[[str, object, Mapping[str, object] | None], Awaitable[object]]
-
-    async def request(
-        self,
-        action_type: str,
-        input: object,
-        options: Mapping[str, object] | None = None,
-    ) -> object:
-        return await self._requester(action_type, input, options)
-
-
-@dataclass(slots=True)
-class AgentHooks:
-    on_error: Callable[[OcpError], object] | None = None
-
-    async def report(self, error: OcpError) -> None:
-        if self.on_error is not None:
-            await _maybe_await(self.on_error(error))
-
-
-@dataclass(slots=True)
 class AgentContext:
+    """What an agent sees for one inbound message: the message, its routing, and two actions."""
+
     agent: ActorRef
-    card: AgentCard
     event: EventEnvelope
     message: MessageReceived
-    actor: ActorRef | None = None
-    recipient: ActorRef | None = None
     channel: Mapping[str, object] | None = None
     conversation: Mapping[str, object] | None = None
-    raw_event: EventEnvelope | None = None
-    actions: AgentActions | None = None
-    hooks: AgentHooks = field(default_factory=AgentHooks)
-    logger: AgentLogger = field(default_factory=NullLogger)
+    logger: Logger = field(default_factory=StderrLogger)
     _dispatch: Dispatch | None = None
-    _action_handler: ActionHandler | None = None
+    _requester: ActionRequester | None = None
     _replies: list[EventEnvelope] = field(default_factory=list)
 
     @property
@@ -132,16 +124,18 @@ class AgentContext:
     async def reply(
         self,
         text: str,
-        options: ReplyOptions | None = None,
+        options: ReplyOptions | Mapping[str, object] | None = None,
     ) -> EventEnvelope:
         """Build a message.sent reply to the current event and dispatch it if a sink is set."""
 
-        opts: ReplyOptions = options or {}
+        opts = _reply_options(options)
         event = message_sent(
             actor=self.agent,
-            channel=opts.get("channel", self.event.channel),
-            conversation=opts.get("conversation", self.event.conversation),
-            recipient=opts.get("recipient", self.event.actor),
+            channel=self.event.channel if opts.channel is UNSET else opts.channel,
+            conversation=(
+                self.event.conversation if opts.conversation is UNSET else opts.conversation
+            ),
+            recipient=self.event.actor if opts.recipient is UNSET else opts.recipient,
             text=text,
         )
         event.causation_id = self.event.event_id
@@ -151,104 +145,96 @@ class AgentContext:
             await _maybe_await(self._dispatch(event))
         return event
 
-    async def request_action(self, action: Mapping[str, object]) -> object:
-        """Ask the app to run an action for the current event (policy and approval apply)."""
+    async def request(
+        self,
+        action_type: str,
+        input: object,
+        *,
+        approver: ActorRef | None = None,
+        reason: str | None = None,
+        deadline: datetime | None = None,
+        target: str | None = None,
+        action_id: str | None = None,
+        channel: Mapping[str, object] | None = None,
+        conversation: Mapping[str, object] | None = None,
+        recipient: ActorRef | None = None,
+    ) -> object:
+        """Ask the app to run a registered action for this event. Policy and approval apply.
 
-        if self._action_handler is None:
-            raise ActionError("OCP action handling is not configured for this host")
-        return await _maybe_await(self._action_handler(action, self.event))
+        `approver`, `reason`, and `deadline` apply only when the policy requires approval. The
+        policy's own approver takes precedence over `approver`.
+        """
+
+        if self._requester is None:
+            raise OpenChannelError(
+                "OCP action handling is not configured for this agent", stage="action"
+            )
+        options = {
+            "action_id": action_id,
+            "approver": approver,
+            "reason": reason,
+            "deadline": deadline,
+            "target": target,
+            "channel": channel,
+            "conversation": conversation,
+            "recipient": recipient,
+        }
+        mapping = action_mapping(action_type, input, options)
+        return await _maybe_await(self._requester(mapping["type"], mapping["input"], mapping))
 
 
 class AgentHost:
+    """Routes `message.received` events to agents. Internal to the app; use `open_channel()`."""
+
     def __init__(
         self,
         *,
-        agents: list[AgentDefinition] | None = None,
-        dispatch: Dispatch | None = None,
-        action_handler: ActionHandler | None = None,
-        on_error: Callable[[OcpError], object] | None = None,
-        max_concurrent_conversations: int | None = None,
+        dispatch: Dispatch,
+        requester: Callable[[Mapping[str, object], EventEnvelope], Awaitable[object]],
+        logger: Logger,
     ) -> None:
         self._agents: dict[str, AgentDefinition] = {}
         self._dispatch = dispatch
-        self._action_handler = action_handler
-        self._on_error = on_error
-        self._semaphore: asyncio.Semaphore | None = None
-        self._max_concurrent = max(1, max_concurrent_conversations or 2**31 - 1)
-        for agent in agents or []:
-            self.register(agent)
+        self._requester = requester
+        self._logger = logger
 
-    def register(self, agent: AgentDefinition) -> AgentHost:
+    def register(self, agent: AgentDefinition) -> None:
         if agent.id in self._agents:
             raise ValueError(f"OCP agent is already registered: {agent.id}")
         self._agents[agent.id] = agent
-        return self
 
-    def unregister(self, agent_id: str) -> bool:
-        return self._agents.pop(agent_id, None) is not None
-
-    def get_agent(self, agent_id: str) -> AgentDefinition | None:
-        return self._agents.get(agent_id)
-
-    def get_agent_card(self, agent_id: str) -> AgentCard | None:
-        agent = self.get_agent(agent_id)
-        return agent.card() if agent is not None else None
-
-    def list_agent_cards(self) -> tuple[AgentCard, ...]:
+    def cards(self) -> tuple[AgentCard, ...]:
         return tuple(agent.card() for agent in self._agents.values())
 
-    async def handle(self, event: EventEnvelope | Mapping[str, object]) -> bool:
+    async def handle(self, event: EventEnvelope) -> bool:
         """Route a message.received event to its recipient agent. Returns False if not routed."""
 
-        if self._semaphore is None:
-            self._semaphore = asyncio.Semaphore(self._max_concurrent)
-        envelope = (
-            event if isinstance(event, EventEnvelope) else EventEnvelope.from_proto_json(event)
-        )
-        message = envelope.message_received_payload()
-        if envelope.event_type != "message.received" or message is None:
+        message = event.message_received_payload()
+        if message is None or event_type(event) != "message.received":
             return False
-        agent_id = envelope.recipient.id if envelope.recipient is not None else ""
-        definition = self._agents.get(agent_id)
+        definition = self._agents.get(event.recipient.id if event.recipient else "")
         if definition is None:
             return False
+
+        async def request(
+            action_type: str, value: object, options: Mapping[str, object] | None
+        ) -> object:
+            mapping = {**(options or {}), "type": action_type, "input": value}
+            return await _maybe_await(self._requester(mapping, event))
+
         context = AgentContext(
-            actor=envelope.actor,
             agent=ActorRef(
                 capabilities=definition.actor_capabilities,
                 display_name=definition.name,
                 id=definition.id,
             ),
-            card=definition.card(),
-            channel=envelope.channel,
-            conversation=envelope.conversation,
-            event=envelope,
-            logger=NullLogger(),
+            channel=event.channel,
+            conversation=event.conversation,
+            event=event,
+            logger=self._logger,
             message=message,
-            recipient=envelope.recipient,
-            raw_event=envelope,
-            _action_handler=self._action_handler,
             _dispatch=self._dispatch,
+            _requester=request,
         )
-        context.actions = AgentActions(
-            lambda action_type, value, options: self._request_action(
-                action_type, value, options, envelope
-            )
-        )
-        async with self._semaphore:
-            await _maybe_await(definition.on_message(context))
+        await _maybe_await(definition.on_message(context))
         return True
-
-    async def _request_action(
-        self,
-        action_type: str,
-        value: object,
-        options: Mapping[str, object] | None,
-        event: EventEnvelope,
-    ) -> object:
-        action = {"type": action_type, "input": value, **(dict(options or {}))}
-        return (
-            await _maybe_await(self._action_handler(action, event))
-            if self._action_handler
-            else ActionError("OCP action handling is not configured for this host")
-        )

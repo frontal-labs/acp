@@ -1,7 +1,7 @@
 # Native TypeScript OCP
 
 This is the smallest complete TypeScript example. It uses the config-first
-`createOcp()` API with a policy engine, an example channel, and an example event
+`openChannel()` API with a policy engine, an example channel, and an example event
 store. The store and channel live in `examples/_shared/typescript/example-kit.ts`;
 they are for demonstration only, not production.
 

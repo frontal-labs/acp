@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-ext-postgres",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "PostgreSQL event store for the OpenChannel Protocol runtime",
   "keywords": [
     "openchannel-protocol",

@@ -21,3 +21,7 @@ sdks/python/build/
 sdks/rust/target/
 examples/native-rust/target/
 .DS_Store
+
+# Generated protobuf bindings. Regenerate with `pnpm generate`; only the README is tracked.
+/proto/gen/*
+!/proto/gen/README.md

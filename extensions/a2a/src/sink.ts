@@ -13,7 +13,7 @@ export function createA2ASink(transport: A2ATransport): ChannelSink {
   return createProviderSink(
     "a2a",
     async (event, options?: DeliveryOptions): Promise<DeliveryReceipt | undefined> => {
-      if (event.eventType !== "message.sent" || event.payload.case !== "messageSent") {
+      if (event.payload.case !== "messageSent") {
         return undefined;
       }
       const result = await transport.sendMessage({

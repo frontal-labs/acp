@@ -16,7 +16,7 @@ export function createWhatsAppSink(
   return createProviderSink(
     "whatsapp",
     async (event, options?: DeliveryOptions): Promise<DeliveryReceipt | undefined> => {
-      if (event.eventType !== "message.sent" || event.payload.case !== "messageSent") {
+      if (event.payload.case !== "messageSent") {
         return undefined;
       }
       const to = event.recipient?.id ?? event.channel?.address;

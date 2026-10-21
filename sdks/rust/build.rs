@@ -9,7 +9,7 @@ fn main() {
     println!("cargo:rerun-if-changed={}", proto_root.display());
 
     // A published crate ships src/generated and does not contain the repository proto sources.
-    if !proto_root.join("v1/api/events.proto").exists() {
+    if !proto_root.join("ocp/api/events.proto").exists() {
         return;
     }
 
@@ -22,7 +22,7 @@ fn main() {
     config.btree_map(["."]);
     config
         .compile_protos(
-            &[proto_root.join("v1/api/events.proto"), proto_root.join("v2/api/events.proto")],
+            &[proto_root.join("ocp/api/events.proto")],
             std::slice::from_ref(&proto_root),
         )
         .expect("compile OCP protobuf definitions");

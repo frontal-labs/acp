@@ -1,9 +1,9 @@
 import { ValidationError } from "@frontal-labs/open-channel-core";
 import {
   type EventEnvelope,
-  eventFromJson,
-  eventToJson,
-  isV1Event,
+  eventType,
+  fromJson,
+  toJson,
 } from "@frontal-labs/open-channel-protocol";
 import type { ActionExecutionRecord, EventStore } from "@frontal-labs/open-channel-runtime";
 
@@ -63,14 +63,7 @@ function validatedTableName(value: string): string {
 
 function decode(row: PostgresEventRow): EventEnvelope {
   const value = typeof row.event_json === "string" ? JSON.parse(row.event_json) : row.event_json;
-  const event = eventFromJson(value);
-  if (!isV1Event(event)) {
-    throw new ValidationError("PostgreSQL event store only supports OCP v0.1 envelopes", {
-      provider: "postgres",
-      stage: "validation",
-    });
-  }
-  return event;
+  return fromJson(value);
 }
 
 /** Durable EventStore implementation backed by an injected PostgreSQL client. */
@@ -102,7 +95,7 @@ export class PostgresEventStore implements EventStore {
        ON CONFLICT (event_id) DO NOTHING`,
       [
         event.eventId,
-        event.eventType,
+        eventType(event),
         event.protocolVersion,
         event.occurredAt
           ? new Date(Number(event.occurredAt.seconds) * 1000 + event.occurredAt.nanos / 1_000_000)
@@ -110,7 +103,7 @@ export class PostgresEventStore implements EventStore {
         event.correlationId,
         event.causationId,
         event.idempotencyKey,
-        JSON.stringify(eventToJson(event)),
+        JSON.stringify(toJson(event)),
       ],
     );
   }
@@ -123,7 +116,7 @@ export class PostgresEventStore implements EventStore {
        RETURNING event_id`,
       [
         event.eventId,
-        event.eventType,
+        eventType(event),
         event.protocolVersion,
         event.occurredAt
           ? new Date(Number(event.occurredAt.seconds) * 1000 + event.occurredAt.nanos / 1_000_000)
@@ -131,7 +124,7 @@ export class PostgresEventStore implements EventStore {
         event.correlationId,
         event.causationId,
         event.idempotencyKey,
-        JSON.stringify(eventToJson(event)),
+        JSON.stringify(toJson(event)),
       ],
     );
     return result.rows.length > 0;

@@ -1,28 +1,21 @@
-# OCP protobuf schema
+# OCP protobuf schemas
 
-The canonical wire schema is split by responsibility and version:
+The canonical wire contract. There is one protocol version, `2.0`, and one envelope.
 
 ```text
-proto/
-  buf.yaml       Buf module, lint, and breaking-change configuration
-  buf.gen.yaml   Buf code-generation template
-  v1/
-    api/       Protocol 0.1 envelopes and protocol-level event definitions (canonical)
-    types/     Shared domain types used by API messages
-  v2/
-    api/       Versioned typed envelope; its payload oneof is the event discriminant
-  gen/
-    typescript/
-    python/
-    rust/
+proto/ocp/api/events.proto     ocp.api.EventEnvelope (the single envelope)
+proto/ocp/types/*.proto        ocp.types.* domain messages
+proto/gen/                     generated bindings (do not edit by hand)
 ```
 
-Keep package names versioned (`ocp.v1.api`, `ocp.v1.types`, and `ocp.v2.api`) while keeping the repository layout easy to navigate. The `PACKAGE_DIRECTORY_MATCH` and `PACKAGE_VERSION_SUFFIX` Buf rules are intentionally disabled because the requested layout uses versioned directories without repeating the full package name.
+The package names are `ocp.api` and `ocp.types`. There is no version suffix: the protocol version is carried by the `protocol_version` field of each envelope.
 
-Run `pnpm generate` from the repository root after changing a schema. The root scripts pass `proto/buf.yaml` and `proto/buf.gen.yaml` explicitly, so Buf configuration stays next to the schema while generated output remains under `proto/gen`. It runs:
+## Compatibility rules
 
-- Buf and `protoc-gen-es` for `proto/gen/typescript`;
-- `protoc` 33.2 for `proto/gen/python` (the version CI pins; `pnpm generate:python` refuses other versions, and `PROTOC` can point at the 33.2 binary);
-- the Rust SDK's `prost-build` for `proto/gen/rust`.
+- Field numbers and package names are stable. Add fields; never renumber or reuse one.
+- Field 2 is the removed `event_type` string. It is `reserved`, so its number and name stay retired.
+- The event name is derived from the payload `oneof`. Do not add a second type field.
 
-Generated bindings are checked into this reference repository so each SDK has a visible, reproducible wire surface. Do not edit generated files by hand.
+## Workflow
+
+Edit the schemas, then run `pnpm generate`, inspect the generated diff, and run `pnpm proto:lint` and the language tests.

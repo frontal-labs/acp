@@ -17,27 +17,26 @@ import {
   ChannelRefSchema,
   ConversationRefSchema,
   ConversationStatus,
-  createEvent,
   EscalationTriggeredSchema,
-  type EventName,
   type EventPayload,
-  eventFromBinary,
-  eventToBinary,
-  eventTypeOf,
+  type EventType,
+  eventType,
+  fromBinary,
   HandoffCompletedSchema,
   HandoffInitiatedSchema,
   MessageReceivedSchema,
   MessageSentSchema,
+  newEvent,
   PolicyEvaluatedSchema,
-  type ProtocolVersion,
   TaskAssignedSchema,
   TaskCreatedSchema,
+  toBinary,
 } from "../src/index.js";
 
 /**
- * Cross-language parity fixture. Every event kind is encoded as real protobuf in both
- * protocol versions. The Python and Rust SDK tests decode these bytes and re-encode them
- * to the same bytes, which proves all three implementations agree on the wire format.
+ * Cross-language parity fixture. Every event kind is encoded as real protobuf. The Python and
+ * Rust SDK tests decode these bytes and re-encode them to the same bytes, which proves all three
+ * implementations agree on the wire format.
  *
  * Regenerate with: UPDATE_PROTOCOL_FIXTURES=1 pnpm --filter @frontal-labs/open-channel-protocol test
  */
@@ -81,7 +80,7 @@ const action = create(ActionRequestSchema, {
 });
 const deadline = timestampFromDate(new Date("2030-01-01T00:00:00Z"));
 
-const payloads: Record<string, { eventType: EventName; payload: EventPayload }> = {
+const payloads: Record<string, { eventType: EventType; payload: EventPayload }> = {
   actionExecuted: {
     eventType: "action.executed",
     payload: {
@@ -260,40 +259,32 @@ const payloads: Record<string, { eventType: EventName; payload: EventPayload }> 
 
 interface ParityCase {
   binary: string;
-  eventType: EventName;
+  eventType: EventType;
   name: string;
-  protocolVersion: ProtocolVersion;
 }
 
 function buildCases(): ParityCase[] {
-  const cases: ParityCase[] = [];
-  for (const version of ["0.1", "0.2"] as const) {
-    for (const [name, { eventType, payload }] of Object.entries(payloads)) {
-      const event = createEvent({
-        actor: human,
-        causationId: "cause:parity",
-        channel,
-        conversation,
-        correlationId: "corr:parity",
-        eventId: `parity-${name}-${version}`,
-        eventType,
-        extensions: { tenant: "acme", trace: "abc" },
-        idempotencyKey: "idem:parity",
-        occurredAt: timestampFromDate(new Date("2026-01-01T00:00:00.123Z")),
-        payload,
-        protocolVersion: version,
-        recipient: agent,
-        source: human,
-      });
-      cases.push({
-        binary: Buffer.from(eventToBinary(event)).toString("base64"),
-        eventType: eventTypeOf(event),
-        name: `${name}-${version}`,
-        protocolVersion: version,
-      });
-    }
-  }
-  return cases;
+  return Object.entries(payloads).map(([name, { payload }]) => {
+    const event = newEvent({
+      actor: human,
+      causationId: "cause:parity",
+      channel,
+      conversation,
+      correlationId: "corr:parity",
+      eventId: `parity-${name}`,
+      extensions: { tenant: "acme", trace: "abc" },
+      idempotencyKey: "idem:parity",
+      occurredAt: timestampFromDate(new Date("2026-01-01T00:00:00.123Z")),
+      payload,
+      recipient: agent,
+      source: human,
+    });
+    return {
+      binary: Buffer.from(toBinary(event)).toString("base64"),
+      eventType: eventType(event),
+      name,
+    };
+  });
 }
 
 describe("cross-language protobuf parity", () => {
@@ -309,9 +300,9 @@ describe("cross-language protobuf parity", () => {
 
   it.each(cases)("decodes and re-encodes $name to identical bytes", (fixture) => {
     const bytes = Buffer.from(fixture.binary, "base64");
-    const event = eventFromBinary(bytes, { protocolVersion: fixture.protocolVersion });
+    const event = fromBinary(bytes);
 
-    expect(eventTypeOf(event)).toBe(fixture.eventType);
-    expect(Buffer.from(eventToBinary(event)).toString("base64")).toBe(fixture.binary);
+    expect(eventType(event)).toBe(fixture.eventType);
+    expect(Buffer.from(toBinary(event)).toString("base64")).toBe(fixture.binary);
   });
 });

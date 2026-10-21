@@ -7,7 +7,7 @@ description: Implement OCP policy decisions, approval lifecycles, escalations, a
 
 Use this skill for changes to authorization, approval routing, deadline
 handling, escalation, or the runtime action lifecycle. Read
-[`docs/SPEC_V0_1.md`](../../docs/SPEC_V0_1.md) before changing semantics.
+[`docs/SPEC.md`](../../docs/SPEC.md) before changing semantics.
 
 ## Ownership boundaries
 

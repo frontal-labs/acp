@@ -24,7 +24,7 @@ export interface GoogleChatSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete Google Chat channel configuration for `createOcp()`. */
+/** Complete Google Chat channel configuration for `openChannel()`. */
 export interface GoogleChatChannelOptions extends GoogleChatSourceOptions {
   transport: GoogleChatTransport;
 }

@@ -5,30 +5,18 @@ export {
   actionExecuted,
   actionFailed,
   approvalRequested,
-  type EventBuilderBase,
+  type EventMeta,
   type MessageReceivedInput,
   type MessageSentInput,
   messageReceived,
   messageSent,
 } from "./builders.js";
+export { EVENT_TYPES, type EventType, PROTOCOL_VERSION } from "./constants.js";
 export {
-  EVENT_TYPES,
-  OCP_PROTOCOL_VERSION,
-  OCP_PROTOCOL_VERSIONS,
-  OCP_V2_PROTOCOL_VERSION,
-  type ProtocolVersion,
-} from "./constants.js";
-export {
-  createEvent,
-  type EnvelopeFor,
   type EventInput,
-  type EventName,
   type EventPayload,
-  eventTypeOf,
-  isV1Event,
-  isV2Event,
-  type OcpEvent,
-  type V2EventEnvelope,
+  eventType,
+  newEvent,
   validateEvent,
 } from "./events.js";
 export type {
@@ -42,6 +30,7 @@ export type {
   ArtifactRef,
   ChannelRef,
   ConversationRef,
+  EscalationTriggered,
   EventEnvelope,
   HandoffCompleted,
   HandoffInitiated,
@@ -70,18 +59,6 @@ export {
   ConversationStatusSchema,
   EscalationTriggeredSchema,
   EventEnvelopeSchema,
-  EventType,
-  EventTypeSchema,
-  file_v1_api_events,
-  file_v1_types_actions,
-  file_v1_types_actions_result,
-  file_v1_types_actors,
-  file_v1_types_approvals,
-  file_v1_types_channels,
-  file_v1_types_handoffs,
-  file_v1_types_messages,
-  file_v1_types_policy,
-  file_v1_types_tasks,
   HandoffCompletedSchema,
   HandoffInitiatedSchema,
   MessageReceivedSchema,
@@ -90,16 +67,4 @@ export {
   TaskAssignedSchema,
   TaskCreatedSchema,
 } from "./generated.js";
-export {
-  EventEnvelopeJsonSchema,
-  EventInputSchema,
-  EventNameSchema,
-  EventPayloadInputSchema,
-} from "./schemas.js";
-export {
-  eventFromBinary,
-  eventFromJson,
-  eventToBinary,
-  eventToJson,
-  parseEvent,
-} from "./serialization.js";
+export { fromBinary, fromJson, toBinary, toJson } from "./serialization.js";

@@ -1,18 +1,14 @@
-//! OCP event envelopes for both wire protocol versions.
+//! OCP event envelopes. There is one envelope and one protocol version, [`PROTOCOL_VERSION`].
 //!
-//! - `0.1` stores the event name in `eventType` next to the payload.
-//! - `0.2` has no `eventType`; the payload oneof is the event kind.
-//!
-//! The same constructors build either version; the version is the first argument. Binary
-//! protobuf is produced by prost from the generated types (see `binary.rs`), and the ProtoJSON
-//! form is produced with serde. Mirrors `packages/protocol/src/events.ts`, `builders.ts`, and
-//! `serialization.ts`.
+//! The payload oneof is the event kind: [`EventEnvelope::event_type`] derives the dot-separated
+//! name (for example `approval.granted`) from it, so the envelope never stores a second copy.
+//! Binary protobuf is encoded by prost (see `binary.rs`); the ProtoJSON form uses serde.
+//! Mirrors `packages/protocol/src/events.ts`, `builders.ts`, and `serialization.ts`.
 
 use std::collections::BTreeMap;
-use std::fmt;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use serde::de::DeserializeOwned;
+use serde::Deserialize;
 use serde_json::{Map, Value};
 use thiserror::Error;
 use uuid::Uuid;
@@ -27,38 +23,8 @@ use crate::payloads::{
     TaskAssigned, TaskCreated,
 };
 
-/// Wire protocol version of an envelope. Defaults to `0.1`.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
-pub enum ProtocolVersion {
-    /// Legacy envelope that stores `eventType` next to the payload.
-    #[default]
-    V0_1,
-    /// Payload-discriminated envelope; the event name is derived from the payload.
-    V0_2,
-}
-
-impl ProtocolVersion {
-    pub const fn as_str(self) -> &'static str {
-        match self {
-            Self::V0_1 => "0.1",
-            Self::V0_2 => "0.2",
-        }
-    }
-
-    pub fn parse(value: &str) -> Option<Self> {
-        match value {
-            "0.1" => Some(Self::V0_1),
-            "0.2" => Some(Self::V0_2),
-            _ => None,
-        }
-    }
-}
-
-impl fmt::Display for ProtocolVersion {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        formatter.write_str(self.as_str())
-    }
-}
+/// The protocol version carried by every envelope.
+pub const PROTOCOL_VERSION: &str = "2.0";
 
 #[derive(Debug, Error)]
 pub enum EventError {
@@ -178,24 +144,22 @@ impl EventPayload {
         })
     }
 
+    /// Deserializes straight from the borrowed JSON value; no intermediate clone.
     fn payload_from_json(key: &str, value: &Value) -> Result<Self, EventError> {
-        fn parse<T: DeserializeOwned>(value: &Value) -> Result<T, EventError> {
-            Ok(serde_json::from_value(value.clone())?)
-        }
         Ok(match key {
-            "messageReceived" => Self::MessageReceived(parse(value)?),
-            "messageSent" => Self::MessageSent(parse(value)?),
-            "taskCreated" => Self::TaskCreated(parse(value)?),
-            "taskAssigned" => Self::TaskAssigned(parse(value)?),
-            "approvalRequested" => Self::ApprovalRequested(parse(value)?),
-            "approvalDecided" => Self::ApprovalDecided(parse(value)?),
-            "approvalExpired" => Self::ApprovalExpired(parse(value)?),
-            "escalationTriggered" => Self::EscalationTriggered(parse(value)?),
-            "handoffInitiated" => Self::HandoffInitiated(parse(value)?),
-            "handoffCompleted" => Self::HandoffCompleted(parse(value)?),
-            "policyEvaluated" => Self::PolicyEvaluated(parse(value)?),
-            "actionExecuted" => Self::ActionExecuted(parse(value)?),
-            "actionFailed" => Self::ActionFailed(parse(value)?),
+            "messageReceived" => Self::MessageReceived(Deserialize::deserialize(value)?),
+            "messageSent" => Self::MessageSent(Deserialize::deserialize(value)?),
+            "taskCreated" => Self::TaskCreated(Deserialize::deserialize(value)?),
+            "taskAssigned" => Self::TaskAssigned(Deserialize::deserialize(value)?),
+            "approvalRequested" => Self::ApprovalRequested(Deserialize::deserialize(value)?),
+            "approvalDecided" => Self::ApprovalDecided(Deserialize::deserialize(value)?),
+            "approvalExpired" => Self::ApprovalExpired(Deserialize::deserialize(value)?),
+            "escalationTriggered" => Self::EscalationTriggered(Deserialize::deserialize(value)?),
+            "handoffInitiated" => Self::HandoffInitiated(Deserialize::deserialize(value)?),
+            "handoffCompleted" => Self::HandoffCompleted(Deserialize::deserialize(value)?),
+            "policyEvaluated" => Self::PolicyEvaluated(Deserialize::deserialize(value)?),
+            "actionExecuted" => Self::ActionExecuted(Deserialize::deserialize(value)?),
+            "actionFailed" => Self::ActionFailed(Deserialize::deserialize(value)?),
             other => return Err(invalid(format!("unknown payload {other}"))),
         })
     }
@@ -238,18 +202,15 @@ fn require_text(value: &str, context: &str, key: &str) -> Result<(), EventError>
     }
 }
 
-/// An OCP envelope for either protocol version.
+/// An OCP event envelope.
 ///
-/// The shape follows the version: `event_type` is `Some` for `0.1` and `None` for `0.2`.
-/// Use [`EventEnvelope::validate`] (also run by the JSON and binary codecs) to check it.
+/// Use [`EventEnvelope::new`] or a typed builder such as [`message_received`] to create one.
+/// [`EventEnvelope::validate`] runs before every JSON and binary encode and after every decode.
 #[derive(Clone, Debug, PartialEq)]
 pub struct EventEnvelope {
     pub event_id: String,
-    pub protocol_version: ProtocolVersion,
-    /// Stored event name. Required for `0.1`, must be absent for `0.2`.
-    pub event_type: Option<String>,
-    /// RFC 3339 UTC timestamp. Fractional seconds are kept at millisecond, microsecond, or
-    /// nanosecond precision, whichever the source provides.
+    /// RFC 3339 UTC timestamp. Fractional seconds keep millisecond, microsecond, or nanosecond
+    /// precision, whichever the source provides.
     pub occurred_at: String,
     pub source: Option<ActorRef>,
     pub actor: Option<ActorRef>,
@@ -264,32 +225,38 @@ pub struct EventEnvelope {
 }
 
 impl EventEnvelope {
-    /// Builds an envelope from an explicit event name and rejects a name that does not match
-    /// the payload, for either version.
-    pub fn with_event_type(
-        protocol_version: ProtocolVersion,
-        event_type: &str,
-        payload: EventPayload,
-    ) -> Result<Self, EventError> {
-        let derived = payload.event_type();
-        if event_type != derived {
-            return Err(invalid(format!(
-                "event type {event_type} does not match payload event {derived}"
-            )));
+    /// Builds an envelope with a fresh event ID and the current time.
+    pub fn new(payload: EventPayload) -> Self {
+        Self {
+            event_id: Uuid::new_v4().to_string(),
+            occurred_at: system_time_to_rfc3339(SystemTime::now()),
+            source: None,
+            actor: None,
+            recipient: None,
+            channel: None,
+            conversation: None,
+            correlation_id: String::new(),
+            causation_id: String::new(),
+            idempotency_key: String::new(),
+            extensions: BTreeMap::new(),
+            payload,
         }
-        let event = envelope(protocol_version, payload);
-        event.validate()?;
-        Ok(event)
     }
 
-    pub fn message_received_payload(&self) -> Option<&MessageReceived> {
+    /// The dot-separated event name, derived from the payload (for example `approval.granted`).
+    pub fn event_type(&self) -> &'static str {
+        self.payload.event_type()
+    }
+
+    /// The message payload, when this is a `message.received` event.
+    pub fn as_message_received(&self) -> Option<&MessageReceived> {
         match &self.payload {
             EventPayload::MessageReceived(message) => Some(message),
             _ => None,
         }
     }
 
-    /// Checks identity, protocol version and shape agreement, and payload invariants.
+    /// Checks the event ID, timestamp, and payload invariants.
     pub fn validate(&self) -> Result<(), EventError> {
         if self.event_id.trim().is_empty() {
             return Err(invalid("event_id is required"));
@@ -297,40 +264,15 @@ impl EventEnvelope {
         if self.occurred_at.trim().is_empty() {
             return Err(invalid("occurred_at is required"));
         }
-        match (self.protocol_version, &self.event_type) {
-            (ProtocolVersion::V0_1, None) => {
-                return Err(invalid("protocol 0.1 envelope requires event_type"));
-            }
-            (ProtocolVersion::V0_2, Some(_)) => {
-                return Err(invalid(
-                    "protocol 0.2 envelope must not carry event_type; the name is derived from the payload",
-                ));
-            }
-            _ => {}
-        }
-        if let Some(event_type) = &self.event_type {
-            let derived = self.payload.event_type();
-            if event_type != derived {
-                return Err(invalid(format!(
-                    "event_type {event_type} does not match payload event {derived}"
-                )));
-            }
-        }
         self.payload.validate()
     }
 
-    /// Serializes to ProtoJSON-style JSON, with `eventType` only for `0.1`.
-    pub fn to_proto_json(&self) -> Result<Value, EventError> {
+    /// Serializes to ProtoJSON, with the payload under its oneof key.
+    pub fn to_json(&self) -> Result<Value, EventError> {
         self.validate()?;
         let mut object = Map::new();
         object.insert("eventId".to_owned(), Value::String(self.event_id.clone()));
-        object.insert(
-            "protocolVersion".to_owned(),
-            Value::String(self.protocol_version.as_str().to_owned()),
-        );
-        if let Some(event_type) = &self.event_type {
-            object.insert("eventType".to_owned(), Value::String(event_type.clone()));
-        }
+        object.insert("protocolVersion".to_owned(), Value::String(PROTOCOL_VERSION.to_owned()));
         object.insert("occurredAt".to_owned(), Value::String(self.occurred_at.clone()));
         insert_optional(&mut object, "source", &self.source)?;
         insert_optional(&mut object, "actor", &self.actor)?;
@@ -347,24 +289,25 @@ impl EventEnvelope {
         Ok(Value::Object(object))
     }
 
-    /// Parses an untrusted ProtoJSON envelope. The version is read from `protocolVersion`.
-    pub fn from_proto_json(value: &Value) -> Result<Self, EventError> {
+    /// Parses and validates an untrusted ProtoJSON envelope.
+    pub fn from_json(value: &Value) -> Result<Self, EventError> {
         let object = value.as_object().ok_or_else(|| invalid("event must be a JSON object"))?;
-        let protocol_version = match object.get("protocolVersion").and_then(Value::as_str) {
-            Some(text) => ProtocolVersion::parse(text)
-                .ok_or_else(|| invalid(format!("unsupported protocolVersion {text}")))?,
+        match object.get("protocolVersion").and_then(Value::as_str) {
+            Some(PROTOCOL_VERSION) => {}
+            Some(text) => {
+                return Err(invalid(format!(
+                    "unsupported protocolVersion {text}; expected {PROTOCOL_VERSION}"
+                )))
+            }
             None => return Err(invalid("event must have a protocolVersion")),
-        };
+        }
         let mut present = PAYLOAD_KEYS.iter().filter(|key| object.contains_key(**key));
         let key = present.next().ok_or_else(|| invalid("event must have a payload"))?;
         if present.next().is_some() {
             return Err(invalid("event must have exactly one payload"));
         }
-        let payload = EventPayload::payload_from_json(key, &object[*key])?;
         let event = EventEnvelope {
             event_id: string_field(object, "eventId")?,
-            protocol_version,
-            event_type: optional_string(object, "eventType")?,
             occurred_at: string_field(object, "occurredAt")?,
             source: optional_field(object, "source")?,
             actor: optional_field(object, "actor")?,
@@ -375,119 +318,75 @@ impl EventEnvelope {
             causation_id: string_field(object, "causationId")?,
             idempotency_key: string_field(object, "idempotencyKey")?,
             extensions: optional_field(object, "extensions")?.unwrap_or_default(),
-            payload,
+            payload: EventPayload::payload_from_json(key, &object[*key])?,
         };
         event.validate()?;
         Ok(event)
     }
 
-    /// Encodes as binary protobuf (`ocp.v1.api.EventEnvelope` for 0.1, `ocp.v2.api.EventEnvelope`
-    /// for 0.2). Every payload kind has a protobuf encoding.
+    /// Encodes as binary protobuf (`ocp.api.EventEnvelope`).
     pub fn to_binary(&self) -> Result<Vec<u8>, EventError> {
         self.validate()?;
-        binary::encode_envelope(self)
+        binary::encode(self)
     }
 
-    /// Decodes binary protobuf. Binary has no version discriminator, so the expected
-    /// `protocol_version` is required and must match the `protocol_version` field on the wire.
-    pub fn from_binary(
-        bytes: &[u8],
-        protocol_version: ProtocolVersion,
-    ) -> Result<Self, EventError> {
-        let event = binary::decode_envelope(bytes, protocol_version)?;
+    /// Decodes and validates binary protobuf (`ocp.api.EventEnvelope`).
+    pub fn from_binary(bytes: &[u8]) -> Result<Self, EventError> {
+        let event = binary::decode(bytes)?;
         event.validate()?;
         Ok(event)
     }
 }
 
-/// Returns the event name for any envelope, derived from its payload for both versions.
-pub fn event_type_of(event: &EventEnvelope) -> &'static str {
-    event.payload.event_type()
+fn envelope(payload: EventPayload) -> EventEnvelope {
+    EventEnvelope::new(payload)
 }
 
-fn envelope(protocol_version: ProtocolVersion, payload: EventPayload) -> EventEnvelope {
-    EventEnvelope {
-        event_id: Uuid::new_v4().to_string(),
-        protocol_version,
-        event_type: (protocol_version == ProtocolVersion::V0_1)
-            .then(|| payload.event_type().to_owned()),
-        occurred_at: now_rfc3339(),
-        source: None,
-        actor: None,
-        recipient: None,
-        channel: None,
-        conversation: None,
-        correlation_id: String::new(),
-        causation_id: String::new(),
-        idempotency_key: String::new(),
-        extensions: BTreeMap::new(),
-        payload,
-    }
+/// `message.received`.
+pub fn message_received(text: impl Into<String>) -> EventEnvelope {
+    envelope(EventPayload::MessageReceived(MessageReceived {
+        text: text.into(),
+        ..MessageReceived::default()
+    }))
 }
 
-/// `message.received` for the requested protocol version.
-pub fn message_received(
-    protocol_version: ProtocolVersion,
-    text: impl Into<String>,
-) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::MessageReceived(MessageReceived {
-            text: text.into(),
-            ..MessageReceived::default()
-        }),
-    )
+/// `message.sent`.
+pub fn message_sent(text: impl Into<String>) -> EventEnvelope {
+    envelope(EventPayload::MessageSent(MessageSent { text: text.into(), ..MessageSent::default() }))
 }
 
-/// `message.sent` for the requested protocol version.
-pub fn message_sent(protocol_version: ProtocolVersion, text: impl Into<String>) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::MessageSent(MessageSent { text: text.into(), ..MessageSent::default() }),
-    )
-}
-
-/// `task.created` for the requested protocol version.
+/// `task.created`.
 pub fn task_created(
-    protocol_version: ProtocolVersion,
     task_id: impl Into<String>,
     intent: impl Into<String>,
     description: impl Into<String>,
     requested_by: &ActorRef,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::TaskCreated(TaskCreated {
-            task_id: task_id.into(),
-            intent: intent.into(),
-            description: description.into(),
-            requested_by: Some(requested_by.clone()),
-        }),
-    )
+    envelope(EventPayload::TaskCreated(TaskCreated {
+        task_id: task_id.into(),
+        intent: intent.into(),
+        description: description.into(),
+        requested_by: Some(requested_by.clone()),
+    }))
 }
 
-/// `task.assigned` for the requested protocol version.
+/// `task.assigned`.
 pub fn task_assigned(
-    protocol_version: ProtocolVersion,
     task_id: impl Into<String>,
     assignee: &ActorRef,
     reason: impl Into<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::TaskAssigned(TaskAssigned {
-            task_id: task_id.into(),
-            assignee: Some(assignee.clone()),
-            reason: reason.into(),
-        }),
-    )
+    envelope(EventPayload::TaskAssigned(TaskAssigned {
+        task_id: task_id.into(),
+        assignee: Some(assignee.clone()),
+        reason: reason.into(),
+    }))
 }
 
-/// `approval.requested` for the requested protocol version.
+/// `approval.requested`.
 ///
 /// `deadline` is an RFC 3339 UTC timestamp, or `None` when the approval does not expire.
 pub fn approval_requested(
-    protocol_version: ProtocolVersion,
     requested_action: &ActionInvocation,
     approval_id: impl Into<String>,
     reason: impl Into<String>,
@@ -495,115 +394,91 @@ pub fn approval_requested(
     approver: &ActorRef,
     deadline: Option<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::ApprovalRequested(ApprovalRequested {
-            approval_id: approval_id.into(),
-            agent: Some(agent.clone()),
-            requested_action: Some(requested_action.clone()),
-            reason: reason.into(),
-            approver: Some(approver.clone()),
-            deadline,
-        }),
-    )
+    envelope(EventPayload::ApprovalRequested(ApprovalRequested {
+        approval_id: approval_id.into(),
+        agent: Some(agent.clone()),
+        requested_action: Some(requested_action.clone()),
+        reason: reason.into(),
+        approver: Some(approver.clone()),
+        deadline,
+    }))
 }
 
 /// `approval.granted` or `approval.denied`, chosen by `outcome` (`Granted` or `Denied`).
 pub fn approval_decided(
-    protocol_version: ProtocolVersion,
     approval_id: impl Into<String>,
     outcome: ApprovalOutcome,
     approver: &ActorRef,
     reason: impl Into<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::ApprovalDecided(ApprovalDecided {
-            approval_id: approval_id.into(),
-            approver: Some(approver.clone()),
-            outcome,
-            reason: reason.into(),
-        }),
-    )
+    envelope(EventPayload::ApprovalDecided(ApprovalDecided {
+        approval_id: approval_id.into(),
+        approver: Some(approver.clone()),
+        outcome,
+        reason: reason.into(),
+    }))
 }
 
-/// `approval.expired` for the requested protocol version.
+/// `approval.expired`.
 pub fn approval_expired(
-    protocol_version: ProtocolVersion,
     approval_id: impl Into<String>,
     reason: impl Into<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::ApprovalExpired(ApprovalExpired {
-            approval_id: approval_id.into(),
-            reason: reason.into(),
-        }),
-    )
+    envelope(EventPayload::ApprovalExpired(ApprovalExpired {
+        approval_id: approval_id.into(),
+        reason: reason.into(),
+    }))
 }
 
-/// `escalation.triggered` for the requested protocol version.
+/// `escalation.triggered`.
 pub fn escalation_triggered(
-    protocol_version: ProtocolVersion,
     escalation_id: impl Into<String>,
     source: &ActorRef,
     target: &ActorRef,
     reason: impl Into<String>,
     related_approval_id: impl Into<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::EscalationTriggered(EscalationTriggered {
-            escalation_id: escalation_id.into(),
-            source: Some(source.clone()),
-            target: Some(target.clone()),
-            reason: reason.into(),
-            related_approval_id: related_approval_id.into(),
-        }),
-    )
+    envelope(EventPayload::EscalationTriggered(EscalationTriggered {
+        escalation_id: escalation_id.into(),
+        source: Some(source.clone()),
+        target: Some(target.clone()),
+        reason: reason.into(),
+        related_approval_id: related_approval_id.into(),
+    }))
 }
 
-/// `handoff.initiated` for the requested protocol version.
+/// `handoff.initiated`.
 pub fn handoff_initiated(
-    protocol_version: ProtocolVersion,
     handoff_id: impl Into<String>,
     from: &ActorRef,
     to: &ActorRef,
     reason: impl Into<String>,
     open_questions: Vec<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::HandoffInitiated(HandoffInitiated {
-            handoff_id: handoff_id.into(),
-            from: Some(from.clone()),
-            to: Some(to.clone()),
-            reason: reason.into(),
-            open_questions,
-        }),
-    )
+    envelope(EventPayload::HandoffInitiated(HandoffInitiated {
+        handoff_id: handoff_id.into(),
+        from: Some(from.clone()),
+        to: Some(to.clone()),
+        reason: reason.into(),
+        open_questions,
+    }))
 }
 
-/// `handoff.completed` for the requested protocol version.
+/// `handoff.completed`.
 pub fn handoff_completed(
-    protocol_version: ProtocolVersion,
     handoff_id: impl Into<String>,
     completed_by: &ActorRef,
     outcome: impl Into<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::HandoffCompleted(HandoffCompleted {
-            handoff_id: handoff_id.into(),
-            completed_by: Some(completed_by.clone()),
-            outcome: outcome.into(),
-        }),
-    )
+    envelope(EventPayload::HandoffCompleted(HandoffCompleted {
+        handoff_id: handoff_id.into(),
+        completed_by: Some(completed_by.clone()),
+        outcome: outcome.into(),
+    }))
 }
 
 /// `policy.allowed` or `policy.blocked`, chosen by `allowed`.
 pub fn policy_evaluated(
-    protocol_version: ProtocolVersion,
     allowed: bool,
     approval_required: bool,
     reason: impl Into<String>,
@@ -611,55 +486,41 @@ pub fn policy_evaluated(
     recipient: &ActorRef,
     policy_id: impl Into<String>,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::PolicyEvaluated(PolicyEvaluated {
-            policy_id: policy_id.into(),
-            allowed,
-            approval_required,
-            reason: reason.into(),
-            action_type: action_type.into(),
-            recipient: Some(recipient.clone()),
-        }),
-    )
+    envelope(EventPayload::PolicyEvaluated(PolicyEvaluated {
+        policy_id: policy_id.into(),
+        allowed,
+        approval_required,
+        reason: reason.into(),
+        action_type: action_type.into(),
+        recipient: Some(recipient.clone()),
+    }))
 }
 
-/// `action.executed` for the requested protocol version.
+/// `action.executed`.
 ///
 /// `result` is stored as a string. A JSON string is stored as-is; `null` becomes an empty string;
 /// any other JSON value is stored as its JSON text.
-pub fn action_executed(
-    protocol_version: ProtocolVersion,
-    action: &ActionInvocation,
-    result: Value,
-) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::ActionExecuted(ActionExecuted {
-            action: Some(action.clone()),
-            result: result_text(result),
-            artifacts: Vec::new(),
-        }),
-    )
+pub fn action_executed(action: &ActionInvocation, result: Value) -> EventEnvelope {
+    envelope(EventPayload::ActionExecuted(ActionExecuted {
+        action: Some(action.clone()),
+        result: result_text(result),
+        artifacts: Vec::new(),
+    }))
 }
 
-/// `action.failed` for the requested protocol version.
+/// `action.failed`.
 pub fn action_failed(
-    protocol_version: ProtocolVersion,
     action: &ActionInvocation,
     error_code: impl Into<String>,
     error_message: impl Into<String>,
     retryable: bool,
 ) -> EventEnvelope {
-    envelope(
-        protocol_version,
-        EventPayload::ActionFailed(ActionFailed {
-            action: Some(action.clone()),
-            error_code: error_code.into(),
-            error_message: error_message.into(),
-            retryable,
-        }),
-    )
+    envelope(EventPayload::ActionFailed(ActionFailed {
+        action: Some(action.clone()),
+        error_code: error_code.into(),
+        error_message: error_message.into(),
+        retryable,
+    }))
 }
 
 fn result_text(result: Value) -> String {
@@ -699,13 +560,13 @@ fn optional_string(object: &Map<String, Value>, key: &str) -> Result<Option<Stri
     }
 }
 
-fn optional_field<T: DeserializeOwned>(
+fn optional_field<T: for<'de> Deserialize<'de>>(
     object: &Map<String, Value>,
     key: &str,
 ) -> Result<Option<T>, EventError> {
     match object.get(key) {
         None | Some(Value::Null) => Ok(None),
-        Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
+        Some(value) => Ok(Some(Deserialize::deserialize(value)?)),
     }
 }
 
@@ -762,9 +623,20 @@ pub(crate) fn from_timestamp(
     Ok(format_rfc3339(timestamp.seconds, timestamp.nanos as u32))
 }
 
-fn now_rfc3339() -> String {
-    let elapsed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+/// RFC 3339 UTC text for a point in time, at the precision the value has.
+pub(crate) fn system_time_to_rfc3339(time: SystemTime) -> String {
+    let elapsed = time.duration_since(UNIX_EPOCH).unwrap_or_default();
     format_rfc3339(elapsed.as_secs() as i64, elapsed.subsec_nanos())
+}
+
+/// Parses RFC 3339 UTC text into a point in time.
+pub(crate) fn rfc3339_to_system_time(value: &str) -> Result<SystemTime, EventError> {
+    let timestamp = to_timestamp(value)?;
+    let seconds = u64::try_from(timestamp.seconds)
+        .map_err(|_| invalid(format!("timestamp before 1970: {value}")))?;
+    let nanos =
+        u32::try_from(timestamp.nanos).map_err(|_| invalid("timestamp nanos out of range"))?;
+    Ok(UNIX_EPOCH + Duration::new(seconds, nanos))
 }
 
 fn format_rfc3339(seconds: i64, nanos: u32) -> String {
@@ -815,12 +687,7 @@ fn days_from_civil(year: i64, month: i64, day: i64) -> i64 {
 
 #[cfg(test)]
 mod tests {
-    use prost::Message as _;
-
     use super::*;
-    use crate::generated::ocp::{
-        v1::api::EventEnvelope as V1Envelope, v2::api::EventEnvelope as V2Envelope,
-    };
     use crate::models::{ActorType, ArtifactRef};
 
     fn action() -> ActionInvocation {
@@ -842,8 +709,8 @@ mod tests {
         }
     }
 
-    fn sample_message(version: ProtocolVersion) -> EventEnvelope {
-        let mut event = message_received(version, "hello");
+    fn sample_message() -> EventEnvelope {
+        let mut event = message_received("hello");
         event.actor = Some(sample_actor());
         event.recipient = Some(ActorRef::agent("agent:support", "Support"));
         event.channel = Some(ChannelRef {
@@ -874,25 +741,24 @@ mod tests {
     }
 
     #[test]
-    fn typed_builder_round_trips_without_a_duplicate_event_type() {
-        let event = message_received(ProtocolVersion::V0_2, "hello");
-        let json = event.to_proto_json().expect("event serializes");
-        assert_eq!(event_type_of(&event), "message.received");
+    fn builder_derives_event_type_and_json_round_trips() {
+        let event = message_received("hello");
+        assert_eq!(event.event_type(), "message.received");
+        let json = event.to_json().expect("serializes");
         assert!(json.get("eventType").is_none());
-        assert_eq!(json["protocolVersion"], "0.2");
+        assert_eq!(json["protocolVersion"], PROTOCOL_VERSION);
         assert!(json.get("messageReceived").is_some());
-        assert_eq!(EventEnvelope::from_proto_json(&json).expect("event parses"), event);
+        assert_eq!(EventEnvelope::from_json(&json).expect("parses"), event);
     }
 
     #[test]
-    fn v01_builders_store_event_type_and_derive_it_from_payload() {
+    fn every_builder_names_its_event_from_the_payload() {
         let agent = ActorRef::agent("agent:support", "Support");
         let cases = [
-            (message_received(ProtocolVersion::V0_1, "hi"), "message.received"),
-            (message_sent(ProtocolVersion::V0_1, "hi"), "message.sent"),
+            (message_sent("hi"), "message.sent"),
+            (message_received("hi"), "message.received"),
             (
                 approval_requested(
-                    ProtocolVersion::V0_1,
                     &action(),
                     "approval:1",
                     "over limit",
@@ -902,155 +768,56 @@ mod tests {
                 ),
                 "approval.requested",
             ),
-            (action_executed(ProtocolVersion::V0_1, &action(), Value::Null), "action.executed"),
-            (
-                action_failed(ProtocolVersion::V0_1, &action(), "OCP_ACTION", "boom", false),
-                "action.failed",
-            ),
+            (action_executed(&action(), Value::Null), "action.executed"),
+            (action_failed(&action(), "OCP_ACTION", "boom", true), "action.failed"),
+            (approval_expired("approval:1", "timed out"), "approval.expired"),
         ];
         for (event, expected) in cases {
-            assert_eq!(event_type_of(&event), expected);
-            assert_eq!(event.event_type.as_deref(), Some(expected));
-            let json = event.to_proto_json().expect("v0.1 serializes");
-            assert_eq!(json["eventType"], expected);
-            assert_eq!(json["protocolVersion"], "0.1");
-        }
-    }
-
-    #[test]
-    fn v02_builders_derive_event_type_from_payload() {
-        let agent = ActorRef::agent("agent:support", "Support");
-        let cases = [
-            (message_sent(ProtocolVersion::V0_2, "hi"), "message.sent"),
-            (
-                approval_requested(
-                    ProtocolVersion::V0_2,
-                    &action(),
-                    "approval:1",
-                    "over limit",
-                    &agent,
-                    &sample_actor(),
-                    None,
-                ),
-                "approval.requested",
-            ),
-            (action_executed(ProtocolVersion::V0_2, &action(), Value::Null), "action.executed"),
-            (
-                action_failed(ProtocolVersion::V0_2, &action(), "OCP_ACTION", "boom", true),
-                "action.failed",
-            ),
-        ];
-        for (event, expected) in cases {
-            assert_eq!(event.event_type, None);
-            assert_eq!(event_type_of(&event), expected);
-            let json = event.to_proto_json().expect("v0.2 serializes");
+            assert_eq!(event.event_type(), expected);
+            let json = event.to_json().expect("serializes");
             assert!(json.get("eventType").is_none());
-            assert_eq!(json["protocolVersion"], "0.2");
+            assert_eq!(json["protocolVersion"], PROTOCOL_VERSION);
         }
     }
 
     #[test]
     fn approval_and_policy_names_derive_from_outcome_and_allowed() {
         let approver = sample_actor();
-        let granted = approval_decided(
-            ProtocolVersion::V0_2,
-            "a:1",
-            ApprovalOutcome::Granted,
-            &approver,
-            "ok",
-        );
-        let denied = approval_decided(
-            ProtocolVersion::V0_2,
-            "a:1",
-            ApprovalOutcome::Denied,
-            &approver,
-            "no",
-        );
         let agent = ActorRef::agent("agent:support", "Support");
-        let blocked = policy_evaluated(
-            ProtocolVersion::V0_2,
-            false,
-            true,
-            "over limit",
-            "refund",
-            &agent,
-            "policy:1",
-        );
-        let allowed = policy_evaluated(
-            ProtocolVersion::V0_2,
-            true,
-            false,
-            "within limit",
-            "refund",
-            &agent,
-            "policy:1",
-        );
-        assert_eq!(event_type_of(&granted), "approval.granted");
-        assert_eq!(event_type_of(&denied), "approval.denied");
-        assert_eq!(event_type_of(&blocked), "policy.blocked");
-        assert_eq!(event_type_of(&allowed), "policy.allowed");
+        let granted = approval_decided("a:1", ApprovalOutcome::Granted, &approver, "ok");
+        let denied = approval_decided("a:1", ApprovalOutcome::Denied, &approver, "no");
+        let blocked = policy_evaluated(false, true, "over limit", "refund", &agent, "policy:1");
+        let allowed = policy_evaluated(true, false, "within limit", "refund", &agent, "policy:1");
+        assert_eq!(granted.event_type(), "approval.granted");
+        assert_eq!(denied.event_type(), "approval.denied");
+        assert_eq!(blocked.event_type(), "policy.blocked");
+        assert_eq!(allowed.event_type(), "policy.allowed");
     }
 
     #[test]
-    fn mismatched_name_is_rejected_for_both_versions() {
-        for version in [ProtocolVersion::V0_1, ProtocolVersion::V0_2] {
-            let payload = EventPayload::MessageReceived(MessageReceived::default());
-            assert!(matches!(
-                EventEnvelope::with_event_type(version, "message.sent", payload),
-                Err(EventError::Invalid(_))
-            ));
-        }
-        let denied = EventPayload::ApprovalDecided(ApprovalDecided {
-            approval_id: "a:1".to_owned(),
-            outcome: ApprovalOutcome::Denied,
-            ..ApprovalDecided::default()
-        });
-        assert!(matches!(
-            EventEnvelope::with_event_type(ProtocolVersion::V0_2, "approval.granted", denied),
-            Err(EventError::Invalid(_))
-        ));
-    }
-
-    #[test]
-    fn version_and_shape_mismatch_is_rejected() {
-        let mut v02_with_name = message_received(ProtocolVersion::V0_2, "hi");
-        v02_with_name.event_type = Some("message.received".to_owned());
-        assert!(matches!(v02_with_name.validate(), Err(EventError::Invalid(_))));
-
-        let mut v01_without_name = message_received(ProtocolVersion::V0_1, "hi");
-        v01_without_name.event_type = None;
-        assert!(matches!(v01_without_name.validate(), Err(EventError::Invalid(_))));
-
-        let json = serde_json::json!({
+    fn json_rejects_other_versions_and_multiple_payloads() {
+        let other_version = serde_json::json!({
             "eventId": "e:1",
-            "protocolVersion": "0.2",
-            "eventType": "message.received",
+            "protocolVersion": "0.1",
             "occurredAt": "2026-10-19T10:00:00.000Z",
             "messageReceived": { "text": "hi" }
         });
-        assert!(matches!(EventEnvelope::from_proto_json(&json), Err(EventError::Invalid(_))));
+        assert!(matches!(EventEnvelope::from_json(&other_version), Err(EventError::Invalid(_))));
 
-        let unknown_version = serde_json::json!({
+        let two_payloads = serde_json::json!({
             "eventId": "e:1",
-            "protocolVersion": "0.3",
+            "protocolVersion": PROTOCOL_VERSION,
             "occurredAt": "2026-10-19T10:00:00.000Z",
-            "messageReceived": { "text": "hi" }
+            "messageReceived": { "text": "hi" },
+            "messageSent": { "text": "hi" }
         });
-        assert!(matches!(
-            EventEnvelope::from_proto_json(&unknown_version),
-            Err(EventError::Invalid(_))
-        ));
+        assert!(matches!(EventEnvelope::from_json(&two_payloads), Err(EventError::Invalid(_))));
     }
 
     #[test]
-    fn approval_and_policy_invariants_are_enforced() {
-        let mut bad_outcome = approval_decided(
-            ProtocolVersion::V0_2,
-            "a:1",
-            ApprovalOutcome::Granted,
-            &sample_actor(),
-            "ok",
-        );
+    fn approval_and_action_invariants_are_enforced() {
+        let mut bad_outcome =
+            approval_decided("a:1", ApprovalOutcome::Granted, &sample_actor(), "ok");
         bad_outcome.payload = EventPayload::ApprovalDecided(ApprovalDecided {
             approval_id: "a:1".to_owned(),
             outcome: ApprovalOutcome::Expired,
@@ -1059,7 +826,6 @@ mod tests {
         assert!(matches!(bad_outcome.validate(), Err(EventError::Invalid(_))));
 
         let mut missing_id = approval_requested(
-            ProtocolVersion::V0_2,
             &action(),
             "a:1",
             "why",
@@ -1074,35 +840,22 @@ mod tests {
         });
         assert!(matches!(missing_id.validate(), Err(EventError::Invalid(_))));
 
-        let mut missing_action = missing_id.clone();
-        missing_action.payload = EventPayload::ApprovalRequested(ApprovalRequested {
-            approval_id: "a:1".to_owned(),
-            ..ApprovalRequested::default()
-        });
-        assert!(matches!(missing_action.validate(), Err(EventError::Invalid(_))));
-    }
-
-    #[test]
-    fn json_round_trips_both_versions() {
-        for version in [ProtocolVersion::V0_1, ProtocolVersion::V0_2] {
-            let event = sample_message(version);
-            let json = event.to_proto_json().expect("serializes");
-            assert_eq!(json["protocolVersion"], version.as_str());
-            assert_eq!(EventEnvelope::from_proto_json(&json).expect("parses"), event);
-        }
+        let mut missing_event_id = message_received("hi");
+        missing_event_id.event_id.clear();
+        assert!(matches!(missing_event_id.validate(), Err(EventError::Invalid(_))));
     }
 
     #[test]
     fn action_input_travels_as_a_json_string_parameter() {
-        let event = action_executed(ProtocolVersion::V0_2, &action(), Value::Null);
-        let json = event.to_proto_json().expect("serializes");
+        let event = action_executed(&action(), Value::Null);
+        let json = event.to_json().expect("serializes");
         let request = &json["actionExecuted"]["action"];
         assert_eq!(request["actionId"], "action:1");
         assert_eq!(request["type"], "refund");
         assert_eq!(request["parameters"]["input"], r#"{"amount":10}"#);
         assert!(request.get("input").is_none());
 
-        let parsed = EventEnvelope::from_proto_json(&json).expect("parses");
+        let parsed = EventEnvelope::from_json(&json).expect("parses");
         let EventPayload::ActionExecuted(payload) = parsed.payload else {
             panic!("expected action.executed");
         };
@@ -1122,31 +875,14 @@ mod tests {
     }
 
     #[test]
-    fn binary_round_trips_both_versions_as_real_protobuf() {
-        for version in [ProtocolVersion::V0_1, ProtocolVersion::V0_2] {
-            let event = sample_message(version);
-            let bytes = event.to_binary().expect("encodes");
-            let decoded = EventEnvelope::from_binary(&bytes, version).expect("decodes");
-            assert_eq!(decoded, event);
-        }
-
-        let v1_bytes = sample_message(ProtocolVersion::V0_1).to_binary().expect("encodes");
-        let as_v1 = V1Envelope::decode(v1_bytes.as_slice()).expect("plain protobuf");
-        assert_eq!(as_v1.event_type, "message.received");
-        assert_eq!(as_v1.protocol_version, "0.1");
-        let v2_bytes = sample_message(ProtocolVersion::V0_2).to_binary().expect("encodes");
-        let as_v2 = V2Envelope::decode(v2_bytes.as_slice()).expect("plain protobuf");
-        assert_eq!(as_v2.protocol_version, "0.2");
+    fn binary_round_trips() {
+        let event = sample_message();
+        let bytes = event.to_binary().expect("encodes");
+        assert_eq!(EventEnvelope::from_binary(&bytes).expect("decodes"), event);
     }
 
     #[test]
-    fn binary_requires_matching_version() {
-        let bytes = sample_message(ProtocolVersion::V0_1).to_binary().expect("encodes");
-        assert!(EventEnvelope::from_binary(&bytes, ProtocolVersion::V0_2).is_err());
-    }
-
-    #[test]
-    fn every_payload_kind_round_trips_in_binary_for_both_versions() {
+    fn every_payload_kind_round_trips_in_binary_and_json() {
         let agent = ActorRef::agent("agent:support", "Support");
         let human = sample_actor();
         let deadline = Some("2030-01-01T00:00:00Z".to_owned());
@@ -1213,30 +949,13 @@ mod tests {
                 retryable: true,
             }),
         ];
-        for version in [ProtocolVersion::V0_1, ProtocolVersion::V0_2] {
-            for payload in &payloads {
-                let mut event = envelope(version, payload.clone());
-                event.occurred_at = "2026-01-01T00:00:00.123Z".to_owned();
-                let bytes = event.to_binary().expect("encodes");
-                let decoded = EventEnvelope::from_binary(&bytes, version).expect("decodes");
-                assert_eq!(decoded, event, "{}", event_type_of(&event));
-            }
+        for payload in payloads {
+            let mut event = EventEnvelope::new(payload);
+            event.occurred_at = "2026-01-01T00:00:00.123Z".to_owned();
+            let bytes = event.to_binary().expect("encodes");
+            assert_eq!(EventEnvelope::from_binary(&bytes).expect("decodes"), event);
+            let json = event.to_json().expect("serializes");
+            assert_eq!(EventEnvelope::from_json(&json).expect("parses"), event);
         }
-    }
-
-    #[test]
-    fn approval_expired_and_decided_builders_name_correctly() {
-        let approver = sample_actor();
-        let expired = approval_expired(ProtocolVersion::V0_2, "approval:1", "timed out");
-        assert_eq!(event_type_of(&expired), "approval.expired");
-        let denied = approval_decided(
-            ProtocolVersion::V0_1,
-            "approval:1",
-            ApprovalOutcome::Denied,
-            &approver,
-            "not allowed",
-        );
-        assert_eq!(denied.event_type.as_deref(), Some("approval.denied"));
-        assert!(denied.to_binary().is_ok());
     }
 }

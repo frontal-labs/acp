@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 
 // Pinned to the protoc release used by CI (.github/workflows/ci.yml). Generated headers embed the
 // protobuf runtime version, so a different protoc rewrites every Python binding file.
-const PROTOC_VERSION = "33.2";
+const PROTOC_VERSION = "35.0";
 const root = resolve(import.meta.dirname, "..");
 const protoc = process.env.PROTOC ?? "protoc";
 const run = (command, args) =>
@@ -22,9 +22,7 @@ if (found !== `libprotoc ${PROTOC_VERSION}`) {
   );
 }
 
-const protos = run("find", ["proto/v1", "proto/v2", "-name", "*.proto", "-print"])
-  .split("\n")
-  .filter(Boolean);
+const protos = run("find", ["proto/ocp", "-name", "*.proto", "-print"]).split("\n").filter(Boolean);
 mkdirSync(resolve(root, "proto/gen/python"), { recursive: true });
 execFileSync(protoc, ["--proto_path=proto", "--python_out=proto/gen/python", ...protos], {
   cwd: root,

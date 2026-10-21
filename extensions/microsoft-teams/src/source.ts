@@ -39,7 +39,6 @@ export async function normalizeTeamsEvent(
         actor,
         channelId: optionalString(body, "conversationId") ?? "teams:approval",
         conversationId: `teams:${optionalString(body, "conversationId") ?? approvalId}`,
-        eventType: actionName === "approve" ? "approval.granted" : "approval.denied",
         extensions: { "ocp.provider": "microsoft-teams", "teams.approval_id": approvalId },
         payload: {
           case: "approvalDecided",
@@ -82,7 +81,6 @@ export async function normalizeTeamsEvent(
       channelId: conversationId,
       conversationId: `teams:${conversationId}`,
       conversationParticipants: [actor],
-      eventType: "message.received",
       extensions: { "ocp.provider": "microsoft-teams" },
       payload: {
         case: "messageReceived",
@@ -97,7 +95,7 @@ export async function normalizeTeamsEvent(
   );
 }
 
-/** Creates a Teams source for `createOcp({ channels })`. */
+/** Creates a Teams source for `openChannel({ channels })`. */
 export function createTeamsSource(options: TeamsSourceOptions = {}): ChannelSource {
   return createProviderSource("microsoft-teams", (input, metadata) =>
     normalizeTeamsEvent(input, metadata, options),

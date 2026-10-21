@@ -39,5 +39,5 @@ export interface CalendarClient {
   update: (input: CalendarUpdateInput) => Promise<CalendarEvent>;
 }
 
-/** Action bundle registered through `createOcp({ actions })`. */
+/** Action bundle registered through `openChannel({ actions })`. */
 export type CalendarActions = ActionDefinition<unknown, unknown>[];

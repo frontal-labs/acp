@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 
-class OcpError(Exception):
+class OpenChannelError(Exception):
     """Classified, vendor-neutral OCP failure."""
 
     code = "OCP_ERROR"
@@ -28,15 +28,15 @@ class OcpError(Exception):
         self.cause = cause
 
 
-class ActionError(OcpError):
+class ActionError(OpenChannelError):
     code = "OCP_ACTION"
 
 
-class DeliveryError(OcpError):
+class DeliveryError(OpenChannelError):
     code = "OCP_TRANSPORT"
 
 
-class AuthorizationError(OcpError):
+class AuthorizationError(OpenChannelError):
     code = "OCP_AUTHORIZATION"
 
 
@@ -49,12 +49,12 @@ def as_ocp_error(
     action_id: str | None = None,
     approval_id: str | None = None,
     provider: str | None = None,
-) -> OcpError:
-    """Return `error` unchanged if it is already an OcpError, otherwise wrap it with its context."""
+) -> OpenChannelError:
+    """Return `error` unchanged if it is already an OpenChannelError, otherwise wrap it with its context."""
 
-    if isinstance(error, OcpError):
+    if isinstance(error, OpenChannelError):
         return error
-    return OcpError(
+    return OpenChannelError(
         str(error),
         stage=stage,
         retryable=retryable,

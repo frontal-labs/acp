@@ -2,9 +2,7 @@
 
 Optional integrations for the OCP TypeScript SDK. Every channel extension keeps provider-specific
 payloads at the boundary and exposes the SDK-native `ChannelSource`, `ChannelSink`, or
-`ChannelDefinition` contracts. Normalized events use the protocol 0.1 `EventEnvelope`, the default
-envelope. Protocol 0.2 is supported by `@frontal-labs/open-channel-protocol`, but these packages do
-not require it.
+`ChannelDefinition` contracts. Normalized events use the single `EventEnvelope` of protocol 2.0 from `@frontal-labs/open-channel-protocol`.
 
 ## Channel extensions
 
@@ -33,11 +31,11 @@ not require it.
 ## Example
 
 ```ts
-import { createOcp } from "@frontal-labs/open-channel";
+import { openChannel } from "@frontal-labs/open-channel";
 import { createSlackChannel } from "@frontal-labs/open-channel-ext-slack";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 
-const app = createOcp({
+const app = openChannel({
   channels: [
     createSlackChannel({
       transport: {

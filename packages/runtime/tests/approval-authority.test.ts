@@ -10,19 +10,19 @@ import {
   ApprovalExpiredSchema,
   ApprovalOutcome,
   ApprovalRequestedSchema,
-  createEvent,
   type EventEnvelope,
+  newEvent,
 } from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 import { createTestEventStore } from "../../testing/src/index.js";
-import { OcpRuntime } from "../src/index.js";
+import { OpenChannelRuntime } from "../src/index.js";
 
 const agent = create(ActorRefSchema, { id: "agent:authority", type: ActorType.AGENT });
 const approver = create(ActorRefSchema, { id: "human:approver", type: ActorType.HUMAN });
 const intruder = create(ActorRefSchema, { id: "human:intruder", type: ActorType.HUMAN });
 
 function createRuntime() {
-  return new OcpRuntime({
+  return new OpenChannelRuntime({
     eventStore: createTestEventStore(),
     policy: new RuleBasedPolicyEngine({
       rules: [{ actionType: "refund.create", allowed: true, id: "refund", requiresApproval: true }],
@@ -30,7 +30,7 @@ function createRuntime() {
   });
 }
 
-async function requestApproval(runtime: OcpRuntime) {
+async function requestApproval(runtime: OpenChannelRuntime) {
   const action = create(ActionRequestSchema, {
     actionId: "action:refund",
     target: "order:1",
@@ -115,11 +115,10 @@ describe("approval authority", () => {
     const runtime = createRuntime();
     const approvalId = await requestApproval(runtime);
     const [request] = await runtime.queryEvents({ eventType: "approval.requested" });
-    const hijack = createEvent({
+    const hijack = newEvent({
       actor: intruder,
       channel: request.channel,
       conversation: request.conversation,
-      eventType: "approval.requested",
       occurredAt: timestampFromDate(new Date()),
       payload: {
         case: "approvalRequested",
@@ -165,7 +164,7 @@ describe("approval authority", () => {
 
 /** Builds an approval decision or expiry as `actor`, reusing the stored request's channel. */
 async function buildEvent(
-  runtime: OcpRuntime,
+  runtime: OpenChannelRuntime,
   actor: typeof intruder,
   eventType: "approval.granted" | "approval.expired",
   approvalId: string,
@@ -181,18 +180,16 @@ async function buildEvent(
     source: actor,
   };
   if (eventType === "approval.expired") {
-    return createEvent({
+    return newEvent({
       ...base,
-      eventType,
       payload: {
         case: "approvalExpired",
         value: create(ApprovalExpiredSchema, { approvalId, reason: "forged" }),
       },
     });
   }
-  return createEvent({
+  return newEvent({
     ...base,
-    eventType,
     payload: {
       case: "approvalDecided",
       value: create(ApprovalDecidedSchema, {

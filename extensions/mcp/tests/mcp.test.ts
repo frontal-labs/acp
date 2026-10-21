@@ -13,7 +13,7 @@ describe("@frontal-labs/open-channel-ext-mcp", () => {
     expect(action?.type).toBe("mcp.tool_call");
     const result = await action?.execute(
       { tool: "echo" },
-      { actions: {} as never, actor: {} as never, runtime: {} as never },
+      { actor: {} as never, request: {} as never, runtime: {} as never },
     );
     expect(result).toMatchObject({ content: [{ text: "ok" }] });
     expect(calls).toEqual(["echo"]);

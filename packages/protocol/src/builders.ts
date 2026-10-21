@@ -1,9 +1,7 @@
 import { create } from "@bufbuild/protobuf";
-import type { Timestamp } from "@bufbuild/protobuf/wkt";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import { type Timestamp, timestampFromDate } from "@bufbuild/protobuf/wkt";
 
-import type { ProtocolVersion } from "./constants.js";
-import { createEvent, type EnvelopeFor, type EventInput } from "./events.js";
+import { type EventInput, newEvent } from "./events.js";
 import {
   ActionExecutedSchema,
   ActionFailedSchema,
@@ -11,35 +9,30 @@ import {
   type ActorRef,
   ApprovalRequestedSchema,
   type ArtifactRef,
+  type EventEnvelope,
   MessageReceivedSchema,
   MessageSentSchema,
 } from "./generated.js";
 
-/** Metadata shared by typed event builders. The envelope version is chosen with `protocolVersion`. */
-export type EventBuilderBase<V extends ProtocolVersion = ProtocolVersion> = Omit<
-  EventInput<V>,
-  "eventType" | "payload"
->;
+/** Routing and identity fields shared by every typed builder. */
+export type EventMeta = Omit<EventInput, "payload">;
 
 /** Input for `messageReceived()`. */
-export interface MessageReceivedInput<V extends ProtocolVersion = ProtocolVersion>
-  extends EventBuilderBase<V> {
+export interface MessageReceivedInput extends EventMeta {
   attachments?: ArtifactRef[];
   metadata?: Record<string, string>;
   text: string;
 }
 
 /** Input for `messageSent()`. */
-export interface MessageSentInput<V extends ProtocolVersion = ProtocolVersion>
-  extends EventBuilderBase<V> {
+export interface MessageSentInput extends EventMeta {
   attachments?: ArtifactRef[];
   metadata?: Record<string, string>;
   text: string;
 }
 
-/** Input for `approvalRequested()`; `deadline` accepts a `Date` or protobuf `Timestamp`. */
-export interface ApprovalRequestedInput<V extends ProtocolVersion = ProtocolVersion>
-  extends EventBuilderBase<V> {
+/** Input for `approvalRequested()`. `deadline` accepts a `Date` or a protobuf `Timestamp`. */
+export interface ApprovalRequestedInput extends EventMeta {
   agent: ActorRef;
   approvalId: string;
   approver: ActorRef;
@@ -49,115 +42,115 @@ export interface ApprovalRequestedInput<V extends ProtocolVersion = ProtocolVers
 }
 
 /** Input for `actionExecuted()`. */
-export interface ActionExecutedInput<V extends ProtocolVersion = ProtocolVersion>
-  extends EventBuilderBase<V> {
+export interface ActionExecutedInput extends EventMeta {
   action: ActionRequest;
   artifacts?: ArtifactRef[];
   result?: string;
 }
 
 /** Input for `actionFailed()`. */
-export interface ActionFailedInput<V extends ProtocolVersion = ProtocolVersion>
-  extends EventBuilderBase<V> {
+export interface ActionFailedInput extends EventMeta {
   action: ActionRequest;
   errorCode: string;
   errorMessage: string;
   retryable?: boolean;
 }
 
-function timestamp(value: Date | Timestamp | undefined): Timestamp | undefined {
+function deadline(value: Date | Timestamp): Timestamp {
   return value instanceof Date ? timestampFromDate(value) : value;
 }
 
-/** Builds a typed `message.received` event for the requested protocol version (default v0.1). */
-export function messageReceived<V extends ProtocolVersion = "0.1">(
-  input: MessageReceivedInput<V>,
-): EnvelopeFor<V> {
-  return createEvent<V>({
-    ...input,
-    eventType: "message.received",
+/** Builds a `message.received` event. */
+export function messageReceived({
+  attachments,
+  metadata,
+  text,
+  ...meta
+}: MessageReceivedInput): EventEnvelope {
+  return newEvent({
+    ...meta,
     payload: {
       case: "messageReceived",
-      value: create(MessageReceivedSchema, {
-        attachments: input.attachments,
-        metadata: input.metadata,
-        text: input.text,
-      }),
+      value: create(MessageReceivedSchema, { attachments, metadata, text }),
     },
   });
 }
 
-/** Builds a typed `message.sent` event for the requested protocol version (default v0.1). */
-export function messageSent<V extends ProtocolVersion = "0.1">(
-  input: MessageSentInput<V>,
-): EnvelopeFor<V> {
-  return createEvent<V>({
-    ...input,
-    eventType: "message.sent",
+/** Builds a `message.sent` event. */
+export function messageSent({
+  attachments,
+  metadata,
+  text,
+  ...meta
+}: MessageSentInput): EventEnvelope {
+  return newEvent({
+    ...meta,
     payload: {
       case: "messageSent",
-      value: create(MessageSentSchema, {
-        attachments: input.attachments,
-        metadata: input.metadata,
-        text: input.text,
-      }),
+      value: create(MessageSentSchema, { attachments, metadata, text }),
     },
   });
 }
 
-/** Builds a typed `approval.requested` event for the requested protocol version (default v0.1). */
-export function approvalRequested<V extends ProtocolVersion = "0.1">(
-  input: ApprovalRequestedInput<V>,
-): EnvelopeFor<V> {
-  return createEvent<V>({
-    ...input,
-    eventType: "approval.requested",
+/** Builds an `approval.requested` event. */
+export function approvalRequested({
+  agent,
+  approvalId,
+  approver,
+  deadline: due,
+  reason,
+  requestedAction,
+  ...meta
+}: ApprovalRequestedInput): EventEnvelope {
+  return newEvent({
+    ...meta,
     payload: {
       case: "approvalRequested",
       value: create(ApprovalRequestedSchema, {
-        agent: input.agent,
-        approvalId: input.approvalId,
-        approver: input.approver,
-        deadline: timestamp(input.deadline),
-        reason: input.reason,
-        requestedAction: input.requestedAction,
+        agent,
+        approvalId,
+        approver,
+        deadline: due === undefined ? undefined : deadline(due),
+        reason,
+        requestedAction,
       }),
     },
   });
 }
 
-/** Builds a typed `action.executed` event for the requested protocol version (default v0.1). */
-export function actionExecuted<V extends ProtocolVersion = "0.1">(
-  input: ActionExecutedInput<V>,
-): EnvelopeFor<V> {
-  return createEvent<V>({
-    ...input,
-    eventType: "action.executed",
+/** Builds an `action.executed` event. */
+export function actionExecuted({
+  action,
+  artifacts,
+  result,
+  ...meta
+}: ActionExecutedInput): EventEnvelope {
+  return newEvent({
+    ...meta,
     payload: {
       case: "actionExecuted",
-      value: create(ActionExecutedSchema, {
-        action: input.action,
-        artifacts: input.artifacts,
-        result: input.result ?? "",
-      }),
+      value: create(ActionExecutedSchema, { action, artifacts, result: result ?? "" }),
     },
   });
 }
 
-/** Builds a typed `action.failed` event for the requested protocol version (default v0.1). */
-export function actionFailed<V extends ProtocolVersion = "0.1">(
-  input: ActionFailedInput<V>,
-): EnvelopeFor<V> {
-  return createEvent<V>({
-    ...input,
-    eventType: "action.failed",
+/** Builds an `action.failed` event. */
+export function actionFailed({
+  action,
+  errorCode,
+  errorMessage,
+  retryable,
+  ...meta
+}: ActionFailedInput): EventEnvelope {
+  return newEvent({
+    ...meta,
     payload: {
       case: "actionFailed",
       value: create(ActionFailedSchema, {
-        action: input.action,
-        errorCode: input.errorCode,
-        errorMessage: input.errorMessage,
-        retryable: input.retryable ?? false,
+        action,
+        errorCode,
+        errorMessage,
+        retryable: retryable ?? false,
       }),
     },
   });

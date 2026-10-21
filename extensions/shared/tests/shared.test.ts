@@ -11,7 +11,6 @@ describe("@frontal-labs/open-channel-ext-shared", () => {
         actor,
         channelId: "C123",
         conversationId: "slack:C123",
-        eventType: "message.received",
         extensions: { "ocp.provider": "slack" },
         payload: { case: "messageReceived", value: createTestMessageReceived("hello") },
       },

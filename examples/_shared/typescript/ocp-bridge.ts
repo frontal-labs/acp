@@ -1,10 +1,11 @@
 import { create } from "@bufbuild/protobuf";
-import { createOcp } from "@frontal-labs/open-channel";
+import { openChannel } from "@frontal-labs/open-channel";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   ActorRefSchema,
   ActorType,
   ChannelRefSchema,
+  eventType,
   messageReceived,
 } from "@frontal-labs/open-channel-protocol";
 
@@ -14,12 +15,12 @@ import { createExampleChannel, createExampleEventStore } from "./example-kit.js"
 export type TextAgent = (text: string) => string | Promise<string>;
 
 /** Runs a text harness behind the public OCP application API. */
-export async function runOcpTextAgent(name: string, handler: TextAgent): Promise<void> {
+export async function runOpenChannelTextAgent(name: string, handler: TextAgent): Promise<void> {
   const agentId = `agent:${name.toLowerCase().replace(/\s+/g, "-")}`;
   const human = create(ActorRefSchema, { id: "human:example", type: ActorType.HUMAN });
   const agent = create(ActorRefSchema, { id: agentId, type: ActorType.AGENT });
   const { channel, sent } = createExampleChannel("example");
-  const app = createOcp({
+  const app = openChannel({
     agents: [
       {
         description: `OCP bridge for ${name}`,
@@ -32,8 +33,8 @@ export async function runOcpTextAgent(name: string, handler: TextAgent): Promise
       },
     ],
     channels: [channel],
-    eventStore: createExampleEventStore(),
     policy: new RuleBasedPolicyEngine({ rules: [] }),
+    store: createExampleEventStore(),
   });
 
   await app.start();
@@ -55,9 +56,9 @@ export async function runOcpTextAgent(name: string, handler: TextAgent): Promise
   console.log(
     JSON.stringify(
       {
-        agentCard: app.listAgentCards().find((card) => card.id === agentId),
+        agentCard: app.agentCards().find((card) => card.id === agentId),
         correlationId: reply.correlationId,
-        eventType: reply.eventType,
+        eventType: eventType(reply),
         reply: reply.payload.value.text,
       },
       null,

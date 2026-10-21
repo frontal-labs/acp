@@ -8,12 +8,12 @@ import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { GoogleChatTransport } from "./types.js";
 
-/** Creates a Google Chat sink for `createOcp({ channels })`. */
+/** Creates a Google Chat sink for `openChannel({ channels })`. */
 export function createGoogleChatSink(transport: GoogleChatTransport): ChannelSink {
   return createProviderSink(
     "google-chat",
     async (event, options?: DeliveryOptions): Promise<DeliveryReceipt | undefined> => {
-      if (event.eventType !== "message.sent" || event.payload.case !== "messageSent") {
+      if (event.payload.case !== "messageSent") {
         return undefined;
       }
       const space = event.channel?.channelId;

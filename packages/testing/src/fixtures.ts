@@ -5,8 +5,8 @@ import type {
   ActorRef,
   EventEnvelope,
   EventInput,
-  EventName,
   EventPayload,
+  EventType,
 } from "@frontal-labs/open-channel-protocol";
 import {
   ActionExecutedSchema,
@@ -22,12 +22,12 @@ import {
   ChannelRefSchema,
   ConversationRefSchema,
   ConversationStatus,
-  createEvent,
   EscalationTriggeredSchema,
   HandoffCompletedSchema,
   HandoffInitiatedSchema,
   MessageReceivedSchema,
   MessageSentSchema,
+  newEvent,
   PolicyEvaluatedSchema,
   TaskAssignedSchema,
   TaskCreatedSchema,
@@ -115,9 +115,9 @@ export function createTestMessageSent(text = "Test response") {
 }
 
 /** Options shared by the OCP event fixtures. */
-export interface TestEventOptions
-  extends Partial<Omit<EventInput<"0.1">, "eventType" | "payload" | "protocolVersion">> {
-  eventType?: EventName;
+export interface TestEventOptions extends Partial<Omit<EventInput, "payload">> {
+  /** Selects the default payload for this event type. */
+  eventType?: EventType;
   payload?: EventPayload;
   text?: string;
 }
@@ -132,18 +132,17 @@ export function createTestEvent(options: TestEventOptions = {}): EventEnvelope {
   } = options;
   const actor = eventOptions.actor ?? createTestHuman();
 
-  return createEvent<"0.1">({
+  return newEvent({
     ...eventOptions,
     actor,
     channel: eventOptions.channel ?? createTestChannel(),
     conversation: eventOptions.conversation ?? createTestConversation(),
-    eventType,
     payload: payload ?? createTestPayload(eventType, actor, text),
     source: eventOptions.source ?? actor,
   });
 }
 
-function createTestPayload(eventType: EventName, actor: ActorRef, text: string): EventPayload {
+function createTestPayload(eventType: EventType, actor: ActorRef, text: string): EventPayload {
   const agent = actor.type === ActorType.AGENT ? actor : createTestAgent();
   const approver = createTestHuman("human:approver", "Test Approver", "approver");
   const action = createTestAction();

@@ -48,7 +48,6 @@ export async function normalizeGoogleChatEvent(
       channelId: spaceName,
       conversationId: `google-chat:${spaceName}`,
       conversationParticipants: [actor],
-      eventType: "message.received",
       extensions: { "ocp.provider": "google-chat" },
       payload: {
         case: "messageReceived",
@@ -61,7 +60,7 @@ export async function normalizeGoogleChatEvent(
   );
 }
 
-/** Creates a Google Chat source for `createOcp({ channels })`. */
+/** Creates a Google Chat source for `openChannel({ channels })`. */
 export function createGoogleChatSource(options: GoogleChatSourceOptions = {}): ChannelSource {
   return createProviderSource("google-chat", (input, metadata) =>
     normalizeGoogleChatEvent(input, metadata, options),

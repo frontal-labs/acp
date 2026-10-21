@@ -1,6 +1,6 @@
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ApprovalOutcome } from "@frontal-labs/open-channel-protocol";
-import { ManualClock, OcpRuntime } from "@frontal-labs/open-channel-runtime";
+import { ApprovalOutcome, eventType } from "@frontal-labs/open-channel-protocol";
+import { ManualClock, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
 import {
   createTestAction,
   createTestAgent,
@@ -14,7 +14,7 @@ function createRuntime() {
   const clock = new ManualClock(new Date("2026-10-19T14:00:00.000Z"));
   const agent = createTestAgent("agent:support", "Support Agent");
   const manager = createTestHuman("human:manager", "Support Manager", "manager");
-  const runtime = new OcpRuntime({
+  const runtime = new OpenChannelRuntime({
     clock,
     defaultApprovalTimeoutMs: 1000,
     eventStore: createTestEventStore(),
@@ -46,7 +46,7 @@ describe("OCP runtime", () => {
     await clock.advanceBy(1000);
 
     const events = await runtime.eventStore.all();
-    expect(events.map((event) => event.eventType)).toEqual([
+    expect(events.map((event) => eventType(event))).toEqual([
       "policy.allowed",
       "approval.requested",
       "approval.expired",
@@ -73,7 +73,7 @@ describe("OCP runtime", () => {
     await clock.advanceBy(1000);
 
     const events = await runtime.eventStore.all();
-    expect(events.map((event) => event.eventType)).not.toContain("escalation.triggered");
+    expect(events.map((event) => eventType(event))).not.toContain("escalation.triggered");
   });
 
   it("deduplicates an inbound event by event id", async () => {

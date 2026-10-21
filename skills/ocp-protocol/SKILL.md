@@ -12,20 +12,21 @@ not alter the wire contract.
 
 ## Canonical sources
 
-- API envelopes and event definitions live in [`proto/v1/api`](../../proto/v1/api).
-- Shared domain types live in [`proto/v1/types`](../../proto/v1/types).
+- The single event envelope lives in [`proto/ocp/api`](../../proto/ocp/api).
+- Shared domain types live in [`proto/ocp/types`](../../proto/ocp/types).
 - Generated output lives in `proto/gen/{typescript,python,rust}`. Never edit it
   by hand.
 - Buf configuration lives in [`proto/buf.yaml`](../../proto/buf.yaml) and
   [`proto/buf.gen.yaml`](../../proto/buf.gen.yaml).
-- Normative behavior is in [`docs/SPEC_V0_1.md`](../../docs/SPEC_V0_1.md).
+- Normative behavior is in [`docs/SPEC.md`](../../docs/SPEC.md).
 
 ## Required invariants
 
-1. Keep packages versioned as `ocp.v1.api` and `ocp.v1.types`.
-2. Treat existing protobuf field numbers as stable for the v0.1 compatibility
-   line. Add fields instead of renumbering or reusing old numbers.
-3. Every event name must map to exactly one protobuf payload case. Update the
+1. Keep package names `ocp.api` and `ocp.types`. Do not add a version suffix.
+2. Treat existing protobuf field numbers as stable. Add fields instead of
+   renumbering or reusing old numbers. Field 2 (`event_type`) is reserved.
+3. Every event name must map to exactly one protobuf payload case. The name is
+   always derived from the payload; the envelope stores no event type string. Update the
    mapping in the spec, protocol helpers, validation, and tests together.
 4. Keep provider-specific identifiers in channel references or extensions;
    core payloads remain provider-neutral.

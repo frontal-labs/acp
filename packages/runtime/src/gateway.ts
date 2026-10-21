@@ -6,10 +6,10 @@ import type {
   DeliveryReceipt,
   ReceiveMetadata,
 } from "@frontal-labs/open-channel-adapter";
-import { OcpError, TransportError, ValidationError } from "@frontal-labs/open-channel-core";
+import { OpenChannelError, TransportError, ValidationError } from "@frontal-labs/open-channel-core";
 import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
 
-import type { OcpRuntime } from "./runtime.js";
+import type { OpenChannelRuntime } from "./runtime.js";
 import type { RuntimeResult } from "./types.js";
 
 /** Routes normalized OCP events to provider adapters. */
@@ -17,9 +17,9 @@ export class ChannelGateway {
   private readonly sinks: Record<string, ChannelSink> = Object.create(null);
   private readonly sources: Record<string, ChannelSource> = Object.create(null);
   private sourceRuns: Partial<Record<string, Promise<void>>> = Object.create(null);
-  readonly runtime: OcpRuntime;
+  readonly runtime: OpenChannelRuntime;
 
-  constructor(runtime: OcpRuntime, adapters: ChannelAdapter[] = []) {
+  constructor(runtime: OpenChannelRuntime, adapters: ChannelAdapter[] = []) {
     this.runtime = runtime;
     for (const adapter of adapters) {
       this.register(adapter);
@@ -63,7 +63,7 @@ export class ChannelGateway {
     try {
       normalized = await source.normalize(input, metadata);
     } catch (error) {
-      if (error instanceof OcpError) {
+      if (error instanceof OpenChannelError) {
         throw error;
       }
       throw new TransportError(`Unable to normalize input for provider: ${provider}`, {
@@ -85,7 +85,7 @@ export class ChannelGateway {
   start(
     emit: (event: EventEnvelope) => Promise<void>,
     signal: AbortSignal,
-    onError?: (error: OcpError) => void | Promise<void>,
+    onError?: (error: OpenChannelError) => void | Promise<void>,
   ): Promise<void> {
     for (const source of Object.values(this.sources)) {
       if (!source.start) {
@@ -94,7 +94,7 @@ export class ChannelGateway {
       const run = Promise.resolve(source.start(emit, signal));
       this.sourceRuns[source.provider] = run.catch(async (error) => {
         await onError?.(
-          error instanceof OcpError
+          error instanceof OpenChannelError
             ? error
             : new TransportError(`OCP source failed for provider ${source.provider}`, {
                 cause: error,
@@ -138,7 +138,7 @@ export class ChannelGateway {
     try {
       return await adapter.send(event, options);
     } catch (error) {
-      if (error instanceof OcpError) {
+      if (error instanceof OpenChannelError) {
         throw error;
       }
       throw new TransportError(`Delivery failed for OCP event ${event.eventId}`, {

@@ -1,5 +1,5 @@
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ChannelGateway, OcpRuntime } from "@frontal-labs/open-channel-runtime";
+import { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
 import {
   createTestAgent,
   createTestChannel,
@@ -13,7 +13,7 @@ describe("OCP channel gateway", () => {
   it("dispatches an outbound event to the adapter for its provider", async () => {
     const adapter = createTestChannelAdapter();
     const gateway = new ChannelGateway(
-      new OcpRuntime({
+      new OpenChannelRuntime({
         eventStore: createTestEventStore(),
         policy: new RuleBasedPolicyEngine({ rules: [] }),
       }),
@@ -34,7 +34,7 @@ describe("OCP channel gateway", () => {
 
   it("fails clearly when no provider adapter is registered", async () => {
     const gateway = new ChannelGateway(
-      new OcpRuntime({
+      new OpenChannelRuntime({
         eventStore: createTestEventStore(),
         policy: new RuleBasedPolicyEngine({ rules: [] }),
       }),

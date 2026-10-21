@@ -7,6 +7,9 @@ use uuid::Uuid;
 
 use crate::events::{self, EventEnvelope};
 
+/// Metadata a provider attaches to raw input passed to [`OpenChannel::receive`](crate::OpenChannel::receive).
+pub type ReceiveMetadata = BTreeMap<String, String>;
+
 pub type JsonObject = BTreeMap<String, serde_json::Value>;
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -96,8 +99,14 @@ pub struct AgentCard {
 }
 
 impl AgentCard {
+    /// A card for `id`, versioned with the SDK release.
     pub fn new(id: impl Into<String>, name: impl Into<String>) -> Self {
-        Self { id: id.into(), name: name.into(), version: "1.0.0".to_owned(), ..Self::default() }
+        Self {
+            id: id.into(),
+            name: name.into(),
+            version: env!("CARGO_PKG_VERSION").to_owned(),
+            ..Self::default()
+        }
     }
 }
 
@@ -151,7 +160,7 @@ pub struct ActionInvocation {
     pub parameters: BTreeMap<String, String>,
 }
 
-/// ProtoJSON shape of `ocp.v1.types.ActionRequest`.
+/// ProtoJSON shape of `ocp.types.ActionRequest`.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ActionRequestJson {
@@ -208,6 +217,17 @@ pub enum ActionResult {
     Failed { action_id: String, error: ActionError },
 }
 
+impl ActionResult {
+    pub(crate) fn action_id(&self) -> &str {
+        match self {
+            Self::Blocked { action_id, .. }
+            | Self::ApprovalRequired { action_id, .. }
+            | Self::Executed { action_id, .. }
+            | Self::Failed { action_id, .. } => action_id,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct ActionError {
     pub code: String,
@@ -217,7 +237,7 @@ pub struct ActionError {
 }
 
 impl ActionError {
-    fn from_agent_error(action_id: impl Into<String>, error: &AgentError) -> Self {
+    pub(crate) fn from_agent_error(action_id: impl Into<String>, error: &AgentError) -> Self {
         Self {
             code: "OCP_ACTION".to_owned(),
             message: error.to_string(),
@@ -260,10 +280,11 @@ type ActionHandler = dyn for<'a> Fn(
     + Send
     + Sync;
 
+/// A typed, policy-controlled action. Build one with [`ActionDefinition::new`].
 pub struct ActionDefinition {
     pub action_type: String,
-    validator: Box<ActionValidator>,
-    handler: Box<ActionHandler>,
+    pub(crate) validator: Box<ActionValidator>,
+    pub(crate) handler: Box<ActionHandler>,
 }
 
 impl ActionDefinition {
@@ -284,6 +305,7 @@ impl ActionDefinition {
         }
     }
 
+    /// Checks and normalizes the input before the handler runs.
     pub fn with_validator<F>(mut self, validator: F) -> Self
     where
         F: Fn(&serde_json::Value) -> Result<serde_json::Value, AgentError> + Send + Sync + 'static,
@@ -311,6 +333,7 @@ pub enum AgentError {
 
 type AgentHandler = dyn for<'a> Fn(&mut AgentContext<'a>) -> Result<(), AgentError> + Send + Sync;
 
+/// An agent: its card, the capabilities its actor advertises, and the message handler.
 pub struct AgentDefinition {
     pub card: AgentCard,
     pub actor_capabilities: Vec<String>,
@@ -326,41 +349,51 @@ impl AgentDefinition {
     }
 }
 
+/// What an agent sees while handling one `message.received` event.
 pub struct AgentContext<'a> {
+    /// The agent handling the message.
     pub agent: ActorRef,
-    pub card: AgentCard,
+    /// The inbound message.
+    pub message: &'a MessageReceived,
+    /// The inbound event envelope.
     pub event: &'a EventEnvelope,
-    pub message: MessageReceived,
+    /// Conversation of the inbound event, when it has one.
+    pub conversation: Option<&'a ConversationRef>,
+    /// Channel of the inbound event, when it has one.
+    pub channel: Option<&'a ChannelRef>,
+    logger: &'a dyn Logger,
     actions: Vec<ActionInvocation>,
     replies: Vec<EventEnvelope>,
 }
 
-impl<'a> AgentContext<'a> {
+impl AgentContext<'_> {
+    /// The logger configured on the application.
+    pub fn logger(&self) -> &dyn Logger {
+        self.logger
+    }
+
+    /// Queues a `message.sent` reply on the inbound event's channel and conversation.
     pub fn reply(&mut self, text: impl Into<String>) -> &EventEnvelope {
-        // Replies use the protocol version of the event being answered.
-        let mut reply = events::message_sent(self.event.protocol_version, text);
+        let mut reply = events::message_sent(text);
         reply.actor = Some(self.agent.clone());
+        reply.source = Some(self.agent.clone());
+        reply.recipient = self.event.actor.clone();
         reply.causation_id = self.event.event_id.clone();
         reply.correlation_id = if self.event.correlation_id.is_empty() {
             self.event.event_id.clone()
         } else {
             self.event.correlation_id.clone()
         };
-        reply.recipient = self.event.actor.clone();
-        reply.source = Some(self.agent.clone());
         reply.channel = self.event.channel.clone();
         reply.conversation = self.event.conversation.clone();
-        // The index is valid because the reply was pushed on the line above.
-        let index = self.replies.len();
         self.replies.push(reply);
-        &self.replies[index]
+        // The reply was pushed on the line above, so the last element exists.
+        self.replies.last().expect("reply was just pushed")
     }
 
-    pub fn request_action(
-        &mut self,
-        action_type: impl Into<String>,
-        input: serde_json::Value,
-    ) -> String {
+    /// Requests an action. Policy decides whether it runs, is blocked, or needs approval.
+    /// Returns the action ID.
+    pub fn request(&mut self, action_type: impl Into<String>, input: serde_json::Value) -> String {
         let action_id = format!("action:{}", Uuid::new_v4());
         self.actions.push(ActionInvocation {
             action_id: action_id.clone(),
@@ -376,6 +409,7 @@ impl<'a> AgentContext<'a> {
     }
 }
 
+/// The outcome of handling one event.
 #[derive(Debug, Default)]
 pub struct HandleResult {
     pub handled: bool,
@@ -384,9 +418,16 @@ pub struct HandleResult {
     pub replies: Vec<EventEnvelope>,
 }
 
+struct Registered {
+    definition: AgentDefinition,
+    /// The agent as an actor, built once at registration instead of per event.
+    actor: ActorRef,
+}
+
+/// Routes `message.received` events to registered agents.
 #[derive(Default)]
 pub struct AgentHost {
-    agents: BTreeMap<String, AgentDefinition>,
+    agents: BTreeMap<String, Registered>,
 }
 
 impl AgentHost {
@@ -398,7 +439,11 @@ impl AgentHost {
         if self.agents.contains_key(&agent.card.id) {
             return Err(AgentError::DuplicateAgent(agent.card.id.clone()));
         }
-        self.agents.insert(agent.card.id.clone(), agent);
+        let actor = ActorRef {
+            capabilities: agent.actor_capabilities.clone(),
+            ..ActorRef::agent(&agent.card.id, &agent.card.name)
+        };
+        self.agents.insert(agent.card.id.clone(), Registered { definition: agent, actor });
         Ok(self)
     }
 
@@ -406,50 +451,54 @@ impl AgentHost {
         self.agents.remove(agent_id).is_some()
     }
 
-    pub fn get_agent_card(&self, agent_id: &str) -> Option<&AgentCard> {
-        self.agents.get(agent_id).map(|agent| &agent.card)
+    pub fn agent_card(&self, agent_id: &str) -> Option<&AgentCard> {
+        self.agents.get(agent_id).map(|agent| &agent.definition.card)
     }
 
-    pub fn list_agent_cards(&self) -> Vec<&AgentCard> {
-        self.agents.values().map(|agent| &agent.card).collect()
+    pub fn agent_cards(&self) -> Vec<&AgentCard> {
+        self.agents.values().map(|agent| &agent.definition.card).collect()
     }
 
-    pub fn handle(&self, event: &EventEnvelope) -> Result<HandleResult, AgentError> {
-        if events::event_type_of(event) != "message.received" {
-            return Ok(HandleResult::default());
-        }
-        let Some(message) = event.message_received_payload().cloned() else {
+    /// Runs the addressed agent's handler for a `message.received` event. Other events are
+    /// ignored.
+    pub fn handle(
+        &self,
+        event: &EventEnvelope,
+        logger: &dyn Logger,
+    ) -> Result<HandleResult, AgentError> {
+        let Some(message) = event.as_message_received() else {
             return Ok(HandleResult::default());
         };
         let agent_id =
             event.recipient.as_ref().map(|recipient| recipient.id.as_str()).unwrap_or_default();
-        let agent = self
+        let registered = self
             .agents
             .get(agent_id)
             .ok_or_else(|| AgentError::UnknownAgent(agent_id.to_owned()))?;
-        let context_agent = ActorRef {
-            capabilities: agent.actor_capabilities.clone(),
-            display_name: agent.card.name.clone(),
-            id: agent.card.id.clone(),
-            ..ActorRef::agent(&agent.card.id, &agent.card.name)
-        };
         let mut context = AgentContext {
-            agent: context_agent,
-            card: agent.card.clone(),
-            event,
+            agent: registered.actor.clone(),
             message,
+            event,
+            conversation: event.conversation.as_ref(),
+            channel: event.channel.as_ref(),
+            logger,
             actions: Vec::new(),
             replies: Vec::new(),
         };
-        (agent.handler)(&mut context)?;
+        (registered.definition.handler)(&mut context)?;
         let (replies, actions) = context.finish();
         Ok(HandleResult { action_results: Vec::new(), actions, handled: true, replies })
     }
 }
 
+/// An inbound provider: turns raw provider input into OCP events.
 pub trait ChannelSource: Send {
     fn provider(&self) -> &str;
-    fn normalize(&self, input: serde_json::Value) -> Result<Vec<EventEnvelope>, AgentError>;
+    fn normalize(
+        &self,
+        input: serde_json::Value,
+        metadata: &ReceiveMetadata,
+    ) -> Result<Vec<EventEnvelope>, AgentError>;
 
     fn start(&mut self) -> Result<(), AgentError> {
         Ok(())
@@ -468,6 +517,7 @@ pub struct DeliveryReceipt {
     pub external_id: Option<String>,
 }
 
+/// An outbound provider: delivers OCP events to the outside world.
 pub trait ChannelSink: Send {
     fn provider(&self) -> &str;
     fn send(&mut self, event: &EventEnvelope) -> Result<DeliveryReceipt, AgentError>;
@@ -477,423 +527,71 @@ pub trait ChannelSink: Send {
     }
 }
 
+/// A provider registration: an optional inbound source and an optional outbound sink.
 pub struct ChannelDefinition {
     pub provider: String,
     pub source: Option<Box<dyn ChannelSource>>,
     pub sink: Option<Box<dyn ChannelSink>>,
 }
 
-struct PendingAction {
-    action: ActionInvocation,
-    event: EventEnvelope,
-}
-
-fn action_id(result: &ActionResult) -> String {
-    match result {
-        ActionResult::Blocked { action_id, .. }
-        | ActionResult::ApprovalRequired { action_id, .. }
-        | ActionResult::Executed { action_id, .. }
-        | ActionResult::Failed { action_id, .. } => action_id.clone(),
-    }
-}
-
-pub struct OcpAppBuilder {
-    host: AgentHost,
-    actions: BTreeMap<String, ActionDefinition>,
-    channels: Vec<ChannelDefinition>,
-    policy: Option<Box<dyn ActionPolicy>>,
-    max_concurrent_conversations: usize,
-}
-
-impl Default for OcpAppBuilder {
-    fn default() -> Self {
-        Self {
-            host: AgentHost::new(),
-            actions: BTreeMap::new(),
-            channels: Vec::new(),
-            policy: None,
-            max_concurrent_conversations: usize::MAX,
-        }
-    }
-}
-
-impl OcpAppBuilder {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn agent(mut self, agent: AgentDefinition) -> Result<Self, AgentError> {
-        self.host.register(agent)?;
-        Ok(self)
-    }
-
-    pub fn action(mut self, action: ActionDefinition) -> Result<Self, AgentError> {
-        if self.actions.contains_key(&action.action_type) {
-            return Err(AgentError::Action(format!(
-                "action already registered: {}",
-                action.action_type
-            )));
-        }
-        self.actions.insert(action.action_type.clone(), action);
-        Ok(self)
-    }
-
-    pub fn channel(mut self, channel: ChannelDefinition) -> Self {
-        self.channels.push(channel);
-        self
-    }
-
-    pub fn policy(mut self, policy: Box<dyn ActionPolicy>) -> Self {
-        self.policy = Some(policy);
-        self
-    }
-
-    pub fn max_concurrent_conversations(mut self, limit: usize) -> Self {
-        self.max_concurrent_conversations = limit.max(1);
-        self
-    }
-
-    pub fn build(self) -> OcpApp {
-        OcpApp {
-            host: self.host,
-            actions: self.actions,
-            channels: self.channels,
-            pending: BTreeMap::new(),
-            policy: self.policy,
-            seen_events: BTreeMap::new(),
-            started: false,
-            max_concurrent_conversations: self.max_concurrent_conversations,
-            action_results: BTreeMap::new(),
-            audit_events: Vec::new(),
-        }
-    }
-}
-
-pub struct OcpApp {
-    host: AgentHost,
-    actions: BTreeMap<String, ActionDefinition>,
-    channels: Vec<ChannelDefinition>,
-    pending: BTreeMap<String, PendingAction>,
-    policy: Option<Box<dyn ActionPolicy>>,
-    seen_events: BTreeMap<String, EventEnvelope>,
-    started: bool,
-    max_concurrent_conversations: usize,
-    action_results: BTreeMap<String, ActionResult>,
-    audit_events: Vec<EventEnvelope>,
-}
-
-impl OcpApp {
-    pub fn start(&mut self) -> Result<(), AgentError> {
-        for channel in &mut self.channels {
-            if let Some(source) = channel.source.as_mut() {
-                source.start()?;
-            }
-        }
-        self.started = true;
-        Ok(())
-    }
-
-    pub fn stop(&mut self) -> Result<(), AgentError> {
-        for channel in &mut self.channels {
-            if let Some(source) = channel.source.as_mut() {
-                source.stop()?;
-            }
-            if let Some(sink) = channel.sink.as_mut() {
-                sink.close()?;
-            }
-        }
-        self.started = false;
-        Ok(())
-    }
-
-    pub fn max_concurrent_conversations(&self) -> usize {
-        self.max_concurrent_conversations
-    }
-
-    pub fn audit_events(&self) -> &[EventEnvelope] {
-        &self.audit_events
-    }
-
-    pub fn register_agent(&mut self, agent: AgentDefinition) -> Result<&mut Self, AgentError> {
-        self.host.register(agent)?;
-        Ok(self)
-    }
-
-    pub fn register_action(&mut self, action: ActionDefinition) -> Result<&mut Self, AgentError> {
-        if self.actions.contains_key(&action.action_type) {
-            return Err(AgentError::Action(format!(
-                "action already registered: {}",
-                action.action_type
-            )));
-        }
-        self.actions.insert(action.action_type.clone(), action);
-        Ok(self)
-    }
-
-    pub fn register_channel(&mut self, channel: ChannelDefinition) -> &mut Self {
-        self.channels.push(channel);
-        self
-    }
-
-    pub fn ingest(&mut self, event: EventEnvelope) -> Result<HandleResult, AgentError> {
-        if !self.started {
-            self.started = true;
-        }
-        if self.seen_events.contains_key(&event.event_id) {
-            return Ok(HandleResult::default());
-        }
-        self.seen_events.insert(event.event_id.clone(), event.clone());
-        let mut result = self.host.handle(&event)?;
-        self.audit_events.push(event.clone());
-        self.dispatch_replies(&result.replies)?;
-        for action in result.actions.iter().cloned() {
-            if let Some(previous) = self.action_results.get(&action.action_id).cloned() {
-                result.action_results.push(previous);
-                continue;
-            }
-            let decision =
-                self.policy.as_ref().map(|policy| policy.evaluate(&action, &event)).unwrap_or(
-                    PolicyDecision {
-                        allowed: false,
-                        approval_required: false,
-                        reason: "No policy configured".to_owned(),
-                    },
-                );
-            if !decision.allowed {
-                let blocked =
-                    ActionResult::Blocked { action_id: action.action_id, reason: decision.reason };
-                self.action_results.insert(action_id(&blocked), blocked.clone());
-                result.action_results.push(blocked);
-            } else if decision.approval_required {
-                let approval_id = format!("{}:approval", action.action_id);
-                let requested_action_id = action.action_id.clone();
-                self.pending
-                    .insert(approval_id.clone(), PendingAction { action, event: event.clone() });
-                let pending_result =
-                    ActionResult::ApprovalRequired { action_id: requested_action_id, approval_id };
-                self.action_results.insert(action_id(&pending_result), pending_result.clone());
-                result.action_results.push(pending_result);
-            } else {
-                let action_result = self.execute_action(action, &event)?;
-                self.action_results.insert(action_id(&action_result), action_result.clone());
-                result.action_results.push(action_result);
-            }
-        }
-        Ok(result)
-    }
-
-    pub fn receive(
-        &mut self,
-        provider: &str,
-        input: serde_json::Value,
-    ) -> Result<Vec<HandleResult>, AgentError> {
-        let source = self
-            .channels
-            .iter()
-            .find(|channel| channel.provider == provider)
-            .and_then(|channel| channel.source.as_ref())
-            .ok_or_else(|| AgentError::UnknownProvider(provider.to_owned()))?;
-        let events = source.normalize(input)?;
-        events.into_iter().map(|event| self.ingest(event)).collect()
-    }
-
-    pub fn approve(&mut self, approval_id: &str) -> Result<ActionResult, AgentError> {
-        let pending = self
-            .pending
-            .remove(approval_id)
-            .ok_or_else(|| AgentError::Action(format!("approval not found: {approval_id}")))?;
-        let result = self.execute_action(pending.action, &pending.event)?;
-        self.action_results.insert(action_id(&result), result.clone());
-        Ok(result)
-    }
-
-    pub fn deny(
-        &mut self,
-        approval_id: &str,
-        reason: impl Into<String>,
-    ) -> Result<ActionResult, AgentError> {
-        let pending = self
-            .pending
-            .remove(approval_id)
-            .ok_or_else(|| AgentError::Action(format!("approval not found: {approval_id}")))?;
-        let result =
-            ActionResult::Blocked { action_id: pending.action.action_id, reason: reason.into() };
-        self.action_results.insert(action_id(&result), result.clone());
-        Ok(result)
-    }
-
-    pub fn list_agent_cards(&self) -> Vec<&AgentCard> {
-        self.host.list_agent_cards()
-    }
-
-    fn execute_action(
-        &self,
-        action: ActionInvocation,
-        event: &EventEnvelope,
-    ) -> Result<ActionResult, AgentError> {
-        let definition = self
-            .actions
-            .get(&action.action_type)
-            .ok_or_else(|| AgentError::UnknownAction(action.action_type.clone()))?;
-        let input = match (definition.validator)(&action.input) {
-            Ok(input) => input,
-            Err(error) => {
-                return Ok(ActionResult::Failed {
-                    action_id: action.action_id.clone(),
-                    error: ActionError::from_agent_error(action.action_id, &error),
-                });
-            }
-        };
-        let default_actor = ActorRef::default();
-        let context =
-            ActionExecutionContext { actor: event.actor.as_ref().unwrap_or(&default_actor), event };
-        match (definition.handler)(&input, &context) {
-            Ok(result) => Ok(ActionResult::Executed { action_id: action.action_id, result }),
-            Err(error) => Ok(ActionResult::Failed {
-                error: ActionError::from_agent_error(action.action_id.clone(), &error),
-                action_id: action.action_id,
-            }),
-        }
-    }
-
-    fn dispatch_replies(&mut self, replies: &[EventEnvelope]) -> Result<(), AgentError> {
-        for reply in replies {
-            let provider =
-                reply.channel.as_ref().map(|channel| channel.provider.as_str()).unwrap_or_default();
-            let channel = self
-                .channels
-                .iter_mut()
-                .find(|channel| channel.provider == provider)
-                .ok_or_else(|| AgentError::UnknownProvider(provider.to_owned()))?;
-            if let Some(sink) = channel.sink.as_mut() {
-                sink.send(reply)?;
-            }
-        }
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
-    use crate::events::{EventPayload, ProtocolVersion};
+    use crate::events::EventPayload;
 
-    fn inbound_message(version: ProtocolVersion, text: &str) -> EventEnvelope {
-        let mut event = events::message_received(version, text);
+    fn inbound_message(text: &str) -> EventEnvelope {
+        let mut event = events::message_received(text);
         event.actor = Some(ActorRef {
             actor_type: ActorType::Human,
             id: "human:gabriel".to_owned(),
             ..ActorRef::default()
         });
         event.recipient = Some(ActorRef::agent("agent:support", "Support"));
+        event.channel = Some(ChannelRef { provider: "slack".to_owned(), ..ChannelRef::default() });
         event
     }
 
     #[test]
-    fn routes_message_and_creates_reply_for_both_protocol_versions() {
-        for version in [ProtocolVersion::V0_1, ProtocolVersion::V0_2] {
-            let mut host = AgentHost::new();
-            let card = AgentCard::new("agent:support", "Support");
-            host.register(AgentDefinition::new(card, |context| {
+    fn routes_a_message_and_replies_on_the_same_channel() {
+        let mut host = AgentHost::new();
+        host.register(AgentDefinition::new(
+            AgentCard::new("agent:support", "Support"),
+            |context| {
                 let text = format!("Received: {}", context.message.text);
                 context.reply(text);
                 Ok(())
-            }))
-            .expect("agent registers");
+            },
+        ))
+        .expect("agent registers");
 
-            let event = inbound_message(version, "Can you help?");
-            let result = host.handle(&event).expect("event is handled");
+        let event = inbound_message("Can you help?");
+        let result = host.handle(&event, &StderrLogger).expect("event is handled");
 
-            assert!(result.handled);
-            assert_eq!(result.replies.len(), 1);
-            assert_eq!(result.replies[0].protocol_version, version);
-            assert_eq!(result.replies[0].event_type.is_some(), version == ProtocolVersion::V0_1);
-            assert_eq!(events::event_type_of(&result.replies[0]), "message.sent");
-            assert!(matches!(
-                result.replies[0].payload,
-                EventPayload::MessageSent(MessageSent { ref text, .. }) if text == "Received: Can you help?"
-            ));
-        }
-    }
-
-    struct RequireApprovalPolicy;
-
-    impl ActionPolicy for RequireApprovalPolicy {
-        fn evaluate(&self, _action: &ActionInvocation, _event: &EventEnvelope) -> PolicyDecision {
-            PolicyDecision {
-                allowed: true,
-                approval_required: true,
-                reason: "refunds need approval".to_owned(),
-            }
-        }
-    }
-
-    fn approval_app() -> OcpApp {
-        OcpAppBuilder::new()
-            .agent(AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
-                context.request_action("refund", serde_json::json!({ "amount": 10 }));
-                Ok(())
-            }))
-            .expect("agent registers")
-            .action(ActionDefinition::new("refund", |input, _context| Ok(input.clone())))
-            .expect("action registers")
-            .policy(Box::new(RequireApprovalPolicy))
-            .build()
-    }
-
-    fn approval_message() -> EventEnvelope {
-        let mut event = inbound_message(ProtocolVersion::V0_1, "Refund order 42");
-        event.recipient = Some(ActorRef::agent("agent:billing", "Billing"));
-        event.source = event.actor.clone();
-        event
+        assert!(result.handled);
+        assert_eq!(result.replies.len(), 1);
+        let reply = &result.replies[0];
+        assert_eq!(reply.event_type(), "message.sent");
+        assert_eq!(reply.causation_id, event.event_id);
+        assert_eq!(reply.channel.as_ref().map(|channel| channel.provider.as_str()), Some("slack"));
+        assert!(matches!(
+            reply.payload,
+            EventPayload::MessageSent(MessageSent { ref text, .. }) if text == "Received: Can you help?"
+        ));
     }
 
     #[test]
-    fn approval_required_result_keeps_requested_action_id_and_resolves_by_approval_id() {
-        let mut app = approval_app();
-        app.start().expect("app starts");
-        let event = approval_message();
+    fn ignores_non_message_events_and_rejects_unknown_agents() {
+        let host = AgentHost::new();
+        let mut event = inbound_message("hi");
+        event.payload = EventPayload::ApprovalExpired(crate::payloads::ApprovalExpired {
+            approval_id: "approval:1".to_owned(),
+            reason: "timed out".to_owned(),
+        });
+        assert!(!host.handle(&event, &StderrLogger).expect("ignored").handled);
 
-        let result = app.ingest(event.clone()).expect("event is ingested");
-
-        assert_eq!(result.actions.len(), 1);
-        let requested_action_id = result.actions[0].action_id.clone();
-        assert_eq!(result.action_results.len(), 1);
-        let ActionResult::ApprovalRequired { action_id, approval_id } = &result.action_results[0]
-        else {
-            panic!("expected approval required, got {:?}", result.action_results[0]);
-        };
-        assert_eq!(action_id, &requested_action_id);
-        assert_eq!(approval_id, &format!("{requested_action_id}:approval"));
-
-        let approved = app.approve(approval_id).expect("approval resolves");
-        assert_eq!(
-            approved,
-            ActionResult::Executed {
-                action_id: requested_action_id.clone(),
-                result: serde_json::json!({ "amount": 10 }),
-            }
-        );
-
-        let mut denied_app = approval_app();
-        denied_app.start().expect("app starts");
-        let denied_result = denied_app.ingest(event).expect("event is ingested");
-        let denied_action_id = denied_result.actions[0].action_id.clone();
-        let ActionResult::ApprovalRequired { action_id, approval_id } =
-            &denied_result.action_results[0]
-        else {
-            panic!("expected approval required");
-        };
-        assert_eq!(action_id, &denied_action_id);
-        let denied = denied_app.deny(approval_id, "not authorized").expect("denial resolves");
-        assert_eq!(
-            denied,
-            ActionResult::Blocked {
-                action_id: denied_action_id,
-                reason: "not authorized".to_owned(),
-            }
-        );
+        let unknown = inbound_message("hi");
+        assert!(matches!(host.handle(&unknown, &StderrLogger), Err(AgentError::UnknownAgent(_))));
     }
 
     #[test]
@@ -901,7 +599,34 @@ mod tests {
         let mut host = AgentHost::new();
         host.register(AgentDefinition::new(AgentCard::new("agent:triage", "Triage"), |_| Ok(())))
             .expect("agent registers");
+        assert_eq!(host.agent_cards()[0].name, "Triage");
+        assert_eq!(host.agent_cards()[0].version, env!("CARGO_PKG_VERSION"));
+    }
+}
 
-        assert_eq!(host.list_agent_cards()[0].name, "Triage");
+/// Structured logging for applications and agents. `debug` and `info` are for tracing; `warn`
+/// and `error` report problems.
+pub trait Logger: Send + Sync {
+    fn debug(&self, message: &str);
+    fn info(&self, message: &str);
+    fn warn(&self, message: &str);
+    fn error(&self, message: &str);
+}
+
+/// The default logger: `warn` and `error` go to stderr, `debug` and `info` are silent.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct StderrLogger;
+
+impl Logger for StderrLogger {
+    fn debug(&self, _message: &str) {}
+
+    fn info(&self, _message: &str) {}
+
+    fn warn(&self, message: &str) {
+        eprintln!("[open-channel warn] {message}");
+    }
+
+    fn error(&self, message: &str) {
+        eprintln!("[open-channel error] {message}");
     }
 }

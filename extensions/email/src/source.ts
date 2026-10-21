@@ -32,7 +32,6 @@ export async function normalizeEmailMessage(
       channelId: options.mailbox,
       conversationId: `email:${threadId ?? message.id ?? message.subject ?? message.from}`,
       conversationParticipants: [actor],
-      eventType: "message.received",
       extensions: {
         "ocp.provider": "email",
         ...(message.subject ? { "email.subject": message.subject } : {}),

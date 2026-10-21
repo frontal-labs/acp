@@ -4,7 +4,7 @@ import { createA2ASink } from "./sink.js";
 import { createA2ASource } from "./source.js";
 import type { A2AChannelOptions } from "./types.js";
 
-/** Creates the A2A source/sink pair consumed by `createOcp()`. */
+/** Creates the A2A source/sink pair consumed by `openChannel()`. */
 export function createA2AChannel(options: A2AChannelOptions): ChannelDefinition {
   return {
     provider: "a2a",

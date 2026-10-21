@@ -4,7 +4,7 @@ import { createWhatsAppSink } from "./sink.js";
 import { createWhatsAppSource } from "./source.js";
 import type { WhatsAppChannelOptions } from "./types.js";
 
-/** Creates the WhatsApp source/sink pair consumed by `createOcp()`. */
+/** Creates the WhatsApp source/sink pair consumed by `openChannel()`. */
 export function createWhatsAppChannel(options: WhatsAppChannelOptions): ChannelDefinition {
   return {
     provider: "whatsapp",

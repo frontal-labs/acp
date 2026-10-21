@@ -1,4 +1,4 @@
-import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import { type EventEnvelope, eventType as typeOf } from "@frontal-labs/open-channel-protocol";
 
 /** Action bookkeeping record kept by a test event store. */
 export interface TestActionRecord {
@@ -91,11 +91,11 @@ class RecordingEventStore implements TestEventStore {
   }
 
   list(options: { eventType?: string; limit?: number } = {}): Promise<EventEnvelope[]> {
-    const { eventType, limit } = options;
-    if (!eventType) {
+    const { eventType: wanted, limit } = options;
+    if (!wanted) {
       return Promise.resolve(limit === undefined ? this.log.slice() : this.log.slice(-limit));
     }
-    const matches = this.log.filter((event) => event.eventType === eventType);
+    const matches = this.log.filter((event) => typeOf(event) === wanted);
     return Promise.resolve(limit === undefined ? matches : matches.slice(-limit));
   }
 

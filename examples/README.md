@@ -56,7 +56,7 @@ provider adapter or application output
 The framework examples use the same bridge shape:
 
 ```text
-async function handleOcpMessage(text, context) -> replyText
+async function handleOpenChannelMessage(text, context) -> replyText
 ```
 
 The bridge must preserve OCP event identity and conversation context. A tool

@@ -1,9 +1,8 @@
-"""Stdlib-only protobuf wire codec for OCP event envelopes (v0.1 and v0.2).
+"""Stdlib-only protobuf wire codec for the OCP event envelope.
 
-The schema tables below mirror proto/v1/types/*.proto, proto/v1/api/events.proto (v0.1 envelope)
-and proto/v2/api/events.proto (v0.2 envelope). Messages are exchanged as ProtoJSON-shaped dicts
-using the camelCase keys the models already use; enums are ProtoJSON names such as
-"ACTOR_TYPE_AGENT"; timestamps are RFC 3339 strings.
+The schema tables below mirror proto/ocp/types/*.proto and proto/ocp/api/events.proto. Messages are
+exchanged as ProtoJSON-shaped dicts using the camelCase keys the models already use; enums are
+ProtoJSON names such as "ACTOR_TYPE_AGENT"; timestamps are RFC 3339 strings.
 
 Encoding follows protobuf-es: fields in ascending number order, proto3 implicit-presence scalars
 omitted at their default, message fields emitted whenever the key is present, repeated fields
@@ -73,7 +72,7 @@ ENUMS: dict[str, dict[str, int]] = {
     },
 }
 
-# Message name -> fields. Source: proto/v1/types/*.proto.
+# Message name -> fields. Source: proto/ocp/types/*.proto.
 MESSAGES: dict[str, tuple[_Field, ...]] = {
     "ActorRef": (
         _f(1, "id"),
@@ -209,10 +208,10 @@ def _payload_fields() -> tuple[_Field, ...]:
     )
 
 
-# Envelope schemas. Source: proto/v1/api/events.proto (has event_type) and proto/v2/api/events.proto.
-ENVELOPE_V1: tuple[_Field, ...] = (
+# Envelope schema. Source: proto/ocp/api/events.proto. Field 2 is reserved (the removed event_type);
+# the payload oneof is the event kind.
+ENVELOPE: tuple[_Field, ...] = (
     _f(1, "eventId"),
-    _f(2, "eventType"),
     _f(3, "protocolVersion"),
     _f(4, "occurredAt", "timestamp"),
     _f(5, "source", "message", "ActorRef"),
@@ -226,32 +225,8 @@ ENVELOPE_V1: tuple[_Field, ...] = (
     _f(13, "extensions", "map"),
 ) + _payload_fields()
 
-ENVELOPE_V2: tuple[_Field, ...] = (
-    _f(1, "eventId"),
-    _f(2, "protocolVersion"),
-    _f(3, "occurredAt", "timestamp"),
-    _f(4, "source", "message", "ActorRef"),
-    _f(5, "actor", "message", "ActorRef"),
-    _f(6, "recipient", "message", "ActorRef"),
-    _f(7, "channel", "message", "ChannelRef"),
-    _f(8, "conversation", "message", "ConversationRef"),
-    _f(9, "correlationId"),
-    _f(10, "causationId"),
-    _f(11, "idempotencyKey"),
-    _f(12, "extensions", "map"),
-) + _payload_fields()
-
-_ENVELOPES: dict[str, tuple[str, tuple[_Field, ...]]] = {
-    "0.1": ("EventEnvelopeV1", ENVELOPE_V1),
-    "0.2": ("EventEnvelopeV2", ENVELOPE_V2),
-}
-
-# Schema message name -> fields, including the two envelopes.
-_ALL_MESSAGES: dict[str, tuple[_Field, ...]] = {
-    **MESSAGES,
-    "EventEnvelopeV1": ENVELOPE_V1,
-    "EventEnvelopeV2": ENVELOPE_V2,
-}
+# Schema message name -> fields, including the envelope.
+_ALL_MESSAGES: dict[str, tuple[_Field, ...]] = {**MESSAGES, "EventEnvelope": ENVELOPE}
 
 
 @dataclass(frozen=True, slots=True)
@@ -283,7 +258,13 @@ _ENUM_NAMES: dict[str, dict[int, str]] = {
 # ---------------------------------------------------------------- primitives
 
 
+# Single-byte varints, precomputed so the encoder does not allocate them for every small value.
+_ONE_BYTE_VARINTS: tuple[bytes, ...] = tuple(bytes((value,)) for value in range(0x80))
+
+
 def _write_varint(value: int) -> bytes:
+    if 0 <= value < 0x80:
+        return _ONE_BYTE_VARINTS[value]
     if value < 0:
         value &= _INT64_MASK
     out = bytearray()
@@ -297,7 +278,16 @@ def _write_varint(value: int) -> bytes:
             return bytes(out)
 
 
+# Length-delimited tags for every field number in the schema, precomputed once.
+_LEN_TAGS: dict[int, bytes] = {
+    number: _write_varint((number << 3) | _WIRE_LEN) for number in range(1, 64)
+}
+
+
 def _read_varint(data: bytes, pos: int) -> tuple[int, int]:
+    # Tags and lengths are almost always one byte; return that without the loop.
+    if pos < len(data) and data[pos] < 0x80:
+        return data[pos], pos + 1
     result = 0
     shift = 0
     while True:
@@ -336,7 +326,7 @@ def _timestamp_to_parts(value: str) -> tuple[int, int]:
     match = _TIMESTAMP_RE.fullmatch(value)
     if match is None:
         raise ValueError(f"Invalid RFC 3339 timestamp: {value!r}")
-    local = datetime.strptime(match.group(1), "%Y-%m-%dT%H:%M:%S")
+    local = datetime.fromisoformat(match.group(1))
     zone = match.group(3)
     offset = 0
     if zone != "Z":
@@ -355,7 +345,11 @@ def _parts_to_timestamp(seconds: int, nanos: int) -> str:
 
     if not 0 <= nanos <= 999_999_999:
         raise ValueError(f"Timestamp nanos out of range: {nanos}")
-    text = (_EPOCH + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%S")
+    moment = _EPOCH + timedelta(seconds=seconds)
+    text = (
+        f"{moment.year:04d}-{moment.month:02d}-{moment.day:02d}"
+        f"T{moment.hour:02d}:{moment.minute:02d}:{moment.second:02d}"
+    )
     if nanos == 0:
         return f"{text}Z"
     if nanos % 1_000_000 == 0:
@@ -471,29 +465,42 @@ def _encode_field(field: _Field, item: object) -> bytes:
 
 def _encode_message(message: str, value: Mapping[str, object]) -> bytes:
     spec = _SPECS[message]
-    unknown = sorted(key for key in value if key not in spec.by_name)
-    if unknown:
-        raise ValueError(f"{message} has unsupported field(s): {', '.join(unknown)}")
-    oneof_present = sorted(name for name in spec.oneof_names if value.get(name) is not None)
-    if len(oneof_present) > 1:
-        raise ValueError(f"{message} payload must have exactly one case, got {oneof_present}")
+    for key in value:
+        if key not in spec.by_name:
+            unknown = sorted(key for key in value if key not in spec.by_name)
+            raise ValueError(f"{message} has unsupported field(s): {', '.join(unknown)}")
+    if spec.oneof_names:
+        oneof_present = [name for name in spec.oneof_names if value.get(name) is not None]
+        if len(oneof_present) > 1:
+            raise ValueError(f"{message} payload must have exactly one case, got {oneof_present}")
 
     out = bytearray()
     for field in spec.ordered:
         item = value.get(field.name)
         if item is None:
             continue
+        # Fast paths for the two shapes that dominate events: singular strings and messages.
+        if not field.repeated and field.kind == "string":
+            if not isinstance(item, str):
+                raise TypeError(f"{field.name} must be a string")
+            if item:
+                data = item.encode("utf-8")
+                out += _LEN_TAGS[field.number] + _write_varint(len(data)) + data
+            continue
+        if not field.repeated and field.kind == "message":
+            if not isinstance(item, Mapping):
+                raise TypeError(f"{field.name} must be a mapping")
+            body = _encode_message(field.target or "", item)
+            out += _LEN_TAGS[field.number] + _write_varint(len(body)) + body
+            continue
         out += _encode_field(field, item)
     return bytes(out)
 
 
-def encode_event(value: Mapping[str, object], protocol_version: str) -> bytes:
-    """Encode a ProtoJSON-shaped event dict using the envelope for protocol_version ("0.1" or "0.2")."""
+def encode_event(value: Mapping[str, object]) -> bytes:
+    """Encode a ProtoJSON-shaped event dict as an OCP EventEnvelope."""
 
-    if protocol_version not in _ENVELOPES:
-        raise ValueError(f"Unsupported OCP protocol_version: {protocol_version!r}")
-    name, _ = _ENVELOPES[protocol_version]
-    return _encode_message(name, value)
+    return _encode_message("EventEnvelope", value)
 
 
 # ---------------------------------------------------------------- decode
@@ -608,13 +615,11 @@ def _decode_message(message: str, data: bytes) -> dict[str, object]:
     return result
 
 
-def decode_event(data: bytes, protocol_version: str) -> dict[str, object]:
-    """Decode envelope bytes for protocol_version ("0.1" or "0.2") into a ProtoJSON-shaped dict.
+def decode_event(data: bytes) -> dict[str, object]:
+    """Decode EventEnvelope bytes into a ProtoJSON-shaped dict.
 
-    The dict contains only fields present on the wire; the caller applies proto3 defaults.
+    The dict contains only fields present on the wire; the caller applies proto3 defaults. Unknown
+    fields, including the reserved field 2 that older envelopes used for event_type, are skipped.
     """
 
-    if protocol_version not in _ENVELOPES:
-        raise ValueError(f"Unsupported OCP protocol_version: {protocol_version!r}")
-    name, _ = _ENVELOPES[protocol_version]
-    return _decode_message(name, bytes(data))
+    return _decode_message("EventEnvelope", bytes(data))

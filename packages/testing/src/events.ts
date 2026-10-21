@@ -1,34 +1,28 @@
-import type { EventEnvelope, EventName } from "@frontal-labs/open-channel-protocol";
+import { type EventEnvelope, type EventType, eventType } from "@frontal-labs/open-channel-protocol";
 
 /** Returns event types in their original order. */
-export function eventTypes(events: readonly Pick<EventEnvelope, "eventType">[]): string[] {
-  return events.map((event) => event.eventType);
+export function eventTypes(events: readonly EventEnvelope[]): EventType[] {
+  return events.map((event) => eventType(event));
 }
 
 /** Returns all events with the requested event type. */
-export function eventsOfType(
-  events: readonly EventEnvelope[],
-  eventType: EventName,
-): EventEnvelope[] {
-  return events.filter((event) => event.eventType === eventType);
+export function eventsOfType(events: readonly EventEnvelope[], type: EventType): EventEnvelope[] {
+  return events.filter((event) => eventType(event) === type);
 }
 
 /** Returns the first event with the requested type, if one exists. */
 export function findEvent(
   events: readonly EventEnvelope[],
-  eventType: EventName,
+  type: EventType,
 ): EventEnvelope | undefined {
-  return events.find((event) => event.eventType === eventType);
+  return events.find((event) => eventType(event) === type);
 }
 
 /** Returns the first event with the requested type or throws a useful test error. */
-export function requireEvent(
-  events: readonly EventEnvelope[],
-  eventType: EventName,
-): EventEnvelope {
-  const event = findEvent(events, eventType);
+export function requireEvent(events: readonly EventEnvelope[], type: EventType): EventEnvelope {
+  const event = findEvent(events, type);
   if (!event) {
-    throw new Error(`Expected OCP event ${eventType}; received ${eventTypes(events).join(", ")}`);
+    throw new Error(`Expected OCP event ${type}; received ${eventTypes(events).join(", ")}`);
   }
   return event;
 }

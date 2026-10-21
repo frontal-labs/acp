@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package ocp.api;
+
+import "google/protobuf/timestamp.proto";
+import "ocp/types/actions_result.proto";
+import "ocp/types/actors.proto";
+import "ocp/types/approvals.proto";
+import "ocp/types/channels.proto";
+import "ocp/types/handoffs.proto";
+import "ocp/types/messages.proto";
+import "ocp/types/policy.proto";
+import "ocp/types/tasks.proto";
+
+// The single OCP event envelope. The payload oneof is the event discriminant: the
+// friendly event name (for example "approval.granted") is derived from it, so the
+// envelope never stores a second copy of the type.
+message EventEnvelope {
+  reserved 2;
+  reserved "event_type";
+
+  string event_id = 1;
+  string protocol_version = 3;
+  google.protobuf.Timestamp occurred_at = 4;
+  ocp.types.ActorRef source = 5;
+  ocp.types.ActorRef actor = 6;
+  ocp.types.ActorRef recipient = 7;
+  ocp.types.ChannelRef channel = 8;
+  ocp.types.ConversationRef conversation = 9;
+  string correlation_id = 10;
+  string causation_id = 11;
+  string idempotency_key = 12;
+  map<string, string> extensions = 13;
+
+  oneof payload {
+    ocp.types.MessageReceived message_received = 20;
+    ocp.types.MessageSent message_sent = 21;
+    ocp.types.TaskCreated task_created = 22;
+    ocp.types.TaskAssigned task_assigned = 23;
+    ocp.types.ApprovalRequested approval_requested = 24;
+    ocp.types.ApprovalDecided approval_decided = 25;
+    ocp.types.ApprovalExpired approval_expired = 26;
+    ocp.types.EscalationTriggered escalation_triggered = 27;
+    ocp.types.HandoffInitiated handoff_initiated = 28;
+    ocp.types.HandoffCompleted handoff_completed = 29;
+    ocp.types.PolicyEvaluated policy_evaluated = 30;
+    ocp.types.ActionExecuted action_executed = 31;
+    ocp.types.ActionFailed action_failed = 32;
+  }
+}

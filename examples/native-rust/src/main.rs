@@ -1,6 +1,6 @@
 use open_channel::{
-    approval_requested, event_type_of, message_received, ActionInvocation, ActorRef, ActorType,
-    AgentCard, AgentDefinition, AgentHost, EventEnvelope, ProtocolVersion,
+    approval_requested, message_received, ActionInvocation, ActorRef, ActorType, AgentCard,
+    AgentDefinition, AgentHost, EventEnvelope, StderrLogger,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -14,10 +14,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         },
     ))?;
 
-    let mut event = message_received(
-        ProtocolVersion::default(),
-        "Explain why OCP keeps policy outside the model prompt.",
-    );
+    let mut event = message_received("Explain why OCP keeps policy outside the model prompt.");
     event.actor = Some(ActorRef {
         actor_type: ActorType::Human,
         id: "human:example".to_owned(),
@@ -25,13 +22,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..ActorRef::default()
     });
     event.recipient = Some(ActorRef::agent("agent:rust", "Native Rust Agent"));
-    let result = host.handle(&event)?;
+    let result = host.handle(&event, &StderrLogger)?;
 
     println!("handled: {}", result.handled);
     println!("replies: {}", result.replies.len());
-    println!("reply: {}", serde_json::to_string_pretty(&result.replies[0].to_proto_json()?)?);
+    println!("reply: {}", serde_json::to_string_pretty(&result.replies[0].to_json()?)?);
 
-    // Approval payloads are real protobuf too: encode, then decode with the expected version.
+    // Approval payloads are real protobuf too: encode, then decode.
     let agent = ActorRef::agent("agent:rust", "Native Rust Agent");
     let approver = ActorRef {
         actor_type: ActorType::Human,
@@ -47,7 +44,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         ..ActionInvocation::default()
     };
     let approval = approval_requested(
-        ProtocolVersion::V0_2,
         &refund,
         "approval:refund-1",
         "refund over the agent limit",
@@ -56,7 +52,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Some("2030-01-01T00:00:00.500Z".to_owned()),
     );
     let bytes = approval.to_binary()?;
-    let decoded = EventEnvelope::from_binary(&bytes, ProtocolVersion::V0_2)?;
-    println!("approval: {} in {} protobuf bytes", event_type_of(&decoded), bytes.len());
+    let decoded = EventEnvelope::from_binary(&bytes)?;
+    println!("approval: {} in {} protobuf bytes", decoded.event_type(), bytes.len());
     Ok(())
 }

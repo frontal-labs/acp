@@ -1,5 +1,5 @@
 import type { ActionDefinition } from "@frontal-labs/open-channel";
-import { defineAction } from "@frontal-labs/open-channel";
+import { action } from "@frontal-labs/open-channel";
 import { ActionError } from "@frontal-labs/open-channel-core";
 import { z } from "zod";
 
@@ -33,10 +33,7 @@ function calendarActionError(message: string, cause: unknown): ActionError {
 
 /** Creates the three policy-controlled calendar actions used by OCP agents. */
 export function createCalendarActions(client: CalendarClient): CalendarActions {
-  const createAction = defineAction<
-    CalendarCreateInput,
-    Awaited<ReturnType<CalendarClient["create"]>>
-  >({
+  const createAction = action<CalendarCreateInput, Awaited<ReturnType<CalendarClient["create"]>>>({
     execute: async (input) => {
       try {
         return await client.create(input);
@@ -47,10 +44,7 @@ export function createCalendarActions(client: CalendarClient): CalendarActions {
     type: "calendar.create",
     validate: (input) => CalendarCreateSchema.parse(input),
   });
-  const updateAction = defineAction<
-    CalendarUpdateInput,
-    Awaited<ReturnType<CalendarClient["update"]>>
-  >({
+  const updateAction = action<CalendarUpdateInput, Awaited<ReturnType<CalendarClient["update"]>>>({
     execute: async (input) => {
       try {
         return await client.update(input);
@@ -61,7 +55,7 @@ export function createCalendarActions(client: CalendarClient): CalendarActions {
     type: "calendar.update",
     validate: (input) => CalendarUpdateSchema.parse(input),
   });
-  const cancelAction = defineAction<CalendarCancelInput, { cancelled: boolean }>({
+  const cancelAction = action<CalendarCancelInput, { cancelled: boolean }>({
     execute: async (input) => {
       try {
         return await client.cancel(input);
@@ -77,7 +71,7 @@ export function createCalendarActions(client: CalendarClient): CalendarActions {
 
 /** Narrows an action bundle to a strongly typed calendar action definition. */
 export function calendarAction<TInput, TResult>(
-  action: ActionDefinition<TInput, TResult>,
+  definition: ActionDefinition<TInput, TResult>,
 ): ActionDefinition<TInput, TResult> {
-  return action;
+  return definition;
 }
