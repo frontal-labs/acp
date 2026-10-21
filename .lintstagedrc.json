@@ -1,6 +1,6 @@
 {
   "*.{cjs,js,json,jsonc,mjs,ts,tsx,yaml,yml}": "ultracite check",
-  "*.py": ["ruff check --fix", "ruff format"],
+  "*.py": ["ruff check --fix --force-exclude", "ruff format --force-exclude"],
   "{crates,sdks,examples}/**/*.rs": "rustfmt --check",
   "*.md": "node scripts/check-docs.mjs",
   "*.proto": "sh -c 'printf \"%s\\n\" \"$@\" | xargs -n 1 buf lint --config proto/buf.yaml --path' --"
