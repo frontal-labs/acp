@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-ext-policy-opa",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "OPA-backed PolicyEngine integration for the OpenChannel Protocol",
   "keywords": [
     "openchannel-protocol",

@@ -1,6 +1,6 @@
 # @frontal-labs/open-channel-ext-policy-cedar
 
-## 0.2.0
+## 1.0.0
 
 ### Minor Changes
 
@@ -15,4 +15,4 @@
 ### Patch Changes
 
 - Updated dependencies [[`232c8bf`](https://github.com/frontal-labs/open-channel/commit/232c8bf7134a950b5a7c5697d7472bda0e77fac4)]:
-  - @frontal-labs/open-channel-policy@0.2.0
+  - @frontal-labs/open-channel-policy@1.0.0

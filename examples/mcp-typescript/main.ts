@@ -10,7 +10,7 @@ const args = process.env.MCP_SERVER_ARGS
 const toolName = process.env.MCP_TOOL_NAME ?? "echo";
 
 await runOcpTextAgent("MCP Tool Agent", async (text) => {
-  const client = new Client({ name: "ocp-mcp-example", version: "0.1.0" });
+  const client = new Client({ name: "ocp-mcp-example", version: "1.0.0" });
   await client.connect(new StdioClientTransport({ args, command }));
   try {
     const result = await client.callTool({

@@ -97,7 +97,7 @@ pub struct AgentCard {
 
 impl AgentCard {
     pub fn new(id: impl Into<String>, name: impl Into<String>) -> Self {
-        Self { id: id.into(), name: name.into(), version: "0.1.0".to_owned(), ..Self::default() }
+        Self { id: id.into(), name: name.into(), version: "1.0.0".to_owned(), ..Self::default() }
     }
 }
 

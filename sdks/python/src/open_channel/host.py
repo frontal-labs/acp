@@ -67,7 +67,7 @@ class AgentDefinition:
     name: str
     on_message: AgentHandler
     description: str = ""
-    version: str = "0.2.0"
+    version: str = "1.0.0"
     url: str = ""
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
     skills: tuple[AgentSkill, ...] = ()

@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-protocol",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "Generated TypeScript protocol types and runtime schemas for the OpenChannel Protocol",
   "keywords": [
     "openchannel-protocol",

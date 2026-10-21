@@ -2,12 +2,13 @@
 
 All notable OCP changes are recorded here by Changesets. Pending release notes live in [`.changeset/`](./.changeset/); run `pnpm changeset:version` to apply them to package changelogs.
 
-## Unreleased
+## 1.0.0
 
-- Initial OCP v0.1 reference implementation and repository tooling baseline.
-- Documentation now uses uppercase `SNAKE_CASE.md` filenames, validates Markdown
-  links and filenames in CI, and documents the current `open-channel` distribution
-  and language import identifiers.
+First stable release of the OpenChannel Protocol (OCP), its TypeScript, Python, and Rust SDKs, the `ocp` CLI, and the first-party extensions. The protocol wire version is `0.1` (the canonical envelope); protocol `0.2` is a second supported envelope. Per-package notes, including migration steps from the pre-rename ACP names, are in each package's `CHANGELOG.md`.
+
+- Repository tooling, documentation, and SDK surfaces are unified under the OpenChannel Protocol name. Markdown filenames use uppercase `SNAKE_CASE.md`, and CI validates Markdown links and filenames.
+- Documentation covers the `open-channel` distributions and language import identifiers (`@frontal-labs/open-channel`, `open_channel`, `open_channel`).
+- Security and deployment reviews are recorded in `docs/SECURITY_REVIEW.md` and `docs/DEPLOYMENT_REVIEW.md`, with a production checklist.
 
 ## Release conventions
 

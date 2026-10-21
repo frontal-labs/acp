@@ -7,7 +7,7 @@ proto/
   buf.yaml       Buf module, lint, and breaking-change configuration
   buf.gen.yaml   Buf code-generation template
   v1/
-    api/       Legacy envelopes and protocol-level event definitions
+    api/       Protocol 0.1 envelopes and protocol-level event definitions (canonical)
     types/     Shared domain types used by API messages
   v2/
     api/       Versioned typed envelope; its payload oneof is the event discriminant

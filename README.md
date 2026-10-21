@@ -10,16 +10,35 @@ It standardizes the interaction contract around messages, tasks, approvals, esca
 
 ## Status
 
-OCP v0.2 is an experimental, spec-first reference implementation. It includes
+OCP 1.0.0 is the first stable release of the OpenChannel Protocol and its SDKs. It includes
 versioned protobuf schemas, typed event builders, config-first TypeScript/Python/
 Rust application facades, policy-controlled actions, source/sink channel
-contracts, and at-least-once in-process processing.
+contracts, durable PostgreSQL event storage, and at-least-once processing.
 
-Project links: [repository](https://github.com/frontal-labs/open-channel), [issues](https://github.com/frontal-labs/open-channel/issues), and [release notes](./CHANGELOG.md).
+The repository check (`pnpm check`) covers configuration, documentation links,
+protobuf lint and generation, lint, build, typecheck, unit and integration tests,
+and the Python and Rust SDK test suites.
+
+Two protocol envelopes are supported through one API:
+
+- **Protocol 0.1** (default) is the canonical wire contract. It is specified in
+  [`docs/SPEC_V0_1.md`](./docs/SPEC_V0_1.md), and its protobuf field numbers are stable.
+- **Protocol 0.2** carries the same event semantics in an envelope whose payload
+  `oneof` is the event discriminant. It is not wire-compatible with 0.1
+  envelopes, so choose one version per boundary and keep it when serializing,
+  validating, or replaying events.
+
+Before running OCP in a shared or production environment, complete the checklist in
+[`docs/SECURITY_REVIEW.md`](./docs/SECURITY_REVIEW.md#before-production) and
+[`docs/DEPLOYMENT_REVIEW.md`](./docs/DEPLOYMENT_REVIEW.md#before-a-shared-environment).
+Those reviews record what has been verified and what still needs a live
+environment, such as provider endpoints and a managed PostgreSQL instance.
+
+Project links: [repository](https://github.com/frontal-labs/open-channel), [issues](https://github.com/frontal-labs/open-channel/issues), [security policy](./SECURITY.md), and [release notes](./CHANGELOG.md).
 
 ## Quickstart
 
-Requirements: Node.js 22+, pnpm 10+, Buf, `protoc`, Python 3.11+, Rust stable, and a working git checkout.
+Requirements: Node.js 22.18+, pnpm 10+ (the repository pins 10.28.0 in `packageManager`), Buf, `protoc`, Python 3.11+, Rust stable, and a working git checkout.
 
 ```bash
 pnpm install
@@ -48,28 +67,29 @@ message.received
 ## Repository layout
 
 ```text
-proto/v1/api/                  Legacy v1 API/envelope protobuf definitions
-proto/v2/api/                  Oneof-discriminated v2 API envelope
-proto/v1/types/                Versioned shared domain protobuf definitions
+proto/v1/api/                  Protocol 0.1 envelope and event definitions (canonical)
+proto/v2/api/                  Protocol 0.2 envelope with a payload-oneof discriminator
+proto/v1/types/                Shared domain protobuf definitions
 proto/gen/                     Generated TypeScript, Python, and Rust bindings
 packages/protocol/             Generated types, builders, and serialization helpers
 packages/runtime/              Event routing and approval lifecycle
-packages/policy/               Rule-based policy reference implementation
+packages/policy/               Rule-based policy engine
 packages/adapter/              Provider-neutral adapter contract
-packages/core/                 Shared event bus and identifier primitives
-packages/testing/              Shared fixtures and helpers for TypeScript tests
+packages/core/                 Shared event bus, errors, and identifier primitives
+packages/testing/              Fixtures and helpers for TypeScript tests
+packages/demo/                 Runnable end-to-end example
+extensions/                    Channel, runtime, and policy extensions (see extensions/README.md)
 cli/                           `ocp` validation and inspection CLI
 sdks/typescript/               TypeScript app facade, agent host, and developer API
 sdks/python/                   Python app facade, agent host, and developer API
 sdks/rust/                     Rust app builder, agent host, and developer API
-packages/demo/                 Runnable end-to-end example
 examples/                      Native SDK and optional agent-harness integrations
 skills/                        OCP-specific instructions for agents and contributors
 tests/                         Cross-package Vitest conformance tests
-skills/                        Project-local OCP skills for agent workflows
-skills.sh.json                 skills.sh grouping and discovery metadata
-docs/SPEC_V0_1.md              Normative behavior and compatibility rules
-docs/DEVELOPMENT.md             Local development and agent SDK guide
+docs/SPEC_V0_1.md              Normative protocol behavior and compatibility rules
+docs/DEVELOPMENT.md            Local development and agent SDK guide
+docs/SECURITY_REVIEW.md        Code-level security review, open items, and production checklist
+docs/DEPLOYMENT_REVIEW.md      Development deployment review and shared-environment checklist
 proto/README.md                Schema and generated-code workflow
 turbo.json                     Root Turborepo task graph
 renovate.json                  Dependency-update policy for code and examples
