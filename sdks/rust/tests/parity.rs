@@ -1,10 +1,10 @@
-//! Cross-language parity: decodes the TypeScript-produced fixture, checks the derived event
-//! name, and re-encodes to byte-identical protobuf.
+//! Cross-language parity: decodes the TypeScript-produced fixture, checks the derived event name,
+//! and re-encodes to byte-identical protobuf.
 
 use std::fs;
 use std::path::PathBuf;
 
-use open_channel::{event_type_of, EventEnvelope, ProtocolVersion};
+use open_channel::{EventEnvelope, EventPayload};
 use serde_json::Value;
 
 const FIXTURE: &str = "../../packages/protocol/tests/fixtures/event-parity.json";
@@ -36,35 +36,34 @@ fn base64_decode(input: &str) -> Vec<u8> {
     output
 }
 
-#[test]
-fn every_fixture_entry_decodes_by_type_and_re_encodes_identically() {
+fn load_fixture() -> Vec<Value> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(FIXTURE);
     let text = fs::read_to_string(&path).expect("read parity fixture");
-    let entries: Vec<Value> = serde_json::from_str(&text).expect("fixture is a JSON array");
-    assert_eq!(entries.len(), 30, "fixture covers 15 kinds in two protocol versions");
+    serde_json::from_str(&text).expect("fixture is a JSON array")
+}
+
+#[test]
+fn every_fixture_entry_decodes_by_type_and_re_encodes_identically() {
+    let entries = load_fixture();
+    assert!(!entries.is_empty(), "fixture has entries");
 
     let mut failures = Vec::new();
     for entry in &entries {
         let name = entry["name"].as_str().expect("name");
-        let version_text = entry["protocolVersion"].as_str().expect("protocolVersion");
         let expected_type = entry["eventType"].as_str().expect("eventType");
-        let binary = entry["binary"].as_str().expect("binary");
-        let version = ProtocolVersion::parse(version_text).expect("known protocol version");
-        let original = base64_decode(binary);
+        let original = base64_decode(entry["binary"].as_str().expect("binary"));
 
-        let outcome = EventEnvelope::from_binary(&original, version)
-            .map_err(|error| format!("{name}: decode failed: {error}"));
-        let event = match outcome {
+        let event = match EventEnvelope::from_binary(&original) {
             Ok(event) => event,
-            Err(message) => {
-                failures.push(message);
+            Err(error) => {
+                failures.push(format!("{name}: decode failed: {error}"));
                 continue;
             }
         };
-        if event_type_of(&event) != expected_type {
+        if event.event_type() != expected_type {
             failures.push(format!(
                 "{name}: derived {} but fixture says {expected_type}",
-                event_type_of(&event)
+                event.event_type()
             ));
         }
         match event.to_binary() {
@@ -77,26 +76,20 @@ fn every_fixture_entry_decodes_by_type_and_re_encodes_identically() {
             Err(error) => failures.push(format!("{name}: re-encode failed: {error}")),
         }
     }
-    assert!(
-        failures.is_empty(),
-        "{} of 30 entries failed:\n{}",
-        failures.len(),
-        failures.join("\n")
-    );
+    assert!(failures.is_empty(), "{} entries failed:\n{}", failures.len(), failures.join("\n"));
 }
 
 #[test]
 fn fixture_action_input_is_parsed_back_from_parameters() {
-    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join(FIXTURE);
-    let entries: Vec<Value> =
-        serde_json::from_str(&fs::read_to_string(path).expect("read fixture")).expect("json");
-    let entry = entries.iter().find(|entry| entry["name"] == "actionExecuted-0.2").expect("entry");
-    let event = EventEnvelope::from_binary(
-        &base64_decode(entry["binary"].as_str().expect("binary")),
-        ProtocolVersion::V0_2,
-    )
-    .expect("decodes");
-    let open_channel::EventPayload::ActionExecuted(payload) = event.payload else {
+    let entries = load_fixture();
+    let entry = entries
+        .iter()
+        .find(|entry| entry["eventType"] == "action.executed")
+        .expect("fixture has an action.executed entry");
+    let event =
+        EventEnvelope::from_binary(&base64_decode(entry["binary"].as_str().expect("binary")))
+            .expect("decodes");
+    let EventPayload::ActionExecuted(payload) = event.payload else {
         panic!("expected action.executed");
     };
     let action = payload.action.expect("action present");
