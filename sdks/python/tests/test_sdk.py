@@ -2,120 +2,124 @@ import unittest
 from datetime import datetime
 
 from open_channel import (
-    ActionDefinition,
     ActorRef,
     AgentDefinition,
-    AgentHost,
     AuthorizationError,
     ChannelDefinition,
     DeliveryReceipt,
     EventEnvelope,
-    OcpApp,
     PolicyDecision,
+    action,
     approval_requested,
-    event_from_binary,
-    event_to_binary,
+    from_binary,
     message_received,
+    open_channel,
+    to_binary,
 )
 from support import InMemoryStore
 
+HUMAN = ActorRef("human:gabriel", type="ACTOR_TYPE_HUMAN")
+CHANNEL = {"provider": "memory", "channelId": "room-1"}
 
-class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
-    async def test_routes_message_and_dispatches_reply(self) -> None:
-        dispatched: list[EventEnvelope] = []
 
-        async def dispatch(event: EventEnvelope) -> None:
-            dispatched.append(event)
+def _increment_action(executions: list[int]):
+    return action(
+        type="counter.increment",
+        execute=lambda value, _ctx: executions.append(value["value"]) or value["value"] + 1,
+    )
 
-        async def on_message(context) -> None:
-            await context.reply(f"Received: {context.message.text}")
 
-        host = AgentHost(
-            agents=[AgentDefinition(id="agent:support", name="Support", on_message=on_message)],
-            dispatch=dispatch,
-        )
-        event = EventEnvelope.message_received(
-            actor=ActorRef("human:gabriel", type="ACTOR_TYPE_HUMAN"),
-            recipient=ActorRef("agent:support"),
-            text="Can you help?",
-        )
+class OpenChannelAppTests(unittest.IsolatedAsyncioTestCase):
+    async def test_agent_replies_through_the_channel_sink(self) -> None:
+        delivered: list[EventEnvelope] = []
 
-        self.assertTrue(await host.handle(event))
-        self.assertEqual(len(dispatched), 1)
-        self.assertEqual(
-            dispatched[0].to_proto_json()["messageSent"]["text"], "Received: Can you help?"
-        )
+        class Sink:
+            provider = "memory"
 
-    async def test_accepts_proto_json_and_exposes_agent_cards(self) -> None:
-        host = AgentHost(
-            agents=[AgentDefinition(id="agent:triage", name="Triage", on_message=lambda _: None)]
-        )
-        event = EventEnvelope.message_received(
-            recipient=ActorRef("agent:triage"),
-            text="hello",
-        )
+            async def send(self, event, _options=None):
+                delivered.append(event)
+                return DeliveryReceipt("memory", event.event_id, datetime.now())
 
-        self.assertTrue(await host.handle(event.to_proto_json()))
-        self.assertEqual(host.list_agent_cards()[0].name, "Triage")
+        async def on_message(ctx) -> None:
+            await ctx.reply(f"Received: {ctx.message.text}")
 
-    async def test_app_routes_and_executes_registered_action(self) -> None:
-        executions: list[int] = []
-
-        async def on_message(context) -> None:
-            result = await context.request_action(
-                {"type": "counter.increment", "input": {"value": 2}}
-            )
-            self.assertEqual(result.status, "executed")
-
-        app = OcpApp(
+        app = open_channel(
             store=InMemoryStore(),
-            agents=[AgentDefinition(id="agent:app", name="App", on_message=on_message)],
-            actions=[
-                ActionDefinition(
-                    type="counter.increment",
-                    execute=lambda value, _event: (
-                        executions.append(value["value"]) or value["value"] + 1
-                    ),
-                )
-            ],
             policy=lambda *_args: PolicyDecision(allowed=True),
+            agents=[AgentDefinition(id="agent:support", name="Support", on_message=on_message)],
+            channels=[ChannelDefinition("memory", sink=Sink())],
         )
-        event = EventEnvelope.message_received(
-            actor=ActorRef("human:app", type="ACTOR_TYPE_HUMAN"),
-            recipient=ActorRef("agent:app"),
-            text="increment",
+        event = message_received(
+            actor=HUMAN, recipient=ActorRef("agent:support"), channel=CHANNEL, text="Can you help?"
         )
 
         self.assertTrue(await app.ingest(event))
+        self.assertEqual(len(delivered), 1)
+        self.assertEqual(delivered[0].payload["messageSent"]["text"], "Received: Can you help?")
+
+    async def test_agent_cards_and_duplicate_registration(self) -> None:
+        app = open_channel(
+            store=InMemoryStore(),
+            policy=lambda *_args: PolicyDecision(allowed=True),
+            agents=[AgentDefinition(id="agent:triage", name="Triage", on_message=lambda _: None)],
+        )
+        self.assertEqual(app.agent_cards()[0].name, "Triage")
+        with self.assertRaises(ValueError):
+            app.add_agent(
+                AgentDefinition(id="agent:triage", name="Again", on_message=lambda _: None)
+            )
+
+    async def test_on_observes_accepted_events_until_unsubscribed(self) -> None:
+        seen: list[str] = []
+        app = open_channel(
+            store=InMemoryStore(), policy=lambda *_args: PolicyDecision(allowed=True)
+        )
+        unsubscribe = app.on("message.received", lambda event: seen.append(event.event_id))
+        first = message_received(text="one", actor=HUMAN, channel=CHANNEL)
+        await app.ingest(first)
+        unsubscribe()
+        await app.ingest(message_received(text="two", actor=HUMAN, channel=CHANNEL))
+        self.assertEqual(seen, [first.event_id])
+
+    async def test_agent_requests_registered_action_under_policy(self) -> None:
+        executions: list[int] = []
+        results: dict[str, object] = {}
+
+        async def on_message(ctx) -> None:
+            results["result"] = await ctx.request("counter.increment", {"value": 2})
+
+        app = open_channel(
+            store=InMemoryStore(),
+            agents=[AgentDefinition(id="agent:app", name="App", on_message=on_message)],
+            actions=[_increment_action(executions)],
+            policy=lambda *_args: PolicyDecision(allowed=True),
+        )
+        event = message_received(
+            actor=HUMAN, recipient=ActorRef("agent:app"), channel=CHANNEL, text="increment"
+        )
+
+        await app.ingest(event)
         self.assertEqual(executions, [2])
+        self.assertEqual(results["result"].status, "executed")
 
     async def _request_approval(self, approver: ActorRef | None, executions: list[int]):
         approvals: dict[str, object] = {}
 
-        async def on_message(context) -> None:
-            result = await context.request_action(
-                {"type": "counter.increment", "input": {"value": 1}}
-            )
-            approvals["result"] = result
+        async def on_message(ctx) -> None:
+            approvals["result"] = await ctx.request("counter.increment", {"value": 1})
 
-        app = OcpApp(
+        app = open_channel(
             store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:approve", name="Approve", on_message=on_message)],
-            actions=[
-                ActionDefinition(
-                    type="counter.increment",
-                    execute=lambda value, _event: (
-                        executions.append(value["value"]) or value["value"] + 1
-                    ),
-                )
-            ],
+            actions=[_increment_action(executions)],
             policy=lambda *_args: PolicyDecision(
                 allowed=True, approval_required=True, approver=approver
             ),
         )
-        event = EventEnvelope.message_received(
+        event = message_received(
             actor=ActorRef("human:requester", type="ACTOR_TYPE_HUMAN"),
             recipient=ActorRef("agent:approve"),
+            channel=CHANNEL,
             text="increment",
         )
         await app.ingest(event)
@@ -140,7 +144,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result.status, "executed")
         self.assertEqual(executions, [1])
 
-    async def test_approval_without_designated_approver_uses_runtime_actor(self) -> None:
+    async def test_approval_defaults_to_runtime_actor(self) -> None:
         executions: list[int] = []
         app, approval_id = await self._request_approval(None, executions)
 
@@ -151,9 +155,8 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(executions, [])
 
     async def test_rejects_forged_approval_events_on_ingest(self) -> None:
-        app = OcpApp(
-            store=InMemoryStore(),
-            policy=lambda *_args: PolicyDecision(allowed=True),
+        app = open_channel(
+            store=InMemoryStore(), policy=lambda *_args: PolicyDecision(allowed=True)
         )
         forged = approval_requested(
             agent=ActorRef("agent:forged"),
@@ -168,21 +171,10 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
             await app.ingest(forged)
         self.assertEqual(app._pending, {})
 
-    async def test_v2_builder_round_trips_without_duplicate_event_type(self) -> None:
-        event = message_received(
-            text="hello", actor=ActorRef("human:builder"), protocol_version="0.2"
-        )
-
-        self.assertEqual(event.event_type, "message.received")
-        self.assertNotIn("eventType", event.to_proto_json())
-        self.assertEqual(
-            event_from_binary(event_to_binary(event), "0.2").payload_case, "messageReceived"
-        )
-
-    async def test_app_source_sink_lifecycle_and_duplicate_delivery(self) -> None:
+    async def test_source_sink_lifecycle_and_duplicate_delivery(self) -> None:
         delivered: list[EventEnvelope] = []
         lifecycle: list[str] = []
-        inbound = EventEnvelope.message_received(
+        inbound = message_received(
             actor=ActorRef("human:source", type="ACTOR_TYPE_HUMAN"),
             channel={"provider": "memory", "channelId": "source"},
             recipient=ActorRef("agent:source"),
@@ -211,10 +203,10 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
             async def close(self):
                 lifecycle.append("close")
 
-        async def on_message(context) -> None:
-            await context.reply("reply")
+        async def on_message(ctx) -> None:
+            await ctx.reply("reply")
 
-        app = OcpApp(
+        app = open_channel(
             store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:source", name="Source", on_message=on_message)],
             channels=[ChannelDefinition("memory", source=Source(), sink=Sink())],
@@ -229,6 +221,10 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(second.duplicate)
         self.assertEqual(len(delivered), 1)
         self.assertEqual(lifecycle, ["start", "stop", "close"])
+
+    async def test_binary_round_trip_needs_no_version(self) -> None:
+        event = message_received(text="hello", actor=HUMAN, channel=CHANNEL)
+        self.assertEqual(from_binary(to_binary(event)).payload_case, "messageReceived")
 
 
 if __name__ == "__main__":

@@ -4,13 +4,42 @@ import inspect
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from open_channel import ActorRef, AgentDefinition, AgentHost, EventEnvelope
+from open_channel import (
+    ActorRef,
+    AgentDefinition,
+    ChannelDefinition,
+    EventEnvelope,
+    PolicyDecision,
+    event_type,
+    message_received,
+    open_channel,
+)
 
 TextAgent = Callable[[str], str | Awaitable[str]]
+PROVIDER = "ocp-example"
+
+
+class MemoryStore:
+    """Example-only event store. Production apps pass a durable store to `open_channel(store=...)`."""
+
+    def __init__(self) -> None:
+        self._events: dict[str, EventEnvelope] = {}
+
+    async def append_if_absent(self, event: EventEnvelope) -> bool:
+        if event.event_id in self._events:
+            return False
+        self._events[event.event_id] = event
+        return True
+
+    async def all(self) -> list[EventEnvelope]:
+        return list(self._events.values())
+
+    async def close(self) -> None:
+        return None
 
 
 async def run_ocp_text_agent(name: str, handler: TextAgent) -> None:
-    """Run a text harness behind the OCP Python AgentHost."""
+    """Run a text harness behind an OCP app. The agent replies through the channel sink."""
 
     dispatched: list[EventEnvelope] = []
 
@@ -20,7 +49,15 @@ async def run_ocp_text_agent(name: str, handler: TextAgent) -> None:
             response = await response
         await context.reply(str(response))
 
-    host = AgentHost(
+    class ExampleSink:
+        provider = PROVIDER
+
+        async def send(self, event: EventEnvelope, options: Any = None) -> None:
+            dispatched.append(event)
+
+    app = open_channel(
+        store=MemoryStore(),
+        policy=lambda *_args: PolicyDecision(allowed=True),
         agents=[
             AgentDefinition(
                 id=f"agent:{name}",
@@ -29,22 +66,23 @@ async def run_ocp_text_agent(name: str, handler: TextAgent) -> None:
                 on_message=on_message,
             )
         ],
-        dispatch=dispatched.append,
+        channels=[ChannelDefinition(PROVIDER, sink=ExampleSink())],
     )
-    event = EventEnvelope.message_received(
+    event = message_received(
         actor=ActorRef(id="human:example", type="ACTOR_TYPE_HUMAN", display_name="Example User"),
         recipient=ActorRef(id=f"agent:{name}", display_name=name),
+        channel={"provider": PROVIDER, "channelId": "example"},
         text="Explain why OCP keeps policy outside the model prompt.",
     )
 
-    handled = await host.handle(event)
-    if not handled or not dispatched:
+    await app.ingest(event)
+    if not dispatched:
         raise RuntimeError("The OCP bridge did not dispatch a message.sent reply")
 
     print(
         {
-            "agentCard": host.get_agent_card(f"agent:{name}").to_dict(),
-            "eventType": dispatched[0].event_type,
+            "agentCard": app.agent_cards()[0].to_json(),
+            "eventType": event_type(dispatched[0]),
             "correlationId": dispatched[0].correlation_id,
             "reply": dispatched[0].payload["messageSent"]["text"],
         }

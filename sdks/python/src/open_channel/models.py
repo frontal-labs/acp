@@ -11,6 +11,47 @@ from ._wire import decode_event, encode_event
 # ProtoJSON object produced by the SDK. Inputs accept any Mapping[str, object] instead.
 JsonObject: TypeAlias = dict[str, object]
 
+# The one OCP protocol version. Every envelope carries it; there is no other envelope shape.
+PROTOCOL_VERSION = "0.2"
+
+# Payload case -> event name. Approval decisions and policy results are disambiguated by value.
+_EVENT_TYPE_BY_CASE: dict[str, str] = {
+    "actionExecuted": "action.executed",
+    "actionFailed": "action.failed",
+    "approvalDecided": "approval.granted",
+    "approvalExpired": "approval.expired",
+    "approvalRequested": "approval.requested",
+    "escalationTriggered": "escalation.triggered",
+    "handoffCompleted": "handoff.completed",
+    "handoffInitiated": "handoff.initiated",
+    "messageReceived": "message.received",
+    "messageSent": "message.sent",
+    "policyEvaluated": "policy.allowed",
+    "taskAssigned": "task.assigned",
+    "taskCreated": "task.created",
+}
+
+# Envelope fields other than the payload oneof, as they appear in ProtoJSON.
+_ENVELOPE_FIELDS = frozenset(
+    {
+        "actor",
+        "causationId",
+        "channel",
+        "conversation",
+        "correlationId",
+        "eventId",
+        "extensions",
+        "idempotencyKey",
+        "occurredAt",
+        "protocolVersion",
+        "recipient",
+        "source",
+    }
+)
+
+_GRANTED_OUTCOMES = ("APPROVAL_OUTCOME_GRANTED", 1)
+_DENIED_OUTCOMES = ("APPROVAL_OUTCOME_DENIED", 2)
+
 
 def _mapping(value: object) -> Mapping[str, object]:
     return value if isinstance(value, Mapping) else {}
@@ -44,6 +85,18 @@ def _actor_from_json(value: Mapping[str, object] | None) -> ActorRef | None:
     )
 
 
+def _timestamp(value: datetime | str) -> str:
+    if isinstance(value, str):
+        return value
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=UTC)
+    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _now() -> str:
+    return _timestamp(datetime.now(UTC))
+
+
 @dataclass(frozen=True, slots=True)
 class ActorRef:
     id: str
@@ -52,7 +105,7 @@ class ActorRef:
     authority: str = ""
     capabilities: tuple[str, ...] = ()
 
-    def to_proto_json(self) -> JsonObject:
+    def to_json(self) -> JsonObject:
         value: JsonObject = {"id": self.id, "type": self.type, "displayName": self.display_name}
         if self.authority:
             value["authority"] = self.authority
@@ -67,7 +120,7 @@ class AgentCapabilities:
     state_transition_history: bool = False
     streaming: bool = False
 
-    def to_proto_json(self) -> JsonObject:
+    def to_json(self) -> JsonObject:
         return {
             "pushNotifications": self.push_notifications,
             "stateTransitionHistory": self.state_transition_history,
@@ -83,7 +136,7 @@ class AgentSkill:
     tags: tuple[str, ...] = ()
     examples: tuple[str, ...] = ()
 
-    def to_dict(self) -> JsonObject:
+    def to_json(self) -> JsonObject:
         value: JsonObject = {"id": self.id, "name": self.name}
         if self.description:
             value["description"] = self.description
@@ -104,13 +157,13 @@ class AgentCard:
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
     skills: tuple[AgentSkill, ...] = ()
 
-    def to_dict(self) -> JsonObject:
+    def to_json(self) -> JsonObject:
         value: JsonObject = {
             "id": self.id,
             "name": self.name,
             "version": self.version,
-            "capabilities": self.capabilities.to_proto_json(),
-            "skills": [skill.to_dict() for skill in self.skills],
+            "capabilities": self.capabilities.to_json(),
+            "skills": [skill.to_json() for skill in self.skills],
         }
         if self.description:
             value["description"] = self.description
@@ -126,7 +179,7 @@ class MessageReceived:
     metadata: Mapping[str, str] = field(default_factory=dict)
 
     @classmethod
-    def from_dict(cls, value: Mapping[str, object]) -> MessageReceived:
+    def from_json(cls, value: Mapping[str, object]) -> MessageReceived:
         attachments: list[dict[str, object]] = []
         for item in _items(value.get("attachments")):
             if not isinstance(item, Mapping):
@@ -139,103 +192,31 @@ class MessageReceived:
         )
 
 
-OCP_PROTOCOL_VERSION = "0.1"
-OCP_V2_PROTOCOL_VERSION = "0.2"
-OCP_PROTOCOL_VERSIONS = (OCP_PROTOCOL_VERSION, OCP_V2_PROTOCOL_VERSION)
-
-# Mirrors packages/protocol/src/events.ts. Payload case -> default event name.
-EVENT_TYPE_BY_PAYLOAD_CASE: dict[str, str] = {
-    "actionExecuted": "action.executed",
-    "actionFailed": "action.failed",
-    "approvalDecided": "approval.granted",
-    "approvalExpired": "approval.expired",
-    "approvalRequested": "approval.requested",
-    "escalationTriggered": "escalation.triggered",
-    "handoffCompleted": "handoff.completed",
-    "handoffInitiated": "handoff.initiated",
-    "messageReceived": "message.received",
-    "messageSent": "message.sent",
-    "policyEvaluated": "policy.allowed",
-    "taskAssigned": "task.assigned",
-    "taskCreated": "task.created",
-}
-
-# Event name -> required payload case.
-PAYLOAD_CASE_BY_EVENT_TYPE: dict[str, str] = {
-    "action.executed": "actionExecuted",
-    "action.failed": "actionFailed",
-    "approval.denied": "approvalDecided",
-    "approval.expired": "approvalExpired",
-    "approval.granted": "approvalDecided",
-    "approval.requested": "approvalRequested",
-    "escalation.triggered": "escalationTriggered",
-    "handoff.completed": "handoffCompleted",
-    "handoff.initiated": "handoffInitiated",
-    "message.received": "messageReceived",
-    "message.sent": "messageSent",
-    "policy.allowed": "policyEvaluated",
-    "policy.blocked": "policyEvaluated",
-    "task.assigned": "taskAssigned",
-    "task.created": "taskCreated",
-}
-
-_GRANTED_OUTCOMES = ("APPROVAL_OUTCOME_GRANTED", 1)
-_DENIED_OUTCOMES = ("APPROVAL_OUTCOME_DENIED", 2)
-
-
-def _typed_cases(payload: Mapping[str, object]) -> list[str]:
-    return [key for key in payload if key in EVENT_TYPE_BY_PAYLOAD_CASE]
-
-
 def _payload_case(payload: Mapping[str, object]) -> str:
-    cases = _typed_cases(payload)
+    cases = [key for key in payload if key in _EVENT_TYPE_BY_CASE]
     if len(cases) != 1:
         raise ValueError("OCP event must have exactly one typed payload")
     return cases[0]
 
 
 def _payload_event_type(payload: Mapping[str, object]) -> str:
-    """Event name implied by the payload oneof (approvals and policy decisions are disambiguated)."""
-
     case = _payload_case(payload)
-    value = _mapping(payload[case])
     if case == "approvalDecided":
+        value = _mapping(payload[case])
         return "approval.denied" if value.get("outcome") in _DENIED_OUTCOMES else "approval.granted"
     if case == "policyEvaluated":
+        value = _mapping(payload[case])
         return "policy.allowed" if value.get("allowed") else "policy.blocked"
-    return EVENT_TYPE_BY_PAYLOAD_CASE[case]
+    return _EVENT_TYPE_BY_CASE[case]
 
 
-def event_type_of(event: EventEnvelope) -> str:
-    """Return the dot-separated event name derived from the payload, for either protocol version."""
+def event_type(event: EventEnvelope) -> str:
+    """Return the dot-separated event name (for example "approval.granted") from the payload."""
 
     return _payload_event_type(event.payload)
 
 
-def _check_payload_case(event_type: str, payload: Mapping[str, object]) -> None:
-    expected = PAYLOAD_CASE_BY_EVENT_TYPE.get(event_type)
-    if expected is None:
-        raise ValueError(f"Unsupported OCP event type: {event_type}")
-    cases = _typed_cases(payload)
-    if cases != [expected]:
-        received = ", ".join(cases) or "none"
-        raise ValueError(
-            f"OCP event {event_type} requires payload case {expected}, received {received}"
-        )
-
-
-def _check_asserted_event_type(event_type: str, payload: Mapping[str, object]) -> None:
-    """v0.2 does not store the event name, so a caller-supplied name must still match the payload."""
-
-    _check_payload_case(event_type, payload)
-    derived = _payload_event_type(payload)
-    if derived != event_type:
-        raise ValueError(f"OCP event {event_type} does not match payload event {derived}")
-
-
-def _check_invariants(event_type: str, payload: Mapping[str, object]) -> None:
-    case = _payload_case(payload)
-    value = _mapping(payload[case])
+def _check_invariants(case: str, value: Mapping[str, object]) -> None:
     if case == "approvalRequested":
         if not str(value.get("approvalId", "")).strip():
             raise ValueError("approval.requested must have an approval_id")
@@ -245,68 +226,25 @@ def _check_invariants(event_type: str, payload: Mapping[str, object]) -> None:
             raise ValueError("approval.requested must include a requested_action")
         if not value.get("deadline"):
             raise ValueError("approval.requested must have a deadline")
-    if case == "approvalDecided":
+    elif case == "approvalDecided":
         if not str(value.get("approvalId", "")).strip():
             raise ValueError("approval decision must have an approval_id")
-        outcome = value.get("outcome")
-        if outcome not in _GRANTED_OUTCOMES and outcome not in _DENIED_OUTCOMES:
+        if value.get("outcome") not in _GRANTED_OUTCOMES + _DENIED_OUTCOMES:
             raise ValueError("approval decision must be granted or denied")
-        if event_type == "approval.granted" and outcome not in _GRANTED_OUTCOMES:
-            raise ValueError("approval.granted must have a granted outcome")
-        if event_type == "approval.denied" and outcome not in _DENIED_OUTCOMES:
-            raise ValueError("approval.denied must have a denied outcome")
-    if case == "policyEvaluated":
-        allowed = bool(value.get("allowed"))
-        if event_type == "policy.allowed" and not allowed:
-            raise ValueError("policy.allowed must have allowed=true")
-        if event_type == "policy.blocked" and allowed:
-            raise ValueError("policy.blocked must have allowed=false")
-
-
-def validate_event(event: EventEnvelope) -> None:
-    """Validate identity, protocol version, payload mapping, and approval/policy invariants."""
-
-    if not event.event_id.strip():
-        raise ValueError("OCP event must have an event_id")
-    if event.protocol_version not in OCP_PROTOCOL_VERSIONS:
-        raise ValueError(f"Unsupported OCP protocol_version: {event.protocol_version!r}")
-    if not event.occurred_at.strip():
-        raise ValueError("OCP event must have occurred_at")
-    if not event.payload:
-        raise ValueError("OCP event must have a payload")
-    if event.protocol_version == OCP_V2_PROTOCOL_VERSION:
-        name = _payload_event_type(event.payload)
-        if event.event_type != name:
-            _check_asserted_event_type(event.event_type, event.payload)
-    else:
-        if not event.event_type.strip():
-            raise ValueError("OCP event must have an event_type")
-        name = event.event_type
-        _check_payload_case(name, event.payload)
-    _check_invariants(name, event.payload)
-
-
-def _timestamp(value: datetime | str) -> str:
-    if isinstance(value, str):
-        return value
-    if value.tzinfo is None:
-        value = value.replace(tzinfo=UTC)
-    return value.astimezone(UTC).isoformat().replace("+00:00", "Z")
 
 
 @dataclass(slots=True)
 class EventEnvelope:
-    """OCP event envelope for protocol v0.1 (stores event_type) or v0.2 (payload-derived name).
+    """An OCP event. The payload oneof identifies the event; see `event_type()`.
 
-    Default protocol_version is "0.1". For v0.2 the event_type is derived from the payload; a
-    caller-supplied event_type is only checked against the payload.
+    Build events with the builders (`message_received`, ...) or `new_event()`. Those validate; the
+    dataclass itself does not, so `validate_event()` runs at every boundary (`from_json`,
+    `from_binary`, `to_json`, `to_binary`).
     """
 
-    event_type: str = ""
     payload: Mapping[str, object] = field(default_factory=dict)
     event_id: str = field(default_factory=lambda: str(uuid4()))
-    protocol_version: str = OCP_PROTOCOL_VERSION
-    occurred_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
+    occurred_at: str = field(default_factory=_now)
     source: ActorRef | None = None
     actor: ActorRef | None = None
     recipient: ActorRef | None = None
@@ -317,154 +255,66 @@ class EventEnvelope:
     idempotency_key: str = ""
     extensions: Mapping[str, str] = field(default_factory=dict)
 
-    def __post_init__(self) -> None:
-        if self.protocol_version == OCP_V2_PROTOCOL_VERSION:
-            if self.event_type:
-                _check_asserted_event_type(self.event_type, self.payload)
-            else:
-                self.event_type = _payload_event_type(self.payload)
-        validate_event(self)
-
     @property
     def payload_case(self) -> str:
         return _payload_case(self.payload)
 
-    @classmethod
-    def message_received(
-        cls,
-        *,
-        actor: ActorRef | None = None,
-        recipient: ActorRef | None = None,
-        text: str,
-        channel: Mapping[str, object] | None = None,
-        conversation: Mapping[str, object] | None = None,
-        protocol_version: str = OCP_PROTOCOL_VERSION,
-    ) -> EventEnvelope:
-        return message_received(
-            actor=actor,
-            recipient=recipient,
-            text=text,
-            channel=channel,
-            conversation=conversation,
-            protocol_version=protocol_version,
-        )
-
-    @classmethod
-    def from_proto_json(cls, value: Mapping[str, object]) -> EventEnvelope:
-        """Parse ProtoJSON. The shape is selected by protocolVersion (missing means v0.1)."""
-
-        known_fields = {
-            "actor",
-            "causationId",
-            "channel",
-            "conversation",
-            "correlationId",
-            "eventId",
-            "eventType",
-            "extensions",
-            "idempotencyKey",
-            "occurredAt",
-            "protocolVersion",
-            "recipient",
-            "source",
-        }
-        protocol_version = str(value.get("protocolVersion", OCP_PROTOCOL_VERSION))
-        if protocol_version == OCP_V2_PROTOCOL_VERSION:
-            if "eventType" in value:
-                raise ValueError("OCP v0.2 envelope must not include eventType")
-            event_type = ""
-        elif protocol_version == OCP_PROTOCOL_VERSION:
-            event_type = str(value.get("eventType", ""))
-        else:
-            raise ValueError(f"Unsupported OCP protocol_version: {protocol_version!r}")
-        payload = {key: item for key, item in value.items() if key not in known_fields}
-        return cls(
-            actor=_actor_from_json(_mapping_or_none(value.get("actor"))),
-            causation_id=str(value.get("causationId", "")),
-            channel=_optional_mapping(value.get("channel"), "channel"),
-            conversation=_optional_mapping(value.get("conversation"), "conversation"),
-            correlation_id=str(value.get("correlationId", "")),
-            event_id=str(value.get("eventId", "")),
-            event_type=event_type,
-            extensions={
-                str(key): str(item) for key, item in _mapping(value.get("extensions")).items()
-            },
-            idempotency_key=str(value.get("idempotencyKey", "")),
-            occurred_at=str(value.get("occurredAt", "")),
-            payload=payload,
-            protocol_version=protocol_version,
-            recipient=_actor_from_json(_mapping_or_none(value.get("recipient"))),
-            source=_actor_from_json(_mapping_or_none(value.get("source"))),
-        )
-
     def message_received_payload(self) -> MessageReceived | None:
         value = self.payload.get("messageReceived")
-        return MessageReceived.from_dict(value) if isinstance(value, Mapping) else None
-
-    def to_proto_json(self) -> JsonObject:
-        value: JsonObject = {
-            "eventId": self.event_id,
-            "protocolVersion": self.protocol_version,
-            "occurredAt": self.occurred_at,
-        }
-        if self.protocol_version != OCP_V2_PROTOCOL_VERSION:
-            value["eventType"] = self.event_type
-        for name, actor in (
-            ("source", self.source),
-            ("actor", self.actor),
-            ("recipient", self.recipient),
-        ):
-            if actor is not None:
-                value[name] = actor.to_proto_json()
-        for name, item in (("channel", self.channel), ("conversation", self.conversation)):
-            if item is not None:
-                value[name] = item
-        if self.correlation_id:
-            value["correlationId"] = self.correlation_id
-        if self.causation_id:
-            value["causationId"] = self.causation_id
-        if self.idempotency_key:
-            value["idempotencyKey"] = self.idempotency_key
-        if self.extensions:
-            value["extensions"] = dict(self.extensions)
-        value.update(self.payload)
-        return value
+        return MessageReceived.from_json(value) if isinstance(value, Mapping) else None
 
 
-def _build(
-    event_type: str,
-    payload: Mapping[str, object],
+def validate_event(event: EventEnvelope) -> None:
+    """Validate identity, the payload oneof, and approval invariants."""
+
+    if not event.event_id.strip():
+        raise ValueError("OCP event must have an event_id")
+    if not event.occurred_at.strip():
+        raise ValueError("OCP event must have occurred_at")
+    if not event.payload:
+        raise ValueError("OCP event must have a payload")
+    case = _payload_case(event.payload)
+    _check_invariants(case, _mapping(event.payload[case]))
+
+
+def new_event(
     *,
-    protocol_version: str,
-    actor: ActorRef | None,
-    source: ActorRef | None,
-    recipient: ActorRef | None,
-    channel: Mapping[str, object] | None,
-    conversation: Mapping[str, object] | None,
-    correlation_id: str,
-    causation_id: str,
-    event_id: str | None,
+    payload: Mapping[str, object],
+    actor: ActorRef | None = None,
+    recipient: ActorRef | None = None,
+    source: ActorRef | None = None,
+    channel: Mapping[str, object] | None = None,
+    conversation: Mapping[str, object] | None = None,
+    correlation_id: str = "",
+    causation_id: str = "",
+    idempotency_key: str = "",
+    event_id: str | None = None,
+    occurred_at: datetime | str | None = None,
+    extensions: Mapping[str, str] | None = None,
 ) -> EventEnvelope:
-    return EventEnvelope(
-        event_type=event_type,
-        payload=payload,
+    """Build and validate an event from a payload oneof, such as `{"messageReceived": {...}}`."""
+
+    event = EventEnvelope(
+        payload=dict(payload),
         event_id=event_id or str(uuid4()),
-        protocol_version=protocol_version,
-        occurred_at=datetime.now(UTC).isoformat(),
-        actor=actor,
+        occurred_at=_now() if occurred_at is None else _timestamp(occurred_at),
         source=source,
+        actor=actor,
         recipient=recipient,
         channel=channel,
         conversation=conversation,
         correlation_id=correlation_id,
         causation_id=causation_id,
+        idempotency_key=idempotency_key,
+        extensions=dict(extensions or {}),
     )
+    validate_event(event)
+    return event
 
 
 def message_received(
     *,
     text: str,
-    protocol_version: str = OCP_PROTOCOL_VERSION,
     actor: ActorRef | None = None,
     recipient: ActorRef | None = None,
     source: ActorRef | None = None,
@@ -476,17 +326,15 @@ def message_received(
     causation_id: str = "",
     event_id: str | None = None,
 ) -> EventEnvelope:
-    """Build a `message.received` event for the requested protocol version (default v0.1)."""
+    """Build a `message.received` event."""
 
     value: JsonObject = {"text": text}
     if attachments:
         value["attachments"] = [dict(item) for item in attachments]
     if metadata:
         value["metadata"] = dict(metadata)
-    return _build(
-        "message.received",
-        {"messageReceived": value},
-        protocol_version=protocol_version,
+    return new_event(
+        payload={"messageReceived": value},
         actor=actor,
         source=actor if source is None else source,
         recipient=recipient,
@@ -501,7 +349,6 @@ def message_received(
 def message_sent(
     *,
     text: str,
-    protocol_version: str = OCP_PROTOCOL_VERSION,
     actor: ActorRef | None = None,
     recipient: ActorRef | None = None,
     source: ActorRef | None = None,
@@ -513,17 +360,15 @@ def message_sent(
     causation_id: str = "",
     event_id: str | None = None,
 ) -> EventEnvelope:
-    """Build a `message.sent` event for the requested protocol version (default v0.1)."""
+    """Build a `message.sent` event."""
 
     value: JsonObject = {"text": text}
     if attachments:
         value["attachments"] = [dict(item) for item in attachments]
     if metadata:
         value["metadata"] = dict(metadata)
-    return _build(
-        "message.sent",
-        {"messageSent": value},
-        protocol_version=protocol_version,
+    return new_event(
+        payload={"messageSent": value},
         actor=actor,
         source=actor if source is None else source,
         recipient=recipient,
@@ -543,7 +388,6 @@ def approval_requested(
     reason: str,
     requested_action: Mapping[str, object],
     deadline: datetime | str,
-    protocol_version: str = OCP_PROTOCOL_VERSION,
     actor: ActorRef | None = None,
     recipient: ActorRef | None = None,
     source: ActorRef | None = None,
@@ -553,22 +397,20 @@ def approval_requested(
     causation_id: str = "",
     event_id: str | None = None,
 ) -> EventEnvelope:
-    """Build an `approval.requested` event for the requested protocol version (default v0.1)."""
+    """Build an `approval.requested` event addressed to the approver by default."""
 
     payload = {
         "approvalRequested": {
-            "agent": agent.to_proto_json(),
+            "agent": agent.to_json(),
             "approvalId": approval_id,
-            "approver": approver.to_proto_json(),
+            "approver": approver.to_json(),
             "reason": reason,
             "requestedAction": dict(requested_action),
             "deadline": _timestamp(deadline),
         }
     }
-    return _build(
-        "approval.requested",
-        payload,
-        protocol_version=protocol_version,
+    return new_event(
+        payload=payload,
         actor=actor,
         source=source,
         recipient=approver if recipient is None else recipient,
@@ -584,7 +426,6 @@ def action_executed(
     *,
     action: Mapping[str, object],
     result: str = "",
-    protocol_version: str = OCP_PROTOCOL_VERSION,
     actor: ActorRef | None = None,
     recipient: ActorRef | None = None,
     source: ActorRef | None = None,
@@ -594,12 +435,10 @@ def action_executed(
     causation_id: str = "",
     event_id: str | None = None,
 ) -> EventEnvelope:
-    """Build an `action.executed` event for the requested protocol version (default v0.1)."""
+    """Build an `action.executed` event."""
 
-    return _build(
-        "action.executed",
-        {"actionExecuted": {"action": dict(action), "result": result}},
-        protocol_version=protocol_version,
+    return new_event(
+        payload={"actionExecuted": {"action": dict(action), "result": result}},
         actor=actor,
         source=source,
         recipient=recipient,
@@ -617,7 +456,6 @@ def action_failed(
     error_code: str,
     error_message: str,
     retryable: bool = False,
-    protocol_version: str = OCP_PROTOCOL_VERSION,
     actor: ActorRef | None = None,
     recipient: ActorRef | None = None,
     source: ActorRef | None = None,
@@ -627,7 +465,7 @@ def action_failed(
     causation_id: str = "",
     event_id: str | None = None,
 ) -> EventEnvelope:
-    """Build an `action.failed` event for the requested protocol version (default v0.1)."""
+    """Build an `action.failed` event."""
 
     payload = {
         "actionFailed": {
@@ -637,10 +475,8 @@ def action_failed(
             "retryable": retryable,
         }
     }
-    return _build(
-        "action.failed",
-        payload,
-        protocol_version=protocol_version,
+    return new_event(
+        payload=payload,
         actor=actor,
         source=source,
         recipient=recipient,
@@ -652,64 +488,185 @@ def action_failed(
     )
 
 
-def parse_event(
-    value: bytes | bytearray | Mapping[str, object],
-    protocol_version: str | None = None,
+GRANTED = "APPROVAL_OUTCOME_GRANTED"
+DENIED = "APPROVAL_OUTCOME_DENIED"
+
+
+def approval_decided(
+    *,
+    approval_id: str,
+    approver: ActorRef,
+    outcome: str,
+    reason: str = "",
+    actor: ActorRef | None = None,
+    source: ActorRef | None = None,
+    channel: Mapping[str, object] | None = None,
+    conversation: Mapping[str, object] | None = None,
+    correlation_id: str = "",
+    causation_id: str = "",
+    event_id: str | None = None,
 ) -> EventEnvelope:
-    """Parse an event: a ProtoJSON mapping (version auto-detected) or binary bytes.
+    """Build `approval.granted` (outcome GRANTED) or `approval.denied` (outcome DENIED)."""
 
-    Binary does not carry a version discriminator, so bytes require `protocol_version`.
-    """
+    payload = {
+        "approvalDecided": {
+            "approvalId": approval_id,
+            "approver": approver.to_json(),
+            "outcome": outcome,
+            "reason": reason,
+        }
+    }
+    return new_event(
+        payload=payload,
+        actor=approver if actor is None else actor,
+        source=approver if source is None else source,
+        channel=channel,
+        conversation=conversation,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        event_id=event_id,
+    )
 
-    if isinstance(value, (bytes, bytearray)):
-        if protocol_version is None:
-            raise ValueError("Binary OCP events require an explicit protocol_version")
-        return event_from_binary(value, protocol_version)
-    if not isinstance(value, Mapping):
-        raise TypeError("OCP events must be ProtoJSON mappings or bytes")
-    return EventEnvelope.from_proto_json(value)
+
+def escalation_triggered(
+    *,
+    escalation_id: str,
+    reason: str,
+    related_approval_id: str,
+    agent: ActorRef,
+    approver: ActorRef,
+    actor: ActorRef | None = None,
+    source: ActorRef | None = None,
+    channel: Mapping[str, object] | None = None,
+    conversation: Mapping[str, object] | None = None,
+    correlation_id: str = "",
+    causation_id: str = "",
+    event_id: str | None = None,
+) -> EventEnvelope:
+    """Build an `escalation.triggered` event addressed to the approver."""
+
+    payload = {
+        "escalationTriggered": {
+            "escalationId": escalation_id,
+            "reason": reason,
+            "relatedApprovalId": related_approval_id,
+            "source": agent.to_json(),
+            "target": approver.to_json(),
+        }
+    }
+    return new_event(
+        payload=payload,
+        actor=actor,
+        source=source,
+        recipient=approver,
+        channel=channel,
+        conversation=conversation,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        event_id=event_id,
+    )
 
 
-def event_to_json(event: EventEnvelope) -> JsonObject:
+def approval_expired(
+    *,
+    approval_id: str,
+    reason: str,
+    actor: ActorRef | None = None,
+    source: ActorRef | None = None,
+    channel: Mapping[str, object] | None = None,
+    conversation: Mapping[str, object] | None = None,
+    correlation_id: str = "",
+    causation_id: str = "",
+    event_id: str | None = None,
+) -> EventEnvelope:
+    """Build an `approval.expired` event."""
+
+    return new_event(
+        payload={"approvalExpired": {"approvalId": approval_id, "reason": reason}},
+        actor=actor,
+        source=actor if source is None else source,
+        channel=channel,
+        conversation=conversation,
+        correlation_id=correlation_id,
+        causation_id=causation_id,
+        event_id=event_id,
+    )
+
+
+def to_json(event: EventEnvelope) -> JsonObject:
+    """Serialize a validated event to ProtoJSON."""
+
     validate_event(event)
-    return event.to_proto_json()
+    value: JsonObject = {
+        "eventId": event.event_id,
+        "protocolVersion": PROTOCOL_VERSION,
+        "occurredAt": event.occurred_at,
+    }
+    for name, actor in (
+        ("source", event.source),
+        ("actor", event.actor),
+        ("recipient", event.recipient),
+    ):
+        if actor is not None:
+            value[name] = actor.to_json()
+    for name, item in (("channel", event.channel), ("conversation", event.conversation)):
+        if item is not None:
+            value[name] = item
+    if event.correlation_id:
+        value["correlationId"] = event.correlation_id
+    if event.causation_id:
+        value["causationId"] = event.causation_id
+    if event.idempotency_key:
+        value["idempotencyKey"] = event.idempotency_key
+    if event.extensions:
+        value["extensions"] = dict(event.extensions)
+    value.update(event.payload)
+    return value
 
 
-def event_from_json(value: Mapping[str, object]) -> EventEnvelope:
-    return EventEnvelope.from_proto_json(value)
+def from_json(value: Mapping[str, object]) -> EventEnvelope:
+    """Parse and validate a ProtoJSON event. Rejects any protocol version other than 0.2."""
 
-
-def event_to_binary(event: EventEnvelope) -> bytes:
-    """Serialize a validated event of either version as protobuf wire bytes.
-
-    The bytes are the protobuf encoding of the v0.1 or v0.2 EventEnvelope (selected by
-    `event.protocol_version`), byte-compatible with the TypeScript SDK. The encoding is produced by
-    the stdlib-only codec in `open_channel._wire`; no protobuf runtime is required.
-    """
-
-    validate_event(event)
-    return encode_event(event.to_proto_json(), event.protocol_version)
-
-
-def event_from_binary(value: bytes | bytearray, protocol_version: str) -> EventEnvelope:
-    """Decode protobuf wire bytes as an EventEnvelope of the explicitly requested version.
-
-    Binary carries no version discriminator, so `protocol_version` is required. The bytes are
-    decoded with the v0.1 or v0.2 envelope schema accordingly, then validated; a decoded event
-    whose protocol_version differs from the requested one raises ValueError.
-    """
-
-    if protocol_version not in OCP_PROTOCOL_VERSIONS:
-        raise ValueError(f"Unsupported OCP protocol_version: {protocol_version!r}")
-    try:
-        decoded = decode_event(bytes(value), protocol_version)
-    except ValueError as error:
-        raise ValueError("Invalid OCP binary event") from error
-    event = EventEnvelope.from_proto_json(decoded)
-    if event.protocol_version != protocol_version:
+    if "eventType" in value:
         raise ValueError(
-            f"OCP binary event has protocol_version {event.protocol_version}, "
-            f"expected {protocol_version}"
+            "OCP envelope must not include eventType; the payload identifies the event"
         )
+    version = value.get("protocolVersion")
+    if version != PROTOCOL_VERSION:
+        raise ValueError(f"Unsupported OCP protocol_version: {version!r}")
+    event = EventEnvelope(
+        actor=_actor_from_json(_mapping_or_none(value.get("actor"))),
+        causation_id=str(value.get("causationId", "")),
+        channel=_optional_mapping(value.get("channel"), "channel"),
+        conversation=_optional_mapping(value.get("conversation"), "conversation"),
+        correlation_id=str(value.get("correlationId", "")),
+        event_id=str(value.get("eventId", "")),
+        extensions={str(key): str(item) for key, item in _mapping(value.get("extensions")).items()},
+        idempotency_key=str(value.get("idempotencyKey", "")),
+        occurred_at=str(value.get("occurredAt", "")),
+        payload={key: item for key, item in value.items() if key not in _ENVELOPE_FIELDS},
+        recipient=_actor_from_json(_mapping_or_none(value.get("recipient"))),
+        source=_actor_from_json(_mapping_or_none(value.get("source"))),
+    )
     validate_event(event)
     return event
+
+
+def to_binary(event: EventEnvelope) -> bytes:
+    """Serialize a validated event as protobuf wire bytes (byte-compatible with the TypeScript SDK).
+
+    The encoding comes from the stdlib-only codec in `open_channel._wire`; no protobuf runtime is
+    required.
+    """
+
+    return encode_event(to_json(event))
+
+
+def from_binary(value: bytes | bytearray) -> EventEnvelope:
+    """Decode and validate protobuf wire bytes. Binary needs no version: there is only one."""
+
+    try:
+        decoded = decode_event(bytes(value))
+    except ValueError as error:
+        raise ValueError("Invalid OCP binary event") from error
+    return from_json(decoded)

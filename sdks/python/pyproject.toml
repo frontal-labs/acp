@@ -47,6 +47,7 @@ where = ["src"]
 [dependency-groups]
 dev = [
   "build>=1.2.2,<2.0.0",
+  "protobuf>=7.35.0",
   "ruff>=0.16.0,<0.17.0",
   "twine>=6.1.0,<7.0.0",
 ]
