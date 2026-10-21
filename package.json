@@ -44,6 +44,7 @@
     "check:docs": "node scripts/check-docs.mjs",
     "check:examples": "node scripts/check-examples.mjs",
     "check:format": "ultracite check",
+    "check:owners": "node scripts/check-package-owners.mjs",
     "cli": "turbo run cli --filter=@frontal-labs/open-channel-cli",
     "commitlint": "commitlint --from=HEAD~1 --to=HEAD --verbose",
     "demo": "turbo run demo --filter=@frontal-labs/open-channel-demo",

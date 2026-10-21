@@ -64,3 +64,6 @@ jobs:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+          OCP_NPM_OWNER: ${{ vars.OCP_NPM_OWNER }}
+          OCP_CRATES_OWNER: ${{ vars.OCP_CRATES_OWNER }}
+          OCP_PYPI_OWNER: ${{ vars.OCP_PYPI_OWNER }}

@@ -7,6 +7,8 @@ const python = process.env.PYTHON ?? "python3";
 const dryRun = process.argv.includes("--dry-run");
 const run = (command, args) => execFileSync(command, args, { cwd: root, stdio: "inherit" });
 
+run(process.execPath, ["scripts/check-package-owners.mjs"]);
+
 run("cargo", [
   "publish",
   "--locked",
