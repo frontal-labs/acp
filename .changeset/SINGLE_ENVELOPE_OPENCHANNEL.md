@@ -17,6 +17,6 @@ Breaking: OCP has one envelope and one protocol version, `2.0`.
 - `createOcp()` is now `openChannel()`, and `defineAction()` is now `action()`. The type `OcpApp` is now `OpenChannel`, and the `Ocp*` types are `OpenChannel*`.
 - Runtime options are unchanged: `eventStore` remains the name on `OpenChannelRuntime`. The SDK option is `store`.
 - `listAgentCards()` is now `agentCards()`, `registerAgent` / `registerAction` / `registerChannel` are now `addAgent` / `addAction` / `addChannel`, and `context.actions.request` is now `ctx.request`.
-- Protobuf packages are `ocp.api` and `ocp.types` (previously `ocp.v1.*`, `ocp.v2.*`). Field numbers are unchanged, and field 2 (`event_type`) is reserved.
+- Protobuf packages are `ocp.api` and `ocp.types`. Field numbers are unchanged, and field 2 (`event_type`) is reserved.
 
 Migration: rename the imports, drop `eventType` and `protocolVersion` from event input, and call `eventType(event)` where you read the name. Stored ProtoJSON that contains `eventType` must be re-serialized from the typed builders.
