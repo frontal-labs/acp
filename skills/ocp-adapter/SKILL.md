@@ -58,4 +58,3 @@ mapping, outbound payload construction, provider errors, and retry identity.
 Do not require live provider credentials in unit tests. Assert that
 `ChannelGateway.dispatch()` rejects a missing provider with a shared OCP error
 and sends to the adapter selected by `channel.provider`.
-

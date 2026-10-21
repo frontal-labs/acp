@@ -54,14 +54,16 @@ import { openChannel } from "@frontal-labs/open-channel";
 
 const app = openChannel({
   policy,
-  agents: [{
-    id: "agent:triage",
-    name: "Triage Agent",
-    skills: [{ id: "triage", name: "Triage" }],
-    async onMessage(ctx) {
-      await ctx.reply("I am looking into this.");
+  agents: [
+    {
+      id: "agent:triage",
+      name: "Triage Agent",
+      skills: [{ id: "triage", name: "Triage" }],
+      async onMessage(ctx) {
+        await ctx.reply("I am looking into this.");
+      },
     },
-  }],
+  ],
 });
 await app.start();
 ```

@@ -78,4 +78,3 @@ cargo clippy --manifest-path sdks/rust/Cargo.toml --all-targets --all-features -
 - **Restart recovery.** `start()` restores approval state from the store. Unresolved approvals are tracked again, a deadline that passed while the process was down expires at start, and a granted approval with no terminal action event runs once. Only decisions written by the runtime, or by the designated approver before the source change, are honoured.
 - **Audit.** `app.store()` returns the event store for queries.
 - **Logging.** `ctx.logger()` has four levels. Warnings and errors go to stderr by default. Pass a logger to the builder to replace it.
-
