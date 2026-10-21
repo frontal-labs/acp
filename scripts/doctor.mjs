@@ -21,7 +21,7 @@ const requiredFiles = [
   "proto/v1/api/events.proto",
   ".changeset/config.json",
   ".frontal-code/settings.json",
-  ".cursor/rules/acp-repository.mdc",
+  ".cursor/rules/ocp-repository.mdc",
   ".claude/settings.json",
 ];
 const failures = [];
@@ -45,11 +45,11 @@ for (const file of requiredFiles) {
 }
 
 if (failures.length > 0) {
-  console.error("ACP doctor found problems:");
+  console.error("OCP doctor found problems:");
   for (const failure of failures) {
     console.error(`- ${failure}`);
   }
   process.exitCode = 1;
 } else {
-  console.log("ACP doctor passed.");
+  console.log("OCP doctor passed.");
 }

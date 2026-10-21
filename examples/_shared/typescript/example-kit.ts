@@ -1,10 +1,10 @@
-import type { EventEnvelope } from "@acp/protocol";
-import type { ActionExecutionRecord, EventStore } from "@acp/runtime";
-import type { ChannelDefinition } from "acp-sdk";
+import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import type { ActionExecutionRecord, EventStore } from "@frontal-labs/open-channel-runtime";
 
 /**
- * In-memory event store for examples only. ACP requires an explicit `eventStore`; production
- * deployments use a durable store such as `@acp/ext-postgres`. Nothing here survives a restart.
+ * In-memory event store for examples only. OCP requires an explicit `eventStore`; production
+ * deployments use a durable store such as `@frontal-labs/open-channel-ext-postgres`. Nothing here survives a restart.
  */
 export function createExampleEventStore(): EventStore {
   const events = new Map<string, EventEnvelope>();

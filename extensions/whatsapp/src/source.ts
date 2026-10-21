@@ -1,4 +1,5 @@
-import type { ChannelSource } from "@acp/adapter";
+import { create } from "@bufbuild/protobuf";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
 import {
   createProviderSource,
   optionalRecord,
@@ -7,17 +8,16 @@ import {
   providerEvent,
   records,
   sourceRecord,
-} from "@acp/ext-shared";
-import { MessageReceivedSchema } from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-ext-shared";
+import { MessageReceivedSchema } from "@frontal-labs/open-channel-protocol";
 
 import type { WhatsAppSourceOptions } from "./types.js";
 
-/** Normalizes WhatsApp Business Cloud webhook messages into ACP events. */
+/** Normalizes WhatsApp Business Cloud webhook messages into OCP events. */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Provider payload variants are normalized in one boundary function.
 export async function normalizeWhatsAppEvent(
   input: unknown,
-  metadata: import("@acp/ext-shared").ProviderReceiveMetadata = {},
+  metadata: import("@frontal-labs/open-channel-ext-shared").ProviderReceiveMetadata = {},
   options: WhatsAppSourceOptions = {},
 ) {
   const body = sourceRecord(input, "WhatsApp");
@@ -74,7 +74,7 @@ export async function normalizeWhatsAppEvent(
   return [];
 }
 
-/** Creates a WhatsApp source for `createAcp({ channels })`. */
+/** Creates a WhatsApp source for `createOcp({ channels })`. */
 export function createWhatsAppSource(options: WhatsAppSourceOptions = {}): ChannelSource {
   return createProviderSource("whatsapp", (input, metadata) =>
     normalizeWhatsAppEvent(input, metadata, options),

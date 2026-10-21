@@ -1,7 +1,7 @@
-# Slack ACP agent
+# Slack OCP agent
 
-A real-channel quickstart: an ACP agent that answers messages in a Slack
-channel. Inbound Slack events are verified and normalized into ACP
+A real-channel quickstart: an OCP agent that answers messages in a Slack
+channel. Inbound Slack events are verified and normalized into OCP
 `message.received` events; the agent's reply goes out as a `message.sent`
 event through Slack's Web API.
 
@@ -61,7 +61,7 @@ and any action the agent needs beyond replying would go through
 
 - **Store.** `main.ts` uses the in-memory example store from
   `examples/_shared/typescript/example-kit.ts`. It loses state on restart. Use
-  `@acp/ext-postgres` in production.
+  `@frontal-labs/open-channel-ext-postgres` in production.
 - **Policy.** The policy is empty, so the agent can only reply. Add rules before
   granting it any action.
 - **Retries.** Slack retries unacknowledged deliveries. Events are deduplicated

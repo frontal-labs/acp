@@ -1,20 +1,20 @@
-import { RuleBasedPolicyEngine } from "@acp/policy";
-import { ApprovalOutcome } from "@acp/protocol";
-import { AcpRuntime, ManualClock } from "@acp/runtime";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { ApprovalOutcome } from "@frontal-labs/open-channel-protocol";
+import { ManualClock, OcpRuntime } from "@frontal-labs/open-channel-runtime";
 import {
   createTestAction,
   createTestAgent,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@acp/testing";
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
 function createRuntime() {
   const clock = new ManualClock(new Date("2026-10-19T14:00:00.000Z"));
   const agent = createTestAgent("agent:support", "Support Agent");
   const manager = createTestHuman("human:manager", "Support Manager", "manager");
-  const runtime = new AcpRuntime({
+  const runtime = new OcpRuntime({
     clock,
     defaultApprovalTimeoutMs: 1000,
     eventStore: createTestEventStore(),
@@ -32,7 +32,7 @@ function createRuntime() {
   return { agent, clock, manager, runtime };
 }
 
-describe("ACP runtime", () => {
+describe("OCP runtime", () => {
   it("expires an approval and emits an escalation", async () => {
     const { clock, runtime, agent, manager } = createRuntime();
     const result = await runtime.submitAction({

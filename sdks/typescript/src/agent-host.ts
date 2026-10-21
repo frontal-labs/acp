@@ -1,4 +1,5 @@
-import { AcpError, ActionError, ConflictError } from "@acp/core";
+import { create } from "@bufbuild/protobuf";
+import { ActionError, ConflictError, OcpError } from "@frontal-labs/open-channel-core";
 import {
   ActorRefSchema,
   ActorType,
@@ -6,8 +7,7 @@ import {
   type EventEnvelope,
   type MessageReceived,
   MessageSentSchema,
-} from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-protocol";
 
 import type {
   ActionRequestOptions,
@@ -20,7 +20,7 @@ import type {
   ReplyOptions,
 } from "./types.js";
 
-/** Hosts discoverable agents and routes ACP channel messages to them. */
+/** Hosts discoverable agents and routes OCP channel messages to them. */
 export class AgentHost {
   private readonly runtime: AgentHostOptions["runtime"];
   private readonly gateway: AgentHostOptions["gateway"];
@@ -51,7 +51,7 @@ export class AgentHost {
 
   register(agent: AgentDefinition): this {
     if (agent.id in this.agents) {
-      throw new ConflictError("ACP agent", agent.id);
+      throw new ConflictError("OCP agent", agent.id);
     }
     this.agents[agent.id] = agent;
     return this;
@@ -88,9 +88,9 @@ export class AgentHost {
         await this.handle(event);
       } catch (error) {
         await this.onError?.(
-          error instanceof AcpError
+          error instanceof OcpError
             ? error
-            : new AcpError("ACP_ACTION", error instanceof Error ? error.message : String(error), {
+            : new OcpError("OCP_ACTION", error instanceof Error ? error.message : String(error), {
                 cause: error,
                 eventId: event.eventId,
                 stage: "processing",
@@ -152,7 +152,7 @@ export class AgentHost {
         ): Promise<ActionResult<TResult>> => {
           if (!this.actionRequester) {
             return Promise.reject(
-              new ActionError("ACP action handling is not configured for this host"),
+              new ActionError("OCP action handling is not configured for this host"),
             );
           }
           return this.actionRequester(agent, event, type, input, options);

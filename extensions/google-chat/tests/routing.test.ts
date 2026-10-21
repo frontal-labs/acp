@@ -1,9 +1,9 @@
-import { ActorRefSchema, ActorType } from "@acp/protocol";
 import { create } from "@bufbuild/protobuf";
+import { ActorRefSchema, ActorType } from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 import { createGoogleChatSource } from "../src/index.js";
 
-describe("@acp/ext-google-chat routing", () => {
+describe("@frontal-labs/open-channel-ext-google-chat routing", () => {
   it("sets the configured recipient so AgentHost can route the message", async () => {
     const route = create(ActorRefSchema, { id: "agent:google-chat-helper", type: ActorType.AGENT });
     const source = createGoogleChatSource({ recipient: route });

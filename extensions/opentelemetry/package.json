@@ -1,21 +1,21 @@
 {
-  "name": "@acp/ext-opentelemetry",
+  "name": "@frontal-labs/open-channel-ext-opentelemetry",
   "version": "0.1.0",
-  "description": "OpenTelemetry-compatible hooks for the Agent Communication Protocol TypeScript SDK",
+  "description": "OpenTelemetry-compatible hooks for the OpenChannel Protocol TypeScript SDK",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "opentelemetry",
     "observability",
     "tracing"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "extensions/opentelemetry"
   },
   "license": "Apache-2.0",
@@ -43,12 +43,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/protocol": "workspace:*",
-    "acp-sdk": "workspace:*"
+    "@frontal-labs/open-channel": "workspace:*",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

@@ -1,4 +1,5 @@
-import type { ChannelSource } from "@acp/adapter";
+import { create } from "@bufbuild/protobuf";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
 import {
   createProviderSource,
   optionalRecord,
@@ -6,17 +7,20 @@ import {
   providerActor,
   providerEvent,
   sourceRecord,
-} from "@acp/ext-shared";
-import { ApprovalDecidedSchema, ApprovalOutcome, MessageReceivedSchema } from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-ext-shared";
+import {
+  ApprovalDecidedSchema,
+  ApprovalOutcome,
+  MessageReceivedSchema,
+} from "@frontal-labs/open-channel-protocol";
 
 import type { TeamsSourceOptions } from "./types.js";
 
-/** Normalizes Teams message and approval-card payloads into v1 ACP events. */
+/** Normalizes Teams message and approval-card payloads into v1 OCP events. */
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Provider payload variants are normalized in one boundary function.
 export async function normalizeTeamsEvent(
   input: unknown,
-  metadata: import("@acp/ext-shared").ProviderReceiveMetadata = {},
+  metadata: import("@frontal-labs/open-channel-ext-shared").ProviderReceiveMetadata = {},
   options: TeamsSourceOptions = {},
 ) {
   const body = sourceRecord(input, "Microsoft Teams");
@@ -93,7 +97,7 @@ export async function normalizeTeamsEvent(
   );
 }
 
-/** Creates a Teams source for `createAcp({ channels })`. */
+/** Creates a Teams source for `createOcp({ channels })`. */
 export function createTeamsSource(options: TeamsSourceOptions = {}): ChannelSource {
   return createProviderSource("microsoft-teams", (input, metadata) =>
     normalizeTeamsEvent(input, metadata, options),

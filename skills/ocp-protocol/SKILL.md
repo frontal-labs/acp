@@ -1,11 +1,11 @@
 ---
-name: acp-protocol
-description: Change ACP protobuf schemas, event mappings, generated bindings, and wire serialization while preserving protocol compatibility.
+name: ocp-protocol
+description: Change OCP protobuf schemas, event mappings, generated bindings, and wire serialization while preserving protocol compatibility.
 ---
 
-# ACP protocol engineering
+# OCP protocol engineering
 
-Use this skill when a task changes the ACP wire contract: protobuf messages,
+Use this skill when a task changes the OCP wire contract: protobuf messages,
 event names, payload cases, ProtoJSON, generated SDK bindings, or protocol
 version behavior. Do not use it for an implementation-only change that does
 not alter the wire contract.

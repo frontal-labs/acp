@@ -1,7 +1,7 @@
 import type { JsonValue } from "@bufbuild/protobuf";
 import { z } from "zod";
 
-import { ACP_PROTOCOL_VERSIONS, EVENT_TYPES } from "./constants.js";
+import { EVENT_TYPES, OCP_PROTOCOL_VERSIONS } from "./constants.js";
 
 const actorRefJsonSchema = z
   .object({
@@ -33,11 +33,11 @@ const conversationRefJsonSchema = z
 const payloadValueSchema = z
   .custom<Record<string, unknown>>(
     (value) => value !== null && typeof value === "object" && !Array.isArray(value),
-    "ACP payload must be an object",
+    "OCP payload must be an object",
   )
   .pipe(z.record(z.string(), z.unknown()));
 
-/** The supported event names in the ACP v0.1 protocol. */
+/** The supported event names in the OCP v0.1 protocol. */
 export const EventNameSchema = z.enum(EVENT_TYPES);
 
 /** The validated discriminated union used by `createEvent`. */
@@ -71,13 +71,13 @@ export const EventInputSchema = z
     idempotencyKey: z.string().optional(),
     occurredAt: z.unknown().optional(),
     payload: EventPayloadInputSchema,
-    protocolVersion: z.enum(ACP_PROTOCOL_VERSIONS).optional(),
+    protocolVersion: z.enum(OCP_PROTOCOL_VERSIONS).optional(),
     recipient: actorRefJsonSchema.optional(),
     source: actorRefJsonSchema.optional(),
   })
   .passthrough();
 
-/** Runtime schema for an ACP ProtoJSON envelope before protobuf decoding. */
+/** Runtime schema for an OCP ProtoJSON envelope before protobuf decoding. */
 export const EventEnvelopeJsonSchema = z
   .object({
     actor: actorRefJsonSchema.optional(),
@@ -96,7 +96,7 @@ export const EventEnvelopeJsonSchema = z
   })
   .passthrough();
 
-/** Validates an unknown value as an ACP ProtoJSON-compatible value. */
+/** Validates an unknown value as an OCP ProtoJSON-compatible value. */
 export function parseEventJson(value: unknown): JsonValue {
   return EventEnvelopeJsonSchema.parse(value) as JsonValue;
 }

@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a reproducible problem in ACP
+about: Report a reproducible problem in OCP
 title: "bug: "
 labels: bug
 ---
@@ -15,7 +15,7 @@ Include the smallest reproduction, command, event payload, or fixture that demon
 
 ## Environment
 
-- ACP commit/version:
+- OCP commit/version:
 - Node/pnpm:
 - OS:
 - SDK/runtime:

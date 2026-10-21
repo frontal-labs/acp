@@ -1,9 +1,9 @@
 ---
-name: acp-agent
-description: Build or change ACP agents, agent cards, message handlers, and SDK behavior across the TypeScript, Python, or Rust developer APIs.
+name: ocp-agent
+description: Build or change OCP agents, agent cards, message handlers, and SDK behavior across the TypeScript, Python, or Rust developer APIs.
 ---
 
-# ACP agent development
+# OCP agent development
 
 Use this skill when implementing an agent or changing how an agent is
 discovered, receives messages, replies, requests actions, or participates in a
@@ -62,14 +62,14 @@ wire bindings, not a substitute for a coherent SDK API.
 
 Test the observable flow: inbound message, agent selection, reply or action
 request, policy/approval result, and outbound dispatch. Use deterministic
-fixtures from [`@acp/testing`](../acp-testing/SKILL.md), not real provider
+fixtures from [`@frontal-labs/open-channel-testing`](../ocp-testing/SKILL.md), not real provider
 credentials or wall-clock sleeps. Add agent-card discovery tests when the
 card shape changes, and test duplicate registration as a conflict.
 
 Relevant commands:
 
 ```bash
-pnpm --filter acp-sdk test
-pnpm --filter acp-sdk typecheck
+pnpm --filter @frontal-labs/open-channel test
+pnpm --filter @frontal-labs/open-channel typecheck
 pnpm test
 ```

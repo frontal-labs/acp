@@ -1,9 +1,9 @@
 ---
-name: acp-governance
-description: Maintain ACP repository governance, contribution, security, release, dependency-update, and agent-tooling documentation.
+name: ocp-governance
+description: Maintain OCP repository governance, contribution, security, release, dependency-update, and agent-tooling documentation.
 ---
 
-# ACP governance and repository tooling
+# OCP governance and repository tooling
 
 Use this skill for `AGENTS.md`, `CONTRIBUTING.md`, `SECURITY.md`,
 `CODE_OF_CONDUCT.md`, `CHANGELOG.md`, Renovate, Changesets, Husky, CI, and
@@ -17,7 +17,7 @@ repository-local agent configuration.
 - `CODE_OF_CONDUCT.md` defines participation and enforcement expectations.
 - `.changeset/config.json` and `CHANGELOG.md` define release-note behavior.
 - `renovate.json` defines automated dependency-update policy.
-- `skills/` defines focused ACP implementation guidance.
+- `skills/` defines focused OCP implementation guidance.
 - Markdown filenames use uppercase `SNAKE_CASE.md`; conventional single-token
   names such as `README.md` and `SKILL.md` remain valid.
 

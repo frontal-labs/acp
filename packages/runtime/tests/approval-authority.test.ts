@@ -1,5 +1,7 @@
-import { AuthorizationError } from "@acp/core";
-import { RuleBasedPolicyEngine } from "@acp/policy";
+import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import { AuthorizationError } from "@frontal-labs/open-channel-core";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   ActionRequestSchema,
   ActorRefSchema,
@@ -10,19 +12,17 @@ import {
   ApprovalRequestedSchema,
   createEvent,
   type EventEnvelope,
-} from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+} from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 import { createTestEventStore } from "../../testing/src/index.js";
-import { AcpRuntime } from "../src/index.js";
+import { OcpRuntime } from "../src/index.js";
 
 const agent = create(ActorRefSchema, { id: "agent:authority", type: ActorType.AGENT });
 const approver = create(ActorRefSchema, { id: "human:approver", type: ActorType.HUMAN });
 const intruder = create(ActorRefSchema, { id: "human:intruder", type: ActorType.HUMAN });
 
 function createRuntime() {
-  return new AcpRuntime({
+  return new OcpRuntime({
     eventStore: createTestEventStore(),
     policy: new RuleBasedPolicyEngine({
       rules: [{ actionType: "refund.create", allowed: true, id: "refund", requiresApproval: true }],
@@ -30,7 +30,7 @@ function createRuntime() {
   });
 }
 
-async function requestApproval(runtime: AcpRuntime) {
+async function requestApproval(runtime: OcpRuntime) {
   const action = create(ActionRequestSchema, {
     actionId: "action:refund",
     target: "order:1",
@@ -165,7 +165,7 @@ describe("approval authority", () => {
 
 /** Builds an approval decision or expiry as `actor`, reusing the stored request's channel. */
 async function buildEvent(
-  runtime: AcpRuntime,
+  runtime: OcpRuntime,
   actor: typeof intruder,
   eventType: "approval.granted" | "approval.expired",
   approvalId: string,

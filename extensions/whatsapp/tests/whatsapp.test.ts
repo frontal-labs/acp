@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createWhatsAppSource } from "../src/index.js";
 
-describe("@acp/ext-whatsapp", () => {
+describe("@frontal-labs/open-channel-ext-whatsapp", () => {
   it("normalizes a WhatsApp Business message", async () => {
     const source = createWhatsAppSource();
     const event = await source.normalize({

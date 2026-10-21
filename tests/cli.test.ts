@@ -1,11 +1,11 @@
-import { eventToJson } from "@acp/protocol";
-import { createBufferedTestIO, createTestEvent } from "@acp/testing";
-import { runCommand } from "acp-cli";
+import { runCommand } from "@frontal-labs/open-channel-cli";
+import { eventToJson } from "@frontal-labs/open-channel-protocol";
+import { createBufferedTestIO, createTestEvent } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
-const INVALID_EVENT_PATTERN = /^invalid ACP event:/;
+const INVALID_EVENT_PATTERN = /^invalid OCP event:/;
 
-describe("ACP CLI", () => {
+describe("OCP CLI", () => {
   it("reports the protocol version", async () => {
     const { io, stdout } = createBufferedTestIO();
 
@@ -23,7 +23,7 @@ describe("ACP CLI", () => {
     const code = await runCommand(["validate"], io);
 
     expect(code).toBe(0);
-    expect(stdout).toEqual(["valid ACP event: message.received"]);
+    expect(stdout).toEqual(["valid OCP event: message.received"]);
   });
 
   it("returns a useful error for invalid input", async () => {

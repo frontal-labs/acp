@@ -1,4 +1,4 @@
-# ACP repository agent instructions
+# OCP repository agent instructions
 
 ## Stack
 
@@ -28,7 +28,7 @@ Run `pnpm check` from the repository root. For a faster configuration-only check
 
 ## Project contract
 
-ACP is a provider-neutral protocol for agent, human, and system communication.
+OCP is a provider-neutral protocol for agent, human, and system communication.
 The protocol owns event identity, correlation, payload semantics, policy
 signals, approvals, escalation, handoff, and audit-oriented history. A provider
 adapter owns transport details; an agent harness owns model and tool execution.
@@ -45,7 +45,7 @@ Keep those boundaries explicit:
 - `sdks/{typescript,python,rust}` expose ergonomic agent-host APIs.
 - `examples/` contains opt-in integrations and must not add framework
   dependencies to the core workspace.
-- `skills/` contains reusable ACP-specific agent instructions.
+- `skills/` contains reusable OCP-specific agent instructions.
 
 Provider SDKs, model SDKs, credentials, and framework-specific message types
 belong in an adapter or example. Do not leak them into protocol packages.
@@ -88,20 +88,20 @@ typecheck, executes workspace/root tests, and tests the Python and Rust SDKs.
 
 ## Example integrations
 
-Every example should make the ACP boundary visible:
+Every example should make the OCP boundary visible:
 
 ```text
-provider/harness input -> ACP message.received -> harness execution
-  -> ACP message.sent / policy / approval events -> provider output
+provider/harness input -> OCP message.received -> harness execution
+  -> OCP message.sent / policy / approval events -> provider output
 ```
 
-Document installation, environment variables, run commands, the ACP-to-harness
+Document installation, environment variables, run commands, the OCP-to-harness
 mapping, and the safety/approval boundary. Keep framework dependencies inside
 the example's own manifest or requirements file.
 
 ## Protocol changes
 
-Read `docs/SPEC_V0_1.md` and `skills/acp-protocol/SKILL.md`, edit only canonical
+Read `docs/SPEC_V0_1.md` and `skills/ocp-protocol/SKILL.md`, edit only canonical
 schemas and hand-written helpers, update all language bindings, run
 `pnpm generate`, inspect the generated diff, and then run Buf, typecheck, and
 test verification. Do not claim a schema change is complete while generated

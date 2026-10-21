@@ -18,7 +18,7 @@ fn main() {
             &[proto_root.join("v1/api/events.proto"), proto_root.join("v2/api/events.proto")],
             std::slice::from_ref(&proto_root),
         )
-        .expect("compile ACP protobuf definitions");
+        .expect("compile OCP protobuf definitions");
 
     println!("cargo:rerun-if-changed={}", proto_root.display());
 }

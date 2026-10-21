@@ -1,21 +1,21 @@
-# Frontal ACP
+# OpenChannel Protocol (OCP)
 
 ![Frontal Banner](./banner.jpg)
 
 **Protocol for safe agent communication and approvals.**
 
-ACP is an open communication layer for agents operating inside the channels where people already work: chat, email, calendars, and shared projects.
+OCP is an open communication layer for agents operating inside the channels where people already work: chat, email, calendars, and shared projects.
 
 It standardizes the interaction contract around messages, tasks, approvals, escalation, handoff, policy, and audit events. The core protocol is provider-neutral; Slack, Teams, Google Chat, email, and other providers can implement adapters without changing the event model.
 
 ## Status
 
-ACP v0.2 is an experimental, spec-first reference implementation. It includes
+OCP v0.2 is an experimental, spec-first reference implementation. It includes
 versioned protobuf schemas, typed event builders, config-first TypeScript/Python/
 Rust application facades, policy-controlled actions, source/sink channel
 contracts, and at-least-once in-process processing.
 
-Project links: [repository](https://github.com/frontal-labs/acp), [issues](https://github.com/frontal-labs/acp/issues), and [release notes](./CHANGELOG.md).
+Project links: [repository](https://github.com/frontal-labs/open-channel), [issues](https://github.com/frontal-labs/open-channel/issues), and [release notes](./CHANGELOG.md).
 
 ## Quickstart
 
@@ -58,15 +58,15 @@ packages/policy/               Rule-based policy reference implementation
 packages/adapter/              Provider-neutral adapter contract
 packages/core/                 Shared event bus and identifier primitives
 packages/testing/              Shared fixtures and helpers for TypeScript tests
-cli/                           `acp` validation and inspection CLI
+cli/                           `ocp` validation and inspection CLI
 sdks/typescript/               TypeScript app facade, agent host, and developer API
 sdks/python/                   Python app facade, agent host, and developer API
 sdks/rust/                     Rust app builder, agent host, and developer API
 packages/demo/                 Runnable end-to-end example
 examples/                      Native SDK and optional agent-harness integrations
-skills/                        ACP-specific instructions for agents and contributors
+skills/                        OCP-specific instructions for agents and contributors
 tests/                         Cross-package Vitest conformance tests
-skills/                        Project-local ACP skills for agent workflows
+skills/                        Project-local OCP skills for agent workflows
 skills.sh.json                 skills.sh grouping and discovery metadata
 docs/SPEC_V0_1.md              Normative behavior and compatibility rules
 docs/DEVELOPMENT.md             Local development and agent SDK guide
@@ -79,7 +79,7 @@ ultracite.json                 Shared Biome formatting and lint configuration
 
 ## Protocol model
 
-Every ACP event is an `EventEnvelope` with:
+Every OCP event is an `EventEnvelope` with:
 
 - stable event identity and protocol version;
 - source, actor, recipient, channel, and conversation references;
@@ -105,14 +105,14 @@ Both versions share one API. Pass `protocolVersion: "0.2"` to `createEvent` or a
 - Event IDs make processing idempotent for replayed inbound events.
 - The runtime exposes an append-only event store interface for durable implementations.
 - `ChannelGateway.ingest()` handles inbound events and `ChannelGateway.dispatch()` sends outbound events through a registered provider adapter.
-- `AcpRuntime.decideApproval()` creates and processes a validated approval outcome without requiring callers to handcraft protobuf envelopes.
+- `OcpRuntime.decideApproval()` creates and processes a validated approval outcome without requiring callers to handcraft protobuf envelopes.
 
 ## A2A relationship
 
-ACP uses compatible concepts such as actors, tasks, artifacts, correlation IDs, and typed events, but does not require A2A. ACP adds the enterprise-channel concerns that are specific to human and agent communication: recipients, shared channels, approval routing, escalation, handoff, and auditability.
+OCP uses compatible concepts such as actors, tasks, artifacts, correlation IDs, and typed events, but does not require A2A. OCP adds the enterprise-channel concerns that are specific to human and agent communication: recipients, shared channels, approval routing, escalation, handoff, and auditability.
 
 ## Contributing
 
-The canonical schema lives under `proto/`. Run `pnpm generate` after changing it, then run `pnpm check`. New provider integrations should implement `ChannelSource` and/or `ChannelSink` and translate provider-native events into ACP envelopes without leaking provider-specific fields into the core payloads. Application code should prefer `createAcp()` from `acp-sdk`.
+The canonical schema lives under `proto/`. Run `pnpm generate` after changing it, then run `pnpm check`. New provider integrations should implement `ChannelSource` and/or `ChannelSink` and translate provider-native events into OCP envelopes without leaking provider-specific fields into the core payloads. Application code should prefer `createOcp()` from `open-channel`.
 
 Use `pnpm fix` for safe formatting and lint fixes. Package-level task configuration is inherited from the root `turbo.json`; each package also contains a local `turbo.json` so ownership and future task overrides stay close to the package.

@@ -1,8 +1,7 @@
 import unittest
 from datetime import datetime
 
-from acp import (
-    AcpApp,
+from open_channel import (
     ActionDefinition,
     ActorRef,
     AgentDefinition,
@@ -10,6 +9,7 @@ from acp import (
     ChannelDefinition,
     DeliveryReceipt,
     EventEnvelope,
+    OcpApp,
     PolicyDecision,
     event_from_binary,
     event_to_binary,
@@ -65,7 +65,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
             )
             self.assertEqual(result.status, "executed")
 
-        app = AcpApp(
+        app = OcpApp(
             store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:app", name="App", on_message=on_message)],
             actions=[
@@ -133,7 +133,7 @@ class AgentSdkTests(unittest.IsolatedAsyncioTestCase):
         async def on_message(context) -> None:
             await context.reply("reply")
 
-        app = AcpApp(
+        app = OcpApp(
             store=InMemoryStore(),
             agents=[AgentDefinition(id="agent:source", name="Source", on_message=on_message)],
             channels=[ChannelDefinition("memory", source=Source(), sink=Sink())],

@@ -1,10 +1,14 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { createProviderSink } from "@acp/ext-shared";
-import { deliveryReceipt } from "acp-sdk";
+import { deliveryReceipt } from "@frontal-labs/open-channel";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { GoogleChatTransport } from "./types.js";
 
-/** Creates a Google Chat sink for `createAcp({ channels })`. */
+/** Creates a Google Chat sink for `createOcp({ channels })`. */
 export function createGoogleChatSink(transport: GoogleChatTransport): ChannelSink {
   return createProviderSink(
     "google-chat",

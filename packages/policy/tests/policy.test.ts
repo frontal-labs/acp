@@ -1,9 +1,9 @@
-import { ActorType } from "@acp/protocol";
-import { createTestAgent, createTestHuman } from "@acp/testing";
+import { ActorType } from "@frontal-labs/open-channel-protocol";
+import { createTestAgent, createTestHuman } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { RuleBasedPolicyEngine } from "../src/index.js";
 
-describe("@acp/policy", () => {
+describe("@frontal-labs/open-channel-policy", () => {
   it("evaluates the first matching rule and supports recipient constraints", () => {
     const manager = createTestHuman("human:manager");
     const engine = new RuleBasedPolicyEngine({

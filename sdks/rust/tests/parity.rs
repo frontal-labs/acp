@@ -4,7 +4,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use acp_sdk::{event_type_of, EventEnvelope, ProtocolVersion};
+use open_channel::{event_type_of, EventEnvelope, ProtocolVersion};
 use serde_json::Value;
 
 const FIXTURE: &str = "../../packages/protocol/tests/fixtures/event-parity.json";
@@ -96,7 +96,7 @@ fn fixture_action_input_is_parsed_back_from_parameters() {
         ProtocolVersion::V0_2,
     )
     .expect("decodes");
-    let acp_sdk::EventPayload::ActionExecuted(payload) = event.payload else {
+    let open_channel::EventPayload::ActionExecuted(payload) = event.payload else {
         panic!("expected action.executed");
     };
     let action = payload.action.expect("action present");

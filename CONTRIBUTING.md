@@ -1,4 +1,4 @@
-# Contributing to ACP
+# Contributing to OCP
 
 ## Setup
 
@@ -43,7 +43,7 @@ example fixes can usually go directly to a pull request.
 ## Example checklist
 
 Each framework example must include a local README, a dependency manifest, an
-ACP inbound and outbound event, credential guidance, a deterministic/dry-run
+OCP inbound and outbound event, credential guidance, a deterministic/dry-run
 path where practical, and explicit handling for failures and
 approval-required actions. Framework dependencies must remain opt-in.
 

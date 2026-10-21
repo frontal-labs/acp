@@ -1,4 +1,5 @@
-import { ValidationError } from "@acp/core";
+import { create } from "@bufbuild/protobuf";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 import {
   createEvent,
   eventFromBinary,
@@ -6,12 +7,15 @@ import {
   eventToBinary,
   eventToJson,
   MessageReceivedSchema,
-} from "@acp/protocol";
-import { createTestEvent, createTestHuman, createTestMessageReceived } from "@acp/testing";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-protocol";
+import {
+  createTestEvent,
+  createTestHuman,
+  createTestMessageReceived,
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
-describe("ACP event envelope", () => {
+describe("OCP event envelope", () => {
   it("round-trips through ProtoJSON and binary protobuf", () => {
     const event = createTestEvent({
       actor: createTestHuman("human:gabriel", "Gabriel"),

@@ -1,9 +1,9 @@
-import { ActorRefSchema, ActorType } from "@acp/protocol";
 import { create } from "@bufbuild/protobuf";
+import { ActorRefSchema, ActorType } from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 import { createEmailSource } from "../src/index.js";
 
-describe("@acp/ext-email routing", () => {
+describe("@frontal-labs/open-channel-ext-email routing", () => {
   it("sets the configured recipient so AgentHost can route the message", async () => {
     const route = create(ActorRefSchema, { id: "agent:email-helper", type: ActorType.AGENT });
     const source = createEmailSource({ mailbox: "agent@example.com", recipient: route });

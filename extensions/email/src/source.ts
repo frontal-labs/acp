@@ -1,15 +1,20 @@
-import type { ChannelSource } from "@acp/adapter";
-import { createProviderSource, providerActor, providerEvent, sourceRecord } from "@acp/ext-shared";
-import { MessageReceivedSchema } from "@acp/protocol";
 import { create } from "@bufbuild/protobuf";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
+import {
+  createProviderSource,
+  providerActor,
+  providerEvent,
+  sourceRecord,
+} from "@frontal-labs/open-channel-ext-shared";
+import { MessageReceivedSchema } from "@frontal-labs/open-channel-protocol";
 
 import type { EmailMessage, EmailSourceOptions } from "./types.js";
 
-/** Normalizes an email message into an ACP message.received event. */
+/** Normalizes an email message into an OCP message.received event. */
 export async function normalizeEmailMessage(
   input: unknown,
   options: EmailSourceOptions,
-  metadata: import("@acp/ext-shared").ProviderReceiveMetadata = {},
+  metadata: import("@frontal-labs/open-channel-ext-shared").ProviderReceiveMetadata = {},
 ) {
   const message = sourceRecord(input, "email") as unknown as EmailMessage;
   if (!(message.from && message.text && options.mailbox)) {

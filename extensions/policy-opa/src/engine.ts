@@ -1,5 +1,9 @@
-import { TransportError } from "@acp/core";
-import type { PolicyContext, PolicyDecision, PolicyEngine } from "@acp/policy";
+import { TransportError } from "@frontal-labs/open-channel-core";
+import type {
+  PolicyContext,
+  PolicyDecision,
+  PolicyEngine,
+} from "@frontal-labs/open-channel-policy";
 
 import type { OpaPolicyOptions } from "./types.js";
 

@@ -1,4 +1,4 @@
-import type { ActionDefinition } from "acp-sdk";
+import type { ActionDefinition } from "@frontal-labs/open-channel";
 
 /** Provider-neutral MCP tool invocation input. */
 export interface McpToolCallInput {
@@ -6,7 +6,7 @@ export interface McpToolCallInput {
   tool: string;
 }
 
-/** Minimal MCP result shape accepted by the ACP action bridge. */
+/** Minimal MCP result shape accepted by the OCP action bridge. */
 export interface McpToolResult {
   content?: unknown[];
   isError?: boolean;
@@ -19,5 +19,5 @@ export interface McpToolClient {
   close?: () => Promise<void> | void;
 }
 
-/** ACP action definitions bridged from MCP tools. */
+/** OCP action definitions bridged from MCP tools. */
 export type McpActions = ActionDefinition<unknown, unknown>[];

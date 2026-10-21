@@ -7,7 +7,7 @@
       "!!**/.git",
       "!!**/dist",
       "!!**/.turbo",
-      "!!**/.acp-buf-cache",
+      "!!**/.ocp-buf-cache",
       "!!**/coverage",
       "!!**/proto/gen",
       "!!**/target",

@@ -1,10 +1,10 @@
-# @acp/runtime
+# @frontal-labs/open-channel-runtime
 
-Low-level ACP runtime for event processing, policy evaluation, approvals, escalation, audit storage, and channel dispatch. Application developers can use `createAcp()` from `acp-sdk` as the lifecycle-managed facade.
+Low-level OCP runtime for event processing, policy evaluation, approvals, escalation, audit storage, and channel dispatch. Application developers can use `createOcp()` from `@frontal-labs/open-channel` as the lifecycle-managed facade.
 
 ## Main APIs
 
-- `AcpRuntime` processes events and manages approval lifecycles.
+- `OcpRuntime` processes events and manages approval lifecycles.
 - `ManualClock` makes timeout behavior deterministic in tests.
 - `ChannelGateway` separates inbound ingestion from provider dispatch.
 - `InMemoryEventStore` provides a local append-only event store.

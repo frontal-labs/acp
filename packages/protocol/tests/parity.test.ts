@@ -39,7 +39,7 @@ import {
  * protocol versions. The Python and Rust SDK tests decode these bytes and re-encode them
  * to the same bytes, which proves all three implementations agree on the wire format.
  *
- * Regenerate with: UPDATE_PROTOCOL_FIXTURES=1 pnpm --filter @acp/protocol test
+ * Regenerate with: UPDATE_PROTOCOL_FIXTURES=1 pnpm --filter @frontal-labs/open-channel-protocol test
  */
 const FIXTURE_PATH = fileURLToPath(new URL("./fixtures/event-parity.json", import.meta.url));
 

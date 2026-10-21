@@ -1,21 +1,21 @@
 {
-  "name": "acp-sdk",
+  "name": "@frontal-labs/open-channel",
   "version": "0.1.0",
-  "description": "TypeScript SDK for building Agent Communication Protocol agents and hosts",
+  "description": "TypeScript SDK for building OpenChannel Protocol agents and hosts",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "agents",
     "agent-host",
     "a2a"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "sdks/typescript"
   },
   "license": "Apache-2.0",
@@ -43,15 +43,15 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/core": "workspace:*",
-    "@acp/policy": "workspace:*",
-    "@acp/protocol": "workspace:*",
-    "@acp/runtime": "workspace:*",
-    "@bufbuild/protobuf": "^2.2.5"
+    "@bufbuild/protobuf": "^2.2.5",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-policy": "workspace:*",
+    "@frontal-labs/open-channel-protocol": "workspace:*",
+    "@frontal-labs/open-channel-runtime": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

@@ -8,10 +8,10 @@ import {
   findEvent,
   requireEvent,
   waitFor,
-} from "@acp/testing";
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
-describe("ACP testing toolkit", () => {
+describe("OCP testing toolkit", () => {
   it("creates and inspects protocol events", () => {
     const events = [
       createTestEvent({ eventId: "one", eventType: "message.received" }),

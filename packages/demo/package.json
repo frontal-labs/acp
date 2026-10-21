@@ -1,21 +1,21 @@
 {
-  "name": "@acp/demo",
+  "name": "@frontal-labs/open-channel-demo",
   "version": "0.1.0",
   "private": true,
-  "description": "Reference Agent Communication Protocol demo application",
+  "description": "Reference OpenChannel Protocol demo application",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "demo",
     "example"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "packages/demo"
   },
   "license": "Apache-2.0",
@@ -43,10 +43,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/adapter": "workspace:*",
-    "@acp/policy": "workspace:*",
-    "@acp/testing": "workspace:*",
-    "acp-sdk": "workspace:*"
+    "@frontal-labs/open-channel": "workspace:*",
+    "@frontal-labs/open-channel-adapter": "workspace:*",
+    "@frontal-labs/open-channel-policy": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.12"

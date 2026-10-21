@@ -1,12 +1,12 @@
-import { RuleBasedPolicyEngine } from "@acp/policy";
+import { createOcp, defineAction } from "@frontal-labs/open-channel";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   createTestAgent,
   createTestChannelAdapter,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@acp/testing";
-import { createAcp, defineAction } from "acp-sdk";
+} from "@frontal-labs/open-channel-testing";
 
 /** Narrows unknown action input to the ticket shape this demo expects. */
 function isTicketInput(input: unknown): input is { ticketId: string } {
@@ -38,7 +38,7 @@ export async function runDemo(): Promise<void> {
     },
   });
   let approvalId = "";
-  const app = createAcp({
+  const app = createOcp({
     actions: [action],
     agents: [
       {
@@ -88,7 +88,7 @@ export async function runDemo(): Promise<void> {
   await app.approve(approvalId, manager, "Approved by the support manager");
   await app.stop();
 
-  console.log("\nACP delivery:");
+  console.log("\nOCP delivery:");
   for (const event of adapter.sent) {
     console.log(`${event.eventType} (${event.eventId})`);
   }

@@ -1,4 +1,4 @@
-Run the ACP verification pipeline from the repository root:
+Run the OCP verification pipeline from the repository root:
 
 1. Run `pnpm check:config`.
 2. Run `pnpm check:docs`.

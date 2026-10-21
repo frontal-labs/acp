@@ -1,4 +1,4 @@
-# ACP protobuf schema
+# OCP protobuf schema
 
 The canonical wire schema is split by responsibility and version:
 

@@ -1,8 +1,12 @@
-import type { PolicyContext, PolicyDecision, PolicyEngine } from "@acp/policy";
+import type {
+  PolicyContext,
+  PolicyDecision,
+  PolicyEngine,
+} from "@frontal-labs/open-channel-policy";
 
 import type { CedarEvaluator, CedarPolicyOptions } from "./types.js";
 
-/** Adapts a local Cedar evaluator to ACP's PolicyEngine contract. */
+/** Adapts a local Cedar evaluator to OCP's PolicyEngine contract. */
 export class CedarPolicyEngine implements PolicyEngine {
   private readonly evaluator: CedarEvaluator;
 
@@ -15,7 +19,7 @@ export class CedarPolicyEngine implements PolicyEngine {
   }
 }
 
-/** Creates an ACP PolicyEngine backed by a Cedar evaluator. */
+/** Creates an OCP PolicyEngine backed by a Cedar evaluator. */
 export function createCedarPolicyEngine(options: CedarPolicyOptions): PolicyEngine {
   return new CedarPolicyEngine(options);
 }

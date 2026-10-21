@@ -1,6 +1,6 @@
-# ACP tests
+# OCP tests
 
-The root Vitest project contains cross-package conformance tests for the protocol, runtime, adapters, policy engine, CLI, core primitives, TypeScript SDK, and shared `@acp/testing` package. Each TypeScript workspace package also exposes a Turbo-managed `test` task for its focused tests.
+The root Vitest project contains cross-package conformance tests for the protocol, runtime, adapters, policy engine, CLI, core primitives, TypeScript SDK, and shared `@frontal-labs/open-channel-testing` package. Each TypeScript workspace package also exposes a Turbo-managed `test` task for its focused tests.
 
 Run the suite with:
 

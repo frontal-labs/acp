@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createGoogleChatSource } from "../src/index.js";
 
-describe("@acp/ext-google-chat", () => {
+describe("@frontal-labs/open-channel-ext-google-chat", () => {
   it("normalizes a Google Chat message", async () => {
     const source = createGoogleChatSource();
     const event = await source.normalize({

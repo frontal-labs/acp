@@ -1,4 +1,5 @@
-import type { ChannelSource } from "@acp/adapter";
+import { create } from "@bufbuild/protobuf";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
 import {
   createProviderSource,
   optionalRecord,
@@ -6,16 +7,15 @@ import {
   providerActor,
   providerEvent,
   sourceRecord,
-} from "@acp/ext-shared";
-import { MessageReceivedSchema } from "@acp/protocol";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-ext-shared";
+import { MessageReceivedSchema } from "@frontal-labs/open-channel-protocol";
 
 import type { GoogleChatSourceOptions } from "./types.js";
 
-/** Normalizes Google Chat app events into v1 ACP message events. */
+/** Normalizes Google Chat app events into v1 OCP message events. */
 export async function normalizeGoogleChatEvent(
   input: unknown,
-  metadata: import("@acp/ext-shared").ProviderReceiveMetadata = {},
+  metadata: import("@frontal-labs/open-channel-ext-shared").ProviderReceiveMetadata = {},
   options: GoogleChatSourceOptions = {},
 ) {
   const body = sourceRecord(input, "Google Chat");
@@ -61,7 +61,7 @@ export async function normalizeGoogleChatEvent(
   );
 }
 
-/** Creates a Google Chat source for `createAcp({ channels })`. */
+/** Creates a Google Chat source for `createOcp({ channels })`. */
 export function createGoogleChatSource(options: GoogleChatSourceOptions = {}): ChannelSource {
   return createProviderSource("google-chat", (input, metadata) =>
     normalizeGoogleChatEvent(input, metadata, options),

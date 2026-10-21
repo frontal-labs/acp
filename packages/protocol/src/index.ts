@@ -12,14 +12,13 @@ export {
   messageSent,
 } from "./builders.js";
 export {
-  ACP_PROTOCOL_VERSION,
-  ACP_PROTOCOL_VERSIONS,
-  ACP_V2_PROTOCOL_VERSION,
   EVENT_TYPES,
+  OCP_PROTOCOL_VERSION,
+  OCP_PROTOCOL_VERSIONS,
+  OCP_V2_PROTOCOL_VERSION,
   type ProtocolVersion,
 } from "./constants.js";
 export {
-  type AcpEvent,
   createEvent,
   type EnvelopeFor,
   type EventInput,
@@ -28,6 +27,7 @@ export {
   eventTypeOf,
   isV1Event,
   isV2Event,
+  type OcpEvent,
   type V2EventEnvelope,
   validateEvent,
 } from "./events.js";

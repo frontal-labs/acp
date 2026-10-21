@@ -1,10 +1,14 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { createProviderSink } from "@acp/ext-shared";
-import { deliveryReceipt } from "acp-sdk";
+import { deliveryReceipt } from "@frontal-labs/open-channel";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { TeamsTransport } from "./types.js";
 
-/** Creates a Teams sink for `createAcp({ channels })`. */
+/** Creates a Teams sink for `createOcp({ channels })`. */
 export function createTeamsSink(transport: TeamsTransport): ChannelSink {
   return createProviderSink(
     "microsoft-teams",

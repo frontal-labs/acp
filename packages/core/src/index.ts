@@ -1,10 +1,10 @@
-export type { AcpErrorCode, AcpErrorDetails, AcpErrorOptions, AcpErrorStage } from "./errors.js";
+export type { OcpErrorCode, OcpErrorDetails, OcpErrorOptions, OcpErrorStage } from "./errors.js";
 export {
-  AcpError,
   ActionError,
   AuthorizationError,
   ConflictError,
   NotFoundError,
+  OcpError,
   ProtocolError,
   TransportError,
   ValidationError,

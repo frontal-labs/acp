@@ -1,6 +1,6 @@
-import { ActionError } from "@acp/core";
-import type { ActionDefinition } from "acp-sdk";
-import { defineAction } from "acp-sdk";
+import type { ActionDefinition } from "@frontal-labs/open-channel";
+import { defineAction } from "@frontal-labs/open-channel";
+import { ActionError } from "@frontal-labs/open-channel-core";
 import { z } from "zod";
 
 import type {
@@ -31,7 +31,7 @@ function calendarActionError(message: string, cause: unknown): ActionError {
   return new ActionError(message, { cause, provider: "calendar", retryable: true });
 }
 
-/** Creates the three policy-controlled calendar actions used by ACP agents. */
+/** Creates the three policy-controlled calendar actions used by OCP agents. */
 export function createCalendarActions(client: CalendarClient): CalendarActions {
   const createAction = defineAction<
     CalendarCreateInput,

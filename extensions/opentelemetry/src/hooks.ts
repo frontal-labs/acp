@@ -1,4 +1,4 @@
-import type { AcpHooks } from "acp-sdk";
+import type { OcpHooks } from "@frontal-labs/open-channel";
 
 import type { OpenTelemetryOptions } from "./types.js";
 
@@ -11,7 +11,7 @@ function eventAttributes(event: { eventId: string; eventType: string; protocolVe
 }
 
 /** Creates SDK hooks that emit provider-neutral OpenTelemetry spans and counters. */
-export function createOpenTelemetryHooks(options: OpenTelemetryOptions): AcpHooks {
+export function createOpenTelemetryHooks(options: OpenTelemetryOptions): OcpHooks {
   return {
     onActionCompleted: (result) => {
       options.counters?.actions?.add(1, { status: result.status });

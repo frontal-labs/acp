@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createEmailSource } from "../src/index.js";
 
-describe("@acp/ext-email", () => {
+describe("@frontal-labs/open-channel-ext-email", () => {
   it("normalizes an email and preserves threading metadata", async () => {
     const source = createEmailSource({ mailbox: "agent@example.com" });
     const event = await source.normalize({

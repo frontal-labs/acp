@@ -1,9 +1,6 @@
 export { AgentHost } from "./agent-host.js";
-export { createAcp, deliveryReceipt, isAcpApp } from "./app.js";
+export { createOcp, deliveryReceipt, isOcpApp } from "./app.js";
 export type {
-  AcpApp,
-  AcpAppOptions,
-  AcpHooks,
   ActionDefinition,
   ActionExecutionContext,
   ActionRequestOptions,
@@ -18,6 +15,9 @@ export type {
   AgentSkill,
   ChannelDefinition,
   IngestResult,
+  OcpApp,
+  OcpAppOptions,
+  OcpHooks,
   ReplyOptions,
 } from "./types.js";
 export { defineAction } from "./types.js";

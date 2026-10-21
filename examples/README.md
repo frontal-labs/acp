@@ -1,7 +1,7 @@
-# ACP examples
+# OCP examples
 
-These examples show how to put ACP at the boundary of an agent application.
-The harness or model framework owns orchestration; ACP owns identity, event
+These examples show how to put OCP at the boundary of an agent application.
+The harness or model framework owns orchestration; OCP owns identity, event
 context, policy signals, approvals, and provider-neutral delivery.
 
 ## Quickstart
@@ -22,18 +22,18 @@ environment-variable guidance.
 
 | Example | Language | Harness/tool | What it demonstrates |
 | --- | --- | --- | --- |
-| [`native-typescript`](./native-typescript/README.md) | TypeScript | `acp-sdk` | Agent cards, message routing, channel dispatch, approval flow |
-| [`native-python`](./native-python/README.md) | Python | ACP Python SDK | Async agent host and ProtoJSON-shaped replies |
-| [`native-rust`](./native-rust/README.md) | Rust | ACP Rust SDK | Typed agent host and reply envelopes |
+| [`native-typescript`](./native-typescript/README.md) | TypeScript | `@frontal-labs/open-channel` | Agent cards, message routing, channel dispatch, approval flow |
+| [`native-python`](./native-python/README.md) | Python | OCP Python SDK | Async agent host and ProtoJSON-shaped replies |
+| [`native-rust`](./native-rust/README.md) | Rust | OCP Rust SDK | Typed agent host and reply envelopes |
 | [`slack-typescript`](./slack-typescript/README.md) | TypeScript | Slack Events API and Web API | Real-channel quickstart: signed webhooks in, `chat.postMessage` out |
-| [`langchain-python`](./langchain-python/README.md) | Python | LangChain v1 | `create_agent` mapped to ACP messages |
-| [`langchain-typescript`](./langchain-typescript/README.md) | TypeScript | LangChain v1 | `createAgent` mapped to ACP messages |
+| [`langchain-python`](./langchain-python/README.md) | Python | LangChain v1 | `create_agent` mapped to OCP messages |
+| [`langchain-typescript`](./langchain-typescript/README.md) | TypeScript | LangChain v1 | `createAgent` mapped to OCP messages |
 | [`openai-agents-python`](./openai-agents-python/README.md) | Python | OpenAI Agents SDK | `Runner.run` and interruption boundary |
-| [`pydanticai-python`](./pydanticai-python/README.md) | Python | PydanticAI | Typed agent result mapped to ACP |
-| [`crewai-python`](./crewai-python/README.md) | Python | CrewAI | Crew/task execution mapped to ACP |
+| [`pydanticai-python`](./pydanticai-python/README.md) | Python | PydanticAI | Typed agent result mapped to OCP |
+| [`crewai-python`](./crewai-python/README.md) | Python | CrewAI | Crew/task execution mapped to OCP |
 | [`llamaindex-python`](./llamaindex-python/README.md) | Python | LlamaIndex | `FunctionAgent` and tool-oriented execution |
-| [`vercel-ai-typescript`](./vercel-ai-typescript/README.md) | TypeScript | Vercel AI SDK | `generateText` mapped to ACP |
-| [`mcp-typescript`](./mcp-typescript/README.md) | TypeScript | MCP TypeScript SDK | ACP policy boundary around `callTool` |
+| [`vercel-ai-typescript`](./vercel-ai-typescript/README.md) | TypeScript | Vercel AI SDK | `generateText` mapped to OCP |
+| [`mcp-typescript`](./mcp-typescript/README.md) | TypeScript | MCP TypeScript SDK | OCP policy boundary around `callTool` |
 
 ## Common architecture
 
@@ -41,13 +41,13 @@ environment-variable guidance.
 provider or UI
     │
     ▼
-ACP message.received
+OCP message.received
     │  actor / recipient / channel / conversation / correlation
     ▼
 framework adapter
     │  model / tools / memory / handoffs
     ▼
-ACP message.sent or action/policy/approval events
+OCP message.sent or action/policy/approval events
     │
     ▼
 provider adapter or application output
@@ -56,11 +56,11 @@ provider adapter or application output
 The framework examples use the same bridge shape:
 
 ```text
-async function handleAcpMessage(text, context) -> replyText
+async function handleOcpMessage(text, context) -> replyText
 ```
 
-The bridge must preserve ACP event identity and conversation context. A tool
-that changes state must go through the ACP runtime's action and policy path;
+The bridge must preserve OCP event identity and conversation context. A tool
+that changes state must go through the OCP runtime's action and policy path;
 successful model or MCP output is not authorization.
 
 ## Credentials and safety

@@ -1,10 +1,14 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { createProviderSink } from "@acp/ext-shared";
-import { deliveryReceipt } from "acp-sdk";
+import { deliveryReceipt } from "@frontal-labs/open-channel";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { EmailTransport } from "./types.js";
 
-/** Creates an SMTP/provider email sink for ACP message.sent events. */
+/** Creates an SMTP/provider email sink for OCP message.sent events. */
 export function createEmailSink(transport: EmailTransport): ChannelSink {
   return createProviderSink(
     "email",
@@ -24,7 +28,7 @@ export function createEmailSink(transport: EmailTransport): ChannelSink {
         signal: options?.signal,
         subject: event.extensions["email.subject"]
           ? `Re: ${event.extensions["email.subject"]}`
-          : "ACP message",
+          : "OCP message",
         text: event.payload.value.text,
         to: [recipient],
       });

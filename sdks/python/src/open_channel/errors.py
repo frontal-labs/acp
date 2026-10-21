@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 
-class AcpError(Exception):
-    """Classified, vendor-neutral ACP failure."""
+class OcpError(Exception):
+    """Classified, vendor-neutral OCP failure."""
 
-    code = "ACP_ERROR"
+    code = "OCP_ERROR"
 
     def __init__(
         self,
@@ -28,15 +28,15 @@ class AcpError(Exception):
         self.cause = cause
 
 
-class ActionError(AcpError):
-    code = "ACP_ACTION"
+class ActionError(OcpError):
+    code = "OCP_ACTION"
 
 
-class DeliveryError(AcpError):
-    code = "ACP_TRANSPORT"
+class DeliveryError(OcpError):
+    code = "OCP_TRANSPORT"
 
 
-def as_acp_error(
+def as_ocp_error(
     error: BaseException,
     *,
     stage: str = "processing",
@@ -45,12 +45,12 @@ def as_acp_error(
     action_id: str | None = None,
     approval_id: str | None = None,
     provider: str | None = None,
-) -> AcpError:
-    """Return `error` unchanged if it is already an AcpError, otherwise wrap it with its context."""
+) -> OcpError:
+    """Return `error` unchanged if it is already an OcpError, otherwise wrap it with its context."""
 
-    if isinstance(error, AcpError):
+    if isinstance(error, OcpError):
         return error
-    return AcpError(
+    return OcpError(
         str(error),
         stage=stage,
         retryable=retryable,

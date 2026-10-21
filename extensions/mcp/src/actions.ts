@@ -1,6 +1,6 @@
-import { ActionError } from "@acp/core";
-import type { ActionDefinition } from "acp-sdk";
-import { defineAction } from "acp-sdk";
+import type { ActionDefinition } from "@frontal-labs/open-channel";
+import { defineAction } from "@frontal-labs/open-channel";
+import { ActionError } from "@frontal-labs/open-channel-core";
 import { z } from "zod";
 
 import type { McpActions, McpToolCallInput, McpToolClient, McpToolResult } from "./types.js";
@@ -10,7 +10,7 @@ const McpToolCallSchema = z.object({
   tool: z.string().min(1),
 });
 
-/** Creates the policy-controlled MCP tool action used by ACP agents. */
+/** Creates the policy-controlled MCP tool action used by OCP agents. */
 export function createMcpActions(client: McpToolClient): McpActions {
   const action = defineAction<McpToolCallInput, McpToolResult>({
     execute: async (input) => {

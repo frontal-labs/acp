@@ -27,7 +27,7 @@ Maintainers may remove comments, close discussions, reject contributions,
 restrict participation, or remove access when behavior violates this Code.
 Enforcement decisions should be proportionate and documented where possible.
 
-Do not use ACP examples or integrations to exfiltrate credentials, bypass
+Do not use OCP examples or integrations to exfiltrate credentials, bypass
 authorization, or execute destructive actions without explicit approval.
 
 This document is based on the principles of the

@@ -1,4 +1,4 @@
-import type { EventEnvelope, EventName } from "@acp/protocol";
+import type { EventEnvelope, EventName } from "@frontal-labs/open-channel-protocol";
 
 /** Returns event types in their original order. */
 export function eventTypes(events: readonly Pick<EventEnvelope, "eventType">[]): string[] {
@@ -28,7 +28,7 @@ export function requireEvent(
 ): EventEnvelope {
   const event = findEvent(events, eventType);
   if (!event) {
-    throw new Error(`Expected ACP event ${eventType}; received ${eventTypes(events).join(", ")}`);
+    throw new Error(`Expected OCP event ${eventType}; received ${eventTypes(events).join(", ")}`);
   }
   return event;
 }

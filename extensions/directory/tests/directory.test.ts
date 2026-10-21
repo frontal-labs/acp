@@ -1,8 +1,8 @@
-import { createTestHuman } from "@acp/testing";
+import { createTestHuman } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { createGoogleDirectoryProvider } from "../src/index.js";
 
-describe("@acp/ext-directory", () => {
+describe("@frontal-labs/open-channel-ext-directory", () => {
   it("caches directory identity lookups", async () => {
     let calls = 0;
     const provider = createGoogleDirectoryProvider({

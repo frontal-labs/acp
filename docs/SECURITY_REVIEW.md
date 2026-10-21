@@ -19,7 +19,7 @@ deployed environment, live provider accounts, or secrets management on a target 
 
 | Area | Finding | Fix | Verified by |
 | --- | --- | --- | --- |
-| Approvals | `decideApproval` accepted a decision from any actor, so any caller could approve any pending request. | Rejects decisions from anyone other than the named approver with `AuthorizationError` (`ACP_AUTHORIZATION`). | `packages/runtime/tests/approval-authority.test.ts` |
+| Approvals | `decideApproval` accepted a decision from any actor, so any caller could approve any pending request. | Rejects decisions from anyone other than the named approver with `AuthorizationError` (`OCP_AUTHORIZATION`). | `packages/runtime/tests/approval-authority.test.ts` |
 | Slack example server | The request body was read without a size limit, before the signature was checked. | Bodies over 1 MiB get 413 with `connection: close`. | `examples/slack-typescript --selftest` (checks the status the client receives) |
 | Slack example server | A correctly signed body that is not valid JSON threw inside an async handler. | Returns 400. | `examples/slack-typescript --selftest` |
 | WhatsApp | The webhook verify token was compared with `!==`, which is not constant-time. | Compared with `timingSafeEqual`; length mismatches are rejected. | `extensions/whatsapp/tests/verification.test.ts` |
@@ -59,7 +59,7 @@ deployed environment, live provider accounts, or secrets management on a target 
 - **No rate limiting on webhook endpoints.** The Slack example has a size limit but no per-client
   limit. Put the endpoint behind a gateway that rate-limits.
 - **Example stores and channels are in memory.** `examples/_shared/typescript/example-kit.ts`
-  loses state on restart. Production uses `@acp/ext-postgres`.
+  loses state on restart. Production uses `@frontal-labs/open-channel-ext-postgres`.
 - **Empty policy in examples.** The examples can only reply. Any action needs explicit rules.
 - **Dependency advisories that remain** (`pnpm audit`, after the vitest upgrade):
   - `braces` (high) and `sprintf-js` (moderate): transitive through `@changesets/cli`, a release

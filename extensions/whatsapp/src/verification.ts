@@ -1,7 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 
-import { ValidationError } from "@acp/core";
-import { verifyHmacSignature } from "@acp/ext-shared";
+import { ValidationError } from "@frontal-labs/open-channel-core";
+import { verifyHmacSignature } from "@frontal-labs/open-channel-ext-shared";
 
 import type { WhatsAppWebhookRequest } from "./types.js";
 

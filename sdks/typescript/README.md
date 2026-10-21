@@ -1,16 +1,16 @@
-# acp-sdk
+# open-channel
 
-The npm package `acp-sdk` for building ACP agents, hosts, policy-controlled
+The npm package `@frontal-labs/open-channel` for building OCP agents, hosts, policy-controlled
 actions, and channel integrations.
 
 ```bash
-pnpm add acp-sdk
+pnpm add @frontal-labs/open-channel
 ```
 
 ```ts
-import { createAcp } from "acp-sdk";
+import { createOcp } from "@frontal-labs/open-channel";
 
-const app = createAcp({
+const app = createOcp({
   policy,
   agents: [
     {
@@ -26,15 +26,15 @@ const app = createAcp({
 await app.start();
 ```
 
-`createAcp()` composes the runtime, `AgentHost`, channel source/sink
+`createOcp()` composes the runtime, `AgentHost`, channel source/sink
 registration, action registry, lifecycle, and hooks. Use `AgentHost` directly
 when an application needs lower-level composition. The package also exposes
-the typed event builders through `@acp/protocol`, which take a `protocolVersion` of `"0.1"` (default) or `"0.2"`.
+the typed event builders through `@frontal-labs/open-channel-protocol`, which take a `protocolVersion` of `"0.1"` (default) or `"0.2"`.
 
 ## Development
 
 ```bash
-pnpm --filter acp-sdk build
-pnpm --filter acp-sdk typecheck
-pnpm --filter acp-sdk test
+pnpm --filter @frontal-labs/open-channel build
+pnpm --filter @frontal-labs/open-channel typecheck
+pnpm --filter @frontal-labs/open-channel test
 ```

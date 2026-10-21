@@ -1,8 +1,8 @@
-# ACP Protocol Specification v0.1
+# OCP Protocol Specification v0.1
 
 ## 1. Scope
 
-ACP defines an event protocol for communication between agents, humans, and company systems through shared enterprise channels. It is transport-neutral. A provider adapter may use webhooks, polling, queues, REST, or another transport.
+OCP defines an event protocol for communication between agents, humans, and company systems through shared enterprise channels. It is transport-neutral. A provider adapter may use webhooks, polling, queues, REST, or another transport.
 
 ## 2. Envelope
 
@@ -50,7 +50,7 @@ The reference runtime records every accepted inbound and internally emitted even
 
 ## 7. Provider adapters
 
-An adapter translates provider-native messages into `message.received` envelopes and translates outbound ACP message events into provider-native sends. Provider identifiers belong in `ChannelRef` and `extensions`; core event semantics remain provider-neutral.
+An adapter translates provider-native messages into `message.received` envelopes and translates outbound OCP message events into provider-native sends. Provider identifiers belong in `ChannelRef` and `extensions`; core event semantics remain provider-neutral.
 
 The reference gateway keeps ingestion and dispatch separate: inbound events enter the runtime through `ingest`, while outbound events are explicitly sent through `dispatch`. This avoids treating a stored event as proof that a provider-side delivery succeeded and leaves retry/outbox policy to the host application.
 

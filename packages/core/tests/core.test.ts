@@ -5,10 +5,10 @@ import { createActionId, createCorrelationId, ValidationError } from "../src/ind
 const ACTION_ID_PATTERN = /^action:[0-9a-f-]{36}$/;
 const CORRELATION_ID_PATTERN = /^corr:[0-9a-f-]{36}$/;
 
-describe("@acp/core", () => {
+describe("@frontal-labs/open-channel-core", () => {
   it("creates namespaced identifiers and classified errors", () => {
     expect(createActionId()).toMatch(ACTION_ID_PATTERN);
     expect(createCorrelationId()).toMatch(CORRELATION_ID_PATTERN);
-    expect(new ValidationError("invalid").code).toBe("ACP_VALIDATION");
+    expect(new ValidationError("invalid").code).toBe("OCP_VALIDATION");
   });
 });

@@ -1,21 +1,21 @@
-import { RuleBasedPolicyEngine } from "@acp/policy";
-import { ChannelRefSchema } from "@acp/protocol";
-import { AcpRuntime, ChannelGateway } from "@acp/runtime";
+import { create } from "@bufbuild/protobuf";
+import { AgentHost } from "@frontal-labs/open-channel";
+import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
+import { ChannelGateway, OcpRuntime } from "@frontal-labs/open-channel-runtime";
 import {
   createTestAgent,
   createTestChannelAdapter,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@acp/testing";
-import { create } from "@bufbuild/protobuf";
-import { AgentHost } from "acp-sdk";
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
-describe("ACP agent SDK", () => {
+describe("OCP agent SDK", () => {
   it("routes an inbound message and dispatches the agent reply", async () => {
     const adapter = createTestChannelAdapter();
-    const runtime = new AcpRuntime({
+    const runtime = new OcpRuntime({
       eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
     });

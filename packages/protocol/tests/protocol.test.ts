@@ -1,5 +1,5 @@
-import { ValidationError } from "@acp/core";
 import { create } from "@bufbuild/protobuf";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 import { describe, expect, it } from "vitest";
 import {
   ActionRequestSchema,
@@ -23,7 +23,7 @@ import {
 
 const message = create(MessageReceivedSchema, { text: "hello" });
 
-describe("@acp/protocol", () => {
+describe("@frontal-labs/open-channel-protocol", () => {
   it("round-trips a v0.1 event through ProtoJSON and binary protobuf", () => {
     const event = createEvent({
       actor: create(ActorRefSchema, { id: "human:test", type: ActorType.HUMAN }),

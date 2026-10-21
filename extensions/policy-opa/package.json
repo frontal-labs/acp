@@ -1,21 +1,21 @@
 {
-  "name": "@acp/ext-policy-opa",
+  "name": "@frontal-labs/open-channel-ext-policy-opa",
   "version": "0.1.0",
-  "description": "OPA-backed PolicyEngine integration for the Agent Communication Protocol",
+  "description": "OPA-backed PolicyEngine integration for the OpenChannel Protocol",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "opa",
     "policy",
     "authorization"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "extensions/policy-opa"
   },
   "license": "Apache-2.0",
@@ -43,11 +43,11 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/core": "workspace:*",
-    "@acp/policy": "workspace:*"
+    "@frontal-labs/open-channel-core": "workspace:*",
+    "@frontal-labs/open-channel-policy": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

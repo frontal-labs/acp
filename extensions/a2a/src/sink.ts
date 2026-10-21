@@ -1,10 +1,14 @@
-import type { ChannelSink, DeliveryOptions, DeliveryReceipt } from "@acp/adapter";
-import { createProviderSink } from "@acp/ext-shared";
-import { deliveryReceipt } from "acp-sdk";
+import { deliveryReceipt } from "@frontal-labs/open-channel";
+import type {
+  ChannelSink,
+  DeliveryOptions,
+  DeliveryReceipt,
+} from "@frontal-labs/open-channel-adapter";
+import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { A2ATransport } from "./types.js";
 
-/** Creates an A2A sink for ACP message.sent events. */
+/** Creates an A2A sink for OCP message.sent events. */
 export function createA2ASink(transport: A2ATransport): ChannelSink {
   return createProviderSink(
     "a2a",

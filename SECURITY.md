@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-ACP is experimental while it is in the `0.x` release line. Security fixes are applied to the latest published commit and release only.
+OCP is experimental while it is in the `0.x` release line. Security fixes are applied to the latest published commit and release only.
 
 ## Reporting a vulnerability
 
@@ -23,7 +23,7 @@ Please allow time for triage before public disclosure. Do not include live crede
 
 ## Scope and threat model
 
-ACP is experimental and security concerns include the protocol, runtime,
+OCP is experimental and security concerns include the protocol, runtime,
 policy engine, SDKs, provider adapters, generated bindings, examples,
 CI/release workflows, and repository tooling.
 

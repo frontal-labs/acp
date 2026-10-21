@@ -1,5 +1,13 @@
-import type { DeliveryReceipt } from "@acp/adapter";
-import { AcpError, ActionError, ConflictError, createActionId, ValidationError } from "@acp/core";
+import { create } from "@bufbuild/protobuf";
+import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+import type { DeliveryReceipt } from "@frontal-labs/open-channel-adapter";
+import {
+  ActionError,
+  ConflictError,
+  createActionId,
+  OcpError,
+  ValidationError,
+} from "@frontal-labs/open-channel-core";
 import {
   ActionExecutedSchema,
   ActionFailedSchema,
@@ -9,15 +17,10 @@ import {
   createEvent,
   type EventEnvelope,
   type EventName,
-} from "@acp/protocol";
-import { AcpRuntime, ChannelGateway, SYSTEM_ACTOR } from "@acp/runtime";
-import { create } from "@bufbuild/protobuf";
-import { timestampFromDate } from "@bufbuild/protobuf/wkt";
+} from "@frontal-labs/open-channel-protocol";
+import { ChannelGateway, OcpRuntime, SYSTEM_ACTOR } from "@frontal-labs/open-channel-runtime";
 import { AgentHost } from "./agent-host.js";
 import type {
-  AcpApp,
-  AcpAppOptions,
-  AcpHooks,
   ActionDefinition,
   ActionExecutionContext,
   ActionRequestOptions,
@@ -25,6 +28,9 @@ import type {
   AgentCard,
   AgentDefinition,
   ChannelDefinition,
+  OcpApp,
+  OcpAppOptions,
+  OcpHooks,
 } from "./types.js";
 
 interface PendingAction {
@@ -38,18 +44,18 @@ interface PendingAction {
 
 type State = "created" | "running" | "stopping" | "stopped";
 
-/** Creates a lifecycle-managed ACP application for agents, channels, and actions. */
-export function createAcp(options: AcpAppOptions): AcpApp {
-  return new AcpApplication(options);
+/** Creates a lifecycle-managed OCP application for agents, channels, and actions. */
+export function createOcp(options: OcpAppOptions): OcpApp {
+  return new OcpApplication(options);
 }
 
-class AcpApplication implements AcpApp {
+class OcpApplication implements OcpApp {
   readonly gateway: ChannelGateway;
-  readonly runtime: AcpRuntime;
+  readonly runtime: OcpRuntime;
   private readonly actions: Partial<Record<string, ActionDefinition<unknown, unknown>>> =
     Object.create(null);
-  private readonly defaultApprover: NonNullable<AcpAppOptions["defaultApprover"]>;
-  private readonly hooks: AcpHooks;
+  private readonly defaultApprover: NonNullable<OcpAppOptions["defaultApprover"]>;
+  private readonly hooks: OcpHooks;
   private readonly pendingActions: Partial<Record<string, PendingAction>> = Object.create(null);
   private readonly actionResults: Partial<Record<string, ActionResult<unknown>>> =
     Object.create(null);
@@ -61,10 +67,10 @@ class AcpApplication implements AcpApp {
   private runtimeSubscription?: () => void;
   private readonly active = new Set<Promise<unknown>>();
 
-  constructor(options: AcpAppOptions) {
+  constructor(options: OcpAppOptions) {
     this.hooks = options.hooks ?? {};
     this.defaultApprover = options.defaultApprover ?? SYSTEM_ACTOR;
-    this.runtime = new AcpRuntime({
+    this.runtime = new OcpRuntime({
       clock: options.clock,
       defaultApprovalTimeoutMs: options.defaultApprovalTimeoutMs,
       eventStore: options.eventStore,
@@ -101,7 +107,7 @@ class AcpApplication implements AcpApp {
 
   registerAction<TInput, TResult>(action: ActionDefinition<TInput, TResult>): void {
     if (action.type in this.actions) {
-      throw new ConflictError("ACP action", action.type);
+      throw new ConflictError("OCP action", action.type);
     }
     this.actions[action.type] = action as ActionDefinition<unknown, unknown>;
   }
@@ -126,7 +132,7 @@ class AcpApplication implements AcpApp {
       return;
     }
     if (this.state === "stopping" || this.state === "stopped") {
-      throw new AcpError("ACP_TRANSPORT", `Cannot start ACP app while it is ${this.state}`);
+      throw new OcpError("OCP_TRANSPORT", `Cannot start OCP app while it is ${this.state}`);
     }
     this.sourceAbort = new AbortController();
     this.host.attach();
@@ -220,7 +226,7 @@ class AcpApplication implements AcpApp {
   ): Promise<ActionResult<TResult>> {
     const definition = this.actions[type];
     if (!definition) {
-      throw new ValidationError(`No ACP action is registered for type: ${type}`);
+      throw new ValidationError(`No OCP action is registered for type: ${type}`);
     }
     const actionId = options.actionId ?? createActionId();
     const previous = this.actionResults[actionId];
@@ -268,10 +274,10 @@ class AcpApplication implements AcpApp {
       target: options.target ?? `action:${type}`,
       type,
     });
-    if (!(await this.runtime.claimAction(actionId, "acp-sdk"))) {
+    if (!(await this.runtime.claimAction(actionId, "@frontal-labs/open-channel"))) {
       const duplicate: ActionResult<unknown> = {
         actionId,
-        error: new ActionError(`ACP action ${actionId} has already been claimed`, {
+        error: new ActionError(`OCP action ${actionId} has already been claimed`, {
           actionId,
         }),
         status: "failed",
@@ -289,7 +295,7 @@ class AcpApplication implements AcpApp {
       conversation: options.conversation ?? inbound.conversation,
       reason: options.reason ?? `Requested by ${actor.id}`,
     };
-    let submission: Awaited<ReturnType<AcpRuntime["submitAction"]>>;
+    let submission: Awaited<ReturnType<OcpRuntime["submitAction"]>>;
     try {
       submission = await this.runtime.submitAction({
         action,
@@ -476,12 +482,12 @@ class AcpApplication implements AcpApp {
     try {
       await hook(...args);
     } catch (error) {
-      await this.hooks.onError?.(this.toAcpError(error));
+      await this.hooks.onError?.(this.toOcpError(error));
     }
   }
 
   private async reportError(error: unknown, eventId?: string): Promise<void> {
-    await this.runHook(this.hooks.onError, this.toAcpError(error, eventId));
+    await this.runHook(this.hooks.onError, this.toOcpError(error, eventId));
   }
 
   private remainingTimeout(startedAt: number, timeoutMs: number): number {
@@ -501,7 +507,7 @@ class AcpApplication implements AcpApp {
           timeout = setTimeout(
             () =>
               reject(
-                new AcpError("ACP_TRANSPORT", `ACP ${operation} timed out`, {
+                new OcpError("OCP_TRANSPORT", `OCP ${operation} timed out`, {
                   retryable: true,
                   stage: "shutdown",
                 }),
@@ -532,7 +538,7 @@ class AcpApplication implements AcpApp {
         drain(),
         new Promise<never>((_, reject) => {
           timeout = setTimeout(
-            () => reject(new AcpError("ACP_TRANSPORT", "ACP app shutdown timed out")),
+            () => reject(new OcpError("OCP_TRANSPORT", "OCP app shutdown timed out")),
             Math.max(0, timeoutMs),
           );
         }),
@@ -551,7 +557,7 @@ class AcpApplication implements AcpApp {
 
   private assertAccepting(): void {
     if (this.state === "stopping" || this.state === "stopped") {
-      throw new AcpError("ACP_TRANSPORT", `ACP app is ${this.state}`);
+      throw new OcpError("OCP_TRANSPORT", `OCP app is ${this.state}`);
     }
   }
 
@@ -566,10 +572,10 @@ class AcpApplication implements AcpApp {
     });
   }
 
-  private toAcpError(error: unknown, eventId?: string): AcpError {
-    return error instanceof AcpError
+  private toOcpError(error: unknown, eventId?: string): OcpError {
+    return error instanceof OcpError
       ? error
-      : new AcpError("ACP_ACTION", error instanceof Error ? error.message : String(error), {
+      : new OcpError("OCP_ACTION", error instanceof Error ? error.message : String(error), {
           cause: error,
           eventId,
           stage: "processing",
@@ -578,12 +584,12 @@ class AcpApplication implements AcpApp {
 
   private serializeInput(input: unknown): string {
     if (input === undefined || typeof input === "function" || typeof input === "symbol") {
-      throw new ValidationError("ACP action input must be JSON serializable");
+      throw new ValidationError("OCP action input must be JSON serializable");
     }
     try {
       return JSON.stringify(input);
     } catch (error) {
-      throw new ValidationError("ACP action input must be JSON serializable", { cause: error });
+      throw new ValidationError("OCP action input must be JSON serializable", { cause: error });
     }
   }
 
@@ -609,6 +615,6 @@ export function deliveryReceipt(
 }
 
 /** Type guard useful when an app is configured with a default empty policy. */
-export function isAcpApp(value: unknown): value is AcpApp {
+export function isOcpApp(value: unknown): value is OcpApp {
   return Boolean(value && typeof value === "object" && "ingest" in value && "start" in value);
 }

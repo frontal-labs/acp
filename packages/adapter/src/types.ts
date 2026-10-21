@@ -1,4 +1,4 @@
-import type { EventEnvelope } from "@acp/protocol";
+import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
 
 /** Metadata supplied by a provider when normalizing inbound input. */
 export interface ReceiveMetadata {
@@ -21,7 +21,7 @@ export interface DeliveryReceipt {
   provider: string;
 }
 
-/** Normalizes provider-native inbound input into ACP events. */
+/** Normalizes provider-native inbound input into OCP events. */
 export interface ChannelSource {
   normalize: (
     input: unknown,
@@ -35,7 +35,7 @@ export interface ChannelSource {
   stop?: () => Promise<void> | void;
 }
 
-/** Delivers normalized ACP events to a provider. */
+/** Delivers normalized OCP events to a provider. */
 export interface ChannelSink {
   close?: () => Promise<void> | void;
   readonly provider: string;

@@ -1,5 +1,5 @@
-import { ValidationError } from "@acp/core";
-import { createTestEvent } from "@acp/testing";
+import { ValidationError } from "@frontal-labs/open-channel-core";
+import { createTestEvent } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import {
   createPostgresEventStore,
@@ -20,7 +20,7 @@ function recordingClient() {
   };
 }
 
-describe("@acp/ext-postgres migration", () => {
+describe("@frontal-labs/open-channel-ext-postgres migration", () => {
   it("creates the table the store writes to when a custom table name is configured", async () => {
     const { client, statements } = recordingClient();
     await migratePostgresEventStore(client, { tableName: "orders_events" });

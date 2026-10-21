@@ -1,6 +1,6 @@
-import { runAcpTextAgent } from "../_shared/typescript/acp-bridge.js";
+import { runOcpTextAgent } from "../_shared/typescript/ocp-bridge.js";
 
-await runAcpTextAgent(
+await runOcpTextAgent(
   "Native TypeScript Agent",
   async (text) => `Deterministic response to: ${text}`,
 );

@@ -1,12 +1,12 @@
 import asyncio
 import os
 
-from acp_demo import run_acp_text_agent
+from ocp_demo import run_ocp_text_agent
 from pydantic_ai import Agent
 
 agent = Agent(
-    os.getenv("ACP_MODEL", "openai:gpt-5.2"),
-    system_prompt="You are a concise assistant operating behind an ACP boundary.",
+    os.getenv("OCP_MODEL", "openai:gpt-5.2"),
+    system_prompt="You are a concise assistant operating behind an OCP boundary.",
 )
 
 
@@ -15,7 +15,7 @@ async def main() -> None:
         result = await agent.run(text)
         return str(result.output)
 
-    await run_acp_text_agent("PydanticAI Agent", handle)
+    await run_ocp_text_agent("PydanticAI Agent", handle)
 
 
 if __name__ == "__main__":

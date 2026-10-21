@@ -1,6 +1,11 @@
-import { ValidationError } from "@acp/core";
-import { type EventEnvelope, eventFromJson, eventToJson, isV1Event } from "@acp/protocol";
-import type { ActionExecutionRecord, EventStore } from "@acp/runtime";
+import { ValidationError } from "@frontal-labs/open-channel-core";
+import {
+  type EventEnvelope,
+  eventFromJson,
+  eventToJson,
+  isV1Event,
+} from "@frontal-labs/open-channel-protocol";
+import type { ActionExecutionRecord, EventStore } from "@frontal-labs/open-channel-runtime";
 
 import type { PostgresClient, PostgresEventRow, PostgresEventStoreOptions } from "./types.js";
 
@@ -9,7 +14,7 @@ const TABLE_NAME_PATTERN = /^[a-z_][a-z0-9_]*$/u;
 const DEFAULT_ACTION_LEASE_MS = 5 * 60_000;
 
 /**
- * SQL migration for the append-only ACP event table. The table name must match the store's
+ * SQL migration for the append-only OCP event table. The table name must match the store's
  * `tableName` option; it is validated before it is interpolated, and index names derive from it.
  */
 export function postgresEventStoreMigration(tableName = "acp_events"): string {
@@ -60,7 +65,7 @@ function decode(row: PostgresEventRow): EventEnvelope {
   const value = typeof row.event_json === "string" ? JSON.parse(row.event_json) : row.event_json;
   const event = eventFromJson(value);
   if (!isV1Event(event)) {
-    throw new ValidationError("PostgreSQL event store only supports ACP v0.1 envelopes", {
+    throw new ValidationError("PostgreSQL event store only supports OCP v0.1 envelopes", {
       provider: "postgres",
       stage: "validation",
     });

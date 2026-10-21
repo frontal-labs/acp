@@ -1,5 +1,6 @@
-import type { AcpError } from "@acp/core";
-import { ActorType, ChannelRefSchema } from "@acp/protocol";
+import { create } from "@bufbuild/protobuf";
+import type { OcpError } from "@frontal-labs/open-channel-core";
+import { ActorType, ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
 import {
   createTestAgent,
   createTestChannelAdapter,
@@ -8,12 +9,11 @@ import {
   createTestEventStore,
   createTestHuman,
   type TestEventStore,
-} from "@acp/testing";
-import { create } from "@bufbuild/protobuf";
+} from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { RuleBasedPolicyEngine } from "../../../packages/policy/src/index.js";
-import { AcpRuntime, ChannelGateway } from "../../../packages/runtime/src/index.js";
-import { AgentHost, createAcp, defineAction } from "../src/index.js";
+import { ChannelGateway, OcpRuntime } from "../../../packages/runtime/src/index.js";
+import { AgentHost, createOcp, defineAction } from "../src/index.js";
 
 /** Wraps a test store so each write waits, letting shutdown overlap with runtime processing. */
 function createSlowEventStore(): TestEventStore {
@@ -44,10 +44,10 @@ function createSlowEventStore(): TestEventStore {
   };
 }
 
-describe("acp-sdk", () => {
+describe("@frontal-labs/open-channel", () => {
   it("routes a message to an agent and dispatches its reply", async () => {
     const adapter = createTestChannelAdapter();
-    const runtime = new AcpRuntime({
+    const runtime = new OcpRuntime({
       eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
     });
@@ -99,7 +99,7 @@ describe("acp-sdk", () => {
         return input as { value: number };
       },
     });
-    const app = createAcp({
+    const app = createOcp({
       actions: [increment],
       agents: [
         {
@@ -139,7 +139,7 @@ describe("acp-sdk", () => {
     const approver = createTestHuman("human:approver", "Approver");
     let executions = 0;
     let approvalId = "";
-    const app = createAcp({
+    const app = createOcp({
       actions: [
         {
           execute: () => {
@@ -209,7 +209,7 @@ describe("acp-sdk", () => {
       },
     };
     let rawEvent: unknown;
-    const app = createAcp({
+    const app = createOcp({
       agents: [
         {
           id: agent.id,
@@ -241,7 +241,7 @@ describe("acp-sdk", () => {
     const agent = createTestAgent("agent:duplicate", "Duplicate Agent");
     const human = createTestHuman("human:duplicate");
     let executions = 0;
-    const app = createAcp({
+    const app = createOcp({
       actions: [
         {
           execute: () => {
@@ -295,7 +295,7 @@ describe("acp-sdk", () => {
     let active = 0;
     let peak = 0;
     const release = new Map<string, () => void>();
-    const app = createAcp({
+    const app = createOcp({
       agents: [
         {
           id: agent.id,
@@ -344,9 +344,9 @@ describe("acp-sdk", () => {
 
   it("isolates a failing app.on handler and reports it through onError", async () => {
     const agent = createTestAgent("agent:on-handler", "On Handler Agent");
-    const errors: AcpError[] = [];
+    const errors: OcpError[] = [];
     const seen: string[] = [];
-    const app = createAcp({
+    const app = createOcp({
       agents: [{ id: agent.id, name: agent.displayName, onMessage: async () => undefined }],
       eventStore: createTestEventStore(),
       hooks: {
@@ -376,7 +376,7 @@ describe("acp-sdk", () => {
     const adapter = createTestChannelAdapter();
     const agent = createTestAgent("agent:drain", "Drain Agent");
     const human = createTestHuman("human:drain", "Drain Human");
-    const app = createAcp({
+    const app = createOcp({
       agents: [
         {
           id: agent.id,

@@ -1,15 +1,15 @@
-# acp-sdk
+# open-channel
 
-The PyPI distribution is `acp-sdk`, imported as `acp`. It provides an
+The PyPI distribution is `open-channel`, imported as `open_channel`. It provides an
 application facade, an A2A-like agent card and host API, v0.1 and v0.2 event builders (one API, selected by `protocol_version`),
 and transport-independent source/sink contracts.
 
 ```bash
-python -m pip install acp-sdk
+python -m pip install open-channel
 ```
 
 ```python
-app = AcpApp(
+app = OcpApp(
     store=event_store,  # required: any DurableStore (append_if_absent, all, close)
     agents=[agent],
     actions=[ActionDefinition("send_customer_reply", execute_reply)],
@@ -24,9 +24,9 @@ await app.stop()
 ## Usage
 
 ```python
-from acp import AcpApp, AgentDefinition, PolicyDecision
+from open_channel import OcpApp, AgentDefinition, PolicyDecision
 
-app = AcpApp(
+app = OcpApp(
     store=event_store,  # required: no default store is provided
     agents=[
         AgentDefinition(
@@ -41,7 +41,7 @@ await app.start()
 await app.stop()
 ```
 
-`AgentContext.reply()` returns a validated ACP message event and dispatches it
+`AgentContext.reply()` returns a validated OCP message event and dispatches it
 through the configured sink. Use `list_agent_cards()` for discovery and
 `context.actions.request()` for policy-aware application actions. `AgentHost`
 remains available for lower-level composition.

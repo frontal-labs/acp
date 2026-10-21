@@ -1,7 +1,7 @@
 node_modules/
 dist/
 coverage/
-.acp-buf-cache/
+.ocp-buf-cache/
 .pnpm-store/
 .turbo/
 .biome/

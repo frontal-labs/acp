@@ -1,6 +1,6 @@
-import type { ChannelSource } from "@acp/adapter";
-import { AcpError, ValidationError } from "@acp/core";
-import type { EventEnvelope } from "@acp/protocol";
+import type { ChannelSource } from "@frontal-labs/open-channel-adapter";
+import { OcpError, ValidationError } from "@frontal-labs/open-channel-core";
+import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
 
 import type { ProviderReceiveMetadata, ProviderRecord } from "./types.js";
 
@@ -18,7 +18,7 @@ export function createProviderSource<TInput = unknown>(
       try {
         return await normalizeInput(input as TInput, metadata);
       } catch (error) {
-        if (error instanceof AcpError) {
+        if (error instanceof OcpError) {
           throw error;
         }
         throw new ValidationError(`Unable to normalize ${provider} input`, {

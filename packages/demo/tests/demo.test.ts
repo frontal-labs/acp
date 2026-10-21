@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { runDemo } from "../src/index.js";
 
-describe("@acp/demo", () => {
+describe("@frontal-labs/open-channel-demo", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });

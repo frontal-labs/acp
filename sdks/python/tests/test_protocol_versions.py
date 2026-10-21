@@ -1,7 +1,7 @@
 import unittest
 from datetime import UTC, datetime
 
-from acp import (
+from open_channel import (
     ActorRef,
     EventEnvelope,
     action_executed,
@@ -90,7 +90,7 @@ class ProtocolVersionTests(unittest.TestCase):
             )
         self.assertEqual(
             str(wrong_case.exception),
-            "ACP event message.sent requires payload case messageSent, received messageReceived",
+            "OCP event message.sent requires payload case messageSent, received messageReceived",
         )
 
         with self.assertRaises(ValueError) as wrong_outcome:
@@ -103,7 +103,7 @@ class ProtocolVersionTests(unittest.TestCase):
             )
         self.assertEqual(
             str(wrong_outcome.exception),
-            "ACP event approval.denied does not match payload event approval.granted",
+            "OCP event approval.denied does not match payload event approval.granted",
         )
 
     def test_version_shape_mismatch_raises(self) -> None:

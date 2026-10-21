@@ -5,21 +5,21 @@ import type {
   DeliveryOptions,
   DeliveryReceipt,
   ReceiveMetadata,
-} from "@acp/adapter";
-import { AcpError, TransportError, ValidationError } from "@acp/core";
-import type { EventEnvelope } from "@acp/protocol";
+} from "@frontal-labs/open-channel-adapter";
+import { OcpError, TransportError, ValidationError } from "@frontal-labs/open-channel-core";
+import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
 
-import type { AcpRuntime } from "./runtime.js";
+import type { OcpRuntime } from "./runtime.js";
 import type { RuntimeResult } from "./types.js";
 
-/** Routes normalized ACP events to provider adapters. */
+/** Routes normalized OCP events to provider adapters. */
 export class ChannelGateway {
   private readonly sinks: Record<string, ChannelSink> = Object.create(null);
   private readonly sources: Record<string, ChannelSource> = Object.create(null);
   private sourceRuns: Partial<Record<string, Promise<void>>> = Object.create(null);
-  readonly runtime: AcpRuntime;
+  readonly runtime: OcpRuntime;
 
-  constructor(runtime: AcpRuntime, adapters: ChannelAdapter[] = []) {
+  constructor(runtime: OcpRuntime, adapters: ChannelAdapter[] = []) {
     this.runtime = runtime;
     for (const adapter of adapters) {
       this.register(adapter);
@@ -54,7 +54,7 @@ export class ChannelGateway {
   ): Promise<RuntimeResult[]> {
     const source: ChannelSource | undefined = this.sources[provider];
     if (!source) {
-      throw new TransportError(`No ACP source registered for provider: ${provider}`, {
+      throw new TransportError(`No OCP source registered for provider: ${provider}`, {
         details: { provider },
       });
     }
@@ -63,7 +63,7 @@ export class ChannelGateway {
     try {
       normalized = await source.normalize(input, metadata);
     } catch (error) {
-      if (error instanceof AcpError) {
+      if (error instanceof OcpError) {
         throw error;
       }
       throw new TransportError(`Unable to normalize input for provider: ${provider}`, {
@@ -85,7 +85,7 @@ export class ChannelGateway {
   start(
     emit: (event: EventEnvelope) => Promise<void>,
     signal: AbortSignal,
-    onError?: (error: AcpError) => void | Promise<void>,
+    onError?: (error: OcpError) => void | Promise<void>,
   ): Promise<void> {
     for (const source of Object.values(this.sources)) {
       if (!source.start) {
@@ -94,9 +94,9 @@ export class ChannelGateway {
       const run = Promise.resolve(source.start(emit, signal));
       this.sourceRuns[source.provider] = run.catch(async (error) => {
         await onError?.(
-          error instanceof AcpError
+          error instanceof OcpError
             ? error
-            : new TransportError(`ACP source failed for provider ${source.provider}`, {
+            : new TransportError(`OCP source failed for provider ${source.provider}`, {
                 cause: error,
                 provider: source.provider,
                 retryable: true,
@@ -125,23 +125,23 @@ export class ChannelGateway {
     const provider = event.channel?.provider;
     if (!provider) {
       throw new ValidationError(
-        `Cannot dispatch ACP event ${event.eventId}: channel.provider is required`,
+        `Cannot dispatch OCP event ${event.eventId}: channel.provider is required`,
       );
     }
 
     const adapter: ChannelSink | undefined = this.sinks[provider];
     if (!adapter) {
-      throw new TransportError(`No ACP adapter registered for provider: ${provider}`, {
+      throw new TransportError(`No OCP adapter registered for provider: ${provider}`, {
         details: { eventId: event.eventId, provider },
       });
     }
     try {
       return await adapter.send(event, options);
     } catch (error) {
-      if (error instanceof AcpError) {
+      if (error instanceof OcpError) {
         throw error;
       }
-      throw new TransportError(`Delivery failed for ACP event ${event.eventId}`, {
+      throw new TransportError(`Delivery failed for OCP event ${event.eventId}`, {
         cause: error,
         eventId: event.eventId,
         provider,

@@ -1,6 +1,6 @@
-# @acp/policy
+# @frontal-labs/open-channel-policy
 
-Reference policy interfaces and ordered rule-based evaluation for ACP actions.
+Reference policy interfaces and ordered rule-based evaluation for OCP actions.
 
 `RuleBasedPolicyEngine` uses the first matching rule. If no rule matches, the configured default decision is returned; the default is deny unless overridden.
 

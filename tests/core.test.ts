@@ -1,11 +1,15 @@
-import { createActionId, createCorrelationId, ValidationError } from "@acp/core";
-import { createTestEvent, createTestEventBus } from "@acp/testing";
+import {
+  createActionId,
+  createCorrelationId,
+  ValidationError,
+} from "@frontal-labs/open-channel-core";
+import { createTestEvent, createTestEventBus } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
 const ACTION_ID_PATTERN = /^action:[0-9a-f-]{36}$/;
 const CORRELATION_ID_PATTERN = /^corr:[0-9a-f-]{36}$/;
 
-describe("ACP core", () => {
+describe("OCP core", () => {
   it("publishes events to subscribers and supports unsubscribe", async () => {
     const bus = createTestEventBus<ReturnType<typeof createTestEvent>>();
     const received: string[] = [];
@@ -29,7 +33,7 @@ describe("ACP core", () => {
   it("exposes classified shared errors", () => {
     const error = new ValidationError("invalid event", { details: { field: "eventId" } });
 
-    expect(error.code).toBe("ACP_VALIDATION");
+    expect(error.code).toBe("OCP_VALIDATION");
     expect(error.details).toEqual({ field: "eventId" });
     expect(error).toBeInstanceOf(Error);
   });

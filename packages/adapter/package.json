@@ -1,21 +1,21 @@
 {
-  "name": "@acp/adapter",
+  "name": "@frontal-labs/open-channel-adapter",
   "version": "0.1.0",
-  "description": "Adapter interfaces for connecting Agent Communication Protocol transports and channels",
+  "description": "Adapter interfaces for connecting OpenChannel Protocol transports and channels",
   "keywords": [
-    "agent-communication-protocol",
-    "acp",
+    "openchannel-protocol",
+    "ocp",
     "adapters",
     "channels",
     "messaging"
   ],
-  "homepage": "https://github.com/frontal-labs/acp#readme",
+  "homepage": "https://github.com/frontal-labs/open-channel#readme",
   "bugs": {
-    "url": "https://github.com/frontal-labs/acp/issues"
+    "url": "https://github.com/frontal-labs/open-channel/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/frontal-labs/acp.git",
+    "url": "https://github.com/frontal-labs/open-channel.git",
     "directory": "packages/adapter"
   },
   "license": "Apache-2.0",
@@ -43,10 +43,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@acp/protocol": "workspace:*"
+    "@frontal-labs/open-channel-protocol": "workspace:*"
   },
   "devDependencies": {
-    "@acp/testing": "workspace:*",
+    "@frontal-labs/open-channel-testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

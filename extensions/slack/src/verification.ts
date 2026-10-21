@@ -1,5 +1,5 @@
-import { ValidationError } from "@acp/core";
-import { verifyHmacSignature, verifyReplayTimestamp } from "@acp/ext-shared";
+import { ValidationError } from "@frontal-labs/open-channel-core";
+import { verifyHmacSignature, verifyReplayTimestamp } from "@frontal-labs/open-channel-ext-shared";
 
 import type { SlackWebhookRequest } from "./types.js";
 

@@ -1,4 +1,4 @@
-import { ValidationError } from "@acp/core";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 import { describe, expect, it } from "vitest";
 import { createPostgresEventStore, postgresEventStoreMigration } from "../src/index.js";
 
@@ -15,7 +15,7 @@ function recordingClient() {
   };
 }
 
-describe("@acp/ext-postgres action leases", () => {
+describe("@frontal-labs/open-channel-ext-postgres action leases", () => {
   it("claims through one atomic upsert that takes over only expired, still-claimed actions", async () => {
     const { calls, client } = recordingClient();
     const store = createPostgresEventStore({ client, leaseMs: 60_000 });

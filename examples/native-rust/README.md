@@ -1,7 +1,7 @@
-# Native Rust ACP
+# Native Rust OCP
 
 This example uses the local Rust SDK crate and demonstrates typed agent
-registration, ACP message routing, and a generated ProtoJSON-shaped reply.
+registration, OCP message routing, and a generated ProtoJSON-shaped reply.
 
 ## Run
 
