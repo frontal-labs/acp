@@ -11,8 +11,8 @@ language-specific:
 | [`python/`](./python/) | PyPI `open-channel` | `open_channel` | `OpenChannel`, `AgentHost` |
 | [`rust/`](./rust/) | crates.io `open-channel` | `open_channel` | `OpenChannelBuilder`, `AgentHost` |
 
-All SDKs expose one event API for both wire versions: `0.2` is the canonical
-envelope in `proto/ocp`. There is one envelope and one protocol version, `0.2`.
+All SDKs expose one event API for both wire versions: `2.0` is the canonical
+envelope in `proto/ocp`. There is one envelope and one protocol version, `2.0`.
 Generated bindings live under `proto/gen`.
 They expose transport-neutral application APIs; provider SDKs,
 credentials, and framework-specific orchestration belong in adapters or the

@@ -49,7 +49,7 @@ class ParityFixtureTests(unittest.TestCase):
 
                 event = from_binary(data)
                 self.assertEqual(event_type(event), entry["eventType"])
-                self.assertEqual(to_json(event)["protocolVersion"], "0.2")
+                self.assertEqual(to_json(event)["protocolVersion"], "2.0")
 
                 self.assertEqual(to_binary(event), data)
 

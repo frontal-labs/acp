@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-core",
-  "version": "0.2.0",
+  "version": "2.0.0",
   "description": "Core identifiers, events, and transport-neutral primitives for OpenChannel Protocol implementations",
   "keywords": [
     "openchannel-protocol",

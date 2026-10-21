@@ -12,7 +12,7 @@ describe("OCP CLI", () => {
     const code = await runCommand(["version"], io);
 
     expect(code).toBe(0);
-    expect(stdout).toEqual(["0.2"]);
+    expect(stdout).toEqual(["2.0"]);
   });
 
   it("validates ProtoJSON read from stdin", async () => {

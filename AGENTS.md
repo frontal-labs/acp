@@ -55,7 +55,7 @@ belong in an adapter or example. Do not leak them into protocol packages.
 1. Read the relevant skill in `skills/` before changing protocol, policy,
    adapter, agent, test, or example behavior.
 2. Preserve protobuf field numbers and package names. Add fields; do not
-   renumber or reuse fields on the 0.2 line. Field 2 (`event_type`) is reserved.
+   renumber or reuse fields on the 2.0 line. Field 2 (`event_type`) is reserved.
 3. Export public TypeScript APIs explicitly from the owning package's
    `src/index.ts`.
 4. Use stable `agent:`, `human:`, `system:`, `channel:`, and `conversation:`

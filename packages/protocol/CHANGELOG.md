@@ -1,6 +1,6 @@
 # @frontal-labs/open-channel-protocol
 
-## 0.2.0
+## 1.0.0
 
 ### Minor Changes
 
@@ -23,4 +23,4 @@
 ### Patch Changes
 
 - Updated dependencies [[`ba50acf`](https://github.com/frontal-labs/open-channel/commit/ba50acfa54268c84ccc60e9c73d8956988dd7650), [`232c8bf`](https://github.com/frontal-labs/open-channel/commit/232c8bf7134a950b5a7c5697d7472bda0e77fac4), [`315729b`](https://github.com/frontal-labs/open-channel/commit/315729bbcc8cd2ecf28edc928c1d5741ada7e424)]:
-  - @frontal-labs/open-channel-core@0.2.0
+  - @frontal-labs/open-channel-core@1.0.0

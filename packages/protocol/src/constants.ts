@@ -1,5 +1,5 @@
 /** The OCP protocol version carried by every envelope. */
-export const PROTOCOL_VERSION = "0.2" as const;
+export const PROTOCOL_VERSION = "2.0" as const;
 
 /** Every event name OCP defines. Derived from the payload, never stored on the envelope. */
 export const EVENT_TYPES = [

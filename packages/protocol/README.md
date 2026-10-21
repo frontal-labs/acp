@@ -2,7 +2,7 @@
 
 Canonical OCP event model: the protobuf-generated types, typed event builders, validation, and JSON and binary serialization.
 
-There is one envelope and one protocol version, `PROTOCOL_VERSION` (`"0.2"`). The payload `oneof` is the event kind, so `eventType(event)` derives the friendly name (for example `approval.granted`) instead of storing a second copy.
+There is one envelope and one protocol version, `PROTOCOL_VERSION` (`"2.0"`). The payload `oneof` is the event kind, so `eventType(event)` derives the friendly name (for example `approval.granted`) instead of storing a second copy.
 
 ```ts
 import { approvalRequested, eventType, fromBinary, toBinary } from "@frontal-labs/open-channel-protocol";

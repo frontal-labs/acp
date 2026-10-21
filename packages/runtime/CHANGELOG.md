@@ -1,6 +1,6 @@
 # @frontal-labs/open-channel-runtime
 
-## 0.2.0
+## 1.0.0
 
 ### Minor Changes
 
@@ -21,7 +21,7 @@
 - [#2](https://github.com/frontal-labs/open-channel/pull/2) [`2f6ca43`](https://github.com/frontal-labs/open-channel/commit/2f6ca432c96dc138713a1b167f2496ed3a680ab5) Thanks [@gabrielvfonseca](https://github.com/gabrielvfonseca)! - Approval decisions, expiries, and requests can no longer be injected through `process()`. Channel ingress and other callers reach `process()`, so an `approval.granted` or `approval.denied` event from anyone other than the named approver used to resolve a pending approval, an `approval.expired` event could trigger escalation, and an `approval.requested` event could replace a pending approval's approver. `process()` now throws `AuthorizationError` for every `approval.*` lifecycle event. Requests, decisions, and expiries are produced only by `submitAction()`, `decideApproval()`, and the runtime's expiry timer.
 
 - Updated dependencies [[`ba50acf`](https://github.com/frontal-labs/open-channel/commit/ba50acfa54268c84ccc60e9c73d8956988dd7650), [`232c8bf`](https://github.com/frontal-labs/open-channel/commit/232c8bf7134a950b5a7c5697d7472bda0e77fac4), [`315729b`](https://github.com/frontal-labs/open-channel/commit/315729bbcc8cd2ecf28edc928c1d5741ada7e424), [`29b2f5f`](https://github.com/frontal-labs/open-channel/commit/29b2f5ff72f82ab130f0f66e9bb38b87ca7ef913)]:
-  - @frontal-labs/open-channel-adapter@0.2.0
-  - @frontal-labs/open-channel-core@0.2.0
-  - @frontal-labs/open-channel-protocol@0.2.0
-  - @frontal-labs/open-channel-policy@0.2.0
+  - @frontal-labs/open-channel-adapter@1.0.0
+  - @frontal-labs/open-channel-core@1.0.0
+  - @frontal-labs/open-channel-protocol@1.0.0
+  - @frontal-labs/open-channel-policy@1.0.0

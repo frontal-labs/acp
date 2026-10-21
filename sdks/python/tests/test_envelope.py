@@ -56,9 +56,9 @@ class EventNameTests(unittest.TestCase):
 
 class ProtocolVersionTests(unittest.TestCase):
     def test_protocol_version_is_0_2(self) -> None:
-        self.assertEqual(PROTOCOL_VERSION, "0.2")
+        self.assertEqual(PROTOCOL_VERSION, "2.0")
         self.assertEqual(
-            to_json(message_received(text="hi", actor=HUMAN))["protocolVersion"], "0.2"
+            to_json(message_received(text="hi", actor=HUMAN))["protocolVersion"], "2.0"
         )
 
     def test_json_never_carries_event_type(self) -> None:

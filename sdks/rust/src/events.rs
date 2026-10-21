@@ -24,7 +24,7 @@ use crate::payloads::{
 };
 
 /// The protocol version carried by every envelope.
-pub const PROTOCOL_VERSION: &str = "0.2";
+pub const PROTOCOL_VERSION: &str = "2.0";
 
 #[derive(Debug, Error)]
 pub enum EventError {

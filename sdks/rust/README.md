@@ -2,7 +2,7 @@
 
 The Rust distribution of the OpenChannel Protocol (OCP) is published as `open-channel` on crates.io.
 Rust imports use the identifier `open_channel`. It provides one event envelope, one protocol version
-(`PROTOCOL_VERSION`, `0.2`), an agent host with A2A-like agent cards, and the `OpenChannel` application.
+(`PROTOCOL_VERSION`, `2.0`), an agent host with A2A-like agent cards, and the `OpenChannel` application.
 
 ```bash
 cargo add open-channel

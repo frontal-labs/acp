@@ -1,15 +1,15 @@
 ---
-"@frontal-labs/open-channel": minor
-"@frontal-labs/open-channel-adapter": minor
-"@frontal-labs/open-channel-cli": minor
-"@frontal-labs/open-channel-core": minor
-"@frontal-labs/open-channel-policy": minor
-"@frontal-labs/open-channel-protocol": minor
-"@frontal-labs/open-channel-runtime": minor
-"@frontal-labs/open-channel-testing": minor
+"@frontal-labs/open-channel": major
+"@frontal-labs/open-channel-adapter": major
+"@frontal-labs/open-channel-cli": major
+"@frontal-labs/open-channel-core": major
+"@frontal-labs/open-channel-policy": major
+"@frontal-labs/open-channel-protocol": major
+"@frontal-labs/open-channel-runtime": major
+"@frontal-labs/open-channel-testing": major
 ---
 
-Breaking: OCP has one envelope and one protocol version, `0.2`.
+Breaking: OCP has one envelope and one protocol version, `2.0`.
 
 - The envelope no longer stores `eventType`. The event name is derived from the payload: use `eventType(event)`.
 - `createEvent` is now `newEvent`, and it takes no `protocolVersion` or `eventType`.

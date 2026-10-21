@@ -12,7 +12,7 @@ from ._wire import decode_event, encode_event
 JsonObject: TypeAlias = dict[str, object]
 
 # The one OCP protocol version. Every envelope carries it; there is no other envelope shape.
-PROTOCOL_VERSION = "0.2"
+PROTOCOL_VERSION = "2.0"
 
 # Payload case -> event name. Approval decisions and policy results are disambiguated by value.
 _EVENT_TYPE_BY_CASE: dict[str, str] = {
@@ -152,7 +152,7 @@ class AgentCard:
     id: str
     name: str
     description: str = ""
-    version: str = "0.2.0"
+    version: str = "2.0.0"
     url: str = ""
     capabilities: AgentCapabilities = field(default_factory=AgentCapabilities)
     skills: tuple[AgentSkill, ...] = ()

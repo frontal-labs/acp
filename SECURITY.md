@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-OCP is experimental while it is in the `0.x` release line. Security fixes are applied to the latest published commit and release only.
+The 1.0 release line is supported. Security fixes are applied to the latest 1.0.x release. Earlier commits and unreleased branches are not supported. The most recent code-level review, its fixes, and its open items are in [`docs/SECURITY_REVIEW.md`](./docs/SECURITY_REVIEW.md).
 
 ## Reporting a vulnerability
 
@@ -23,9 +23,9 @@ Please allow time for triage before public disclosure. Do not include live crede
 
 ## Scope and threat model
 
-OCP is experimental and security concerns include the protocol, runtime,
-policy engine, SDKs, provider adapters, generated bindings, examples,
-CI/release workflows, and repository tooling.
+Security concerns include the protocol, runtime, policy engine, SDKs, provider
+adapters, generated bindings, examples, CI/release workflows, and repository
+tooling.
 
 The main boundaries are:
 

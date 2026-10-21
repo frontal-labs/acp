@@ -1,7 +1,7 @@
 # open-channel
 
 The PyPI distribution is `open-channel`, imported as `open_channel`. It provides the OCP
-event model (one envelope, protocol version `0.2`), typed event builders, an application
+event model (one envelope, protocol version `2.0`), typed event builders, an application
 factory with agents, actions, channels, policy, and approvals, and transport-independent
 source/sink contracts. The codec is stdlib-only: no protobuf runtime is required.
 
@@ -57,7 +57,7 @@ event = message_received(text="hi", actor=ActorRef("human:ada", type="ACTOR_TYPE
 event_type(event)              # "message.received", derived from the payload
 data = to_binary(event)        # protobuf wire bytes
 from_binary(data)              # validated; no version argument
-to_json(event)                 # ProtoJSON with protocolVersion "0.2"
+to_json(event)                 # ProtoJSON with protocolVersion "2.0"
 from_json(payload)             # rejects other versions and any eventType field
 ```
 

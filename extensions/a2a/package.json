@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-ext-a2a",
-  "version": "0.2.0",
+  "version": "2.0.0",
   "description": "A2A-compatible source and sink bridge for the OpenChannel Protocol TypeScript SDK",
   "keywords": [
     "openchannel-protocol",

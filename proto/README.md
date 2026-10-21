@@ -1,6 +1,6 @@
 # OCP protobuf schemas
 
-The canonical wire contract. There is one protocol version, `0.2`, and one envelope.
+The canonical wire contract. There is one protocol version, `2.0`, and one envelope.
 
 ```text
 proto/ocp/api/events.proto     ocp.api.EventEnvelope (the single envelope)

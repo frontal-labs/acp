@@ -1,4 +1,4 @@
-# OCP Protocol Specification 0.2
+# OCP Protocol Specification 2.0
 
 ## 1. Scope
 
@@ -8,7 +8,7 @@ OCP defines an event protocol for communication between agents, humans, and comp
 
 `ocp.api.EventEnvelope` is the only wire object. Producers MUST populate `event_id`, `protocol_version`, `occurred_at`, and exactly one payload. Producers SHOULD populate actor, recipient, channel, conversation, correlation, causation, and idempotency fields when available.
 
-The protocol version is `0.2`. Consumers MUST reject an envelope whose `protocol_version` is not `0.2`.
+The protocol version is `2.0`. Consumers MUST reject an envelope whose `protocol_version` is not `2.0`.
 
 The event name is derived from the payload `oneof`; the envelope does not store a second copy. Field 2 was the former `event_type` string and is `reserved`; its number and name MUST NOT be reused. The protobuf field numbers in `proto/ocp/api/events.proto` and `proto/ocp/types/*.proto` are stable.
 
@@ -66,4 +66,4 @@ Events serialize to ProtoJSON (`toJson` / `fromJson`) and to binary protobuf (`t
 
 ## 9. Compatibility
 
-Version `0.2` replaces the two earlier envelopes. Earlier binary payloads that have no `event_type` field decode unchanged. Earlier ProtoJSON payloads that include `eventType` are rejected by `fromJson`, and must be re-serialized from the typed builders.
+Version `2.0` replaces the two earlier envelopes. Earlier binary payloads that have no `event_type` field decode unchanged. Earlier ProtoJSON payloads that include `eventType` are rejected by `fromJson`, and must be re-serialized from the typed builders.

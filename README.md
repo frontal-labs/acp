@@ -10,7 +10,7 @@ It standardizes the interaction contract around messages, tasks, approvals, esca
 
 ## Status
 
-OCP v0.2 is an experimental, spec-first reference implementation. It includes
+OCP v2.0 is an experimental, spec-first reference implementation. It includes
 versioned protobuf schemas, typed event builders, config-first TypeScript/Python/
 Rust application facades, policy-controlled actions, source/sink channel
 contracts, and at-least-once in-process processing.
@@ -88,7 +88,7 @@ Every OCP event is an `EventEnvelope` with:
 
 The payload oneof is the event kind, and the friendly name is derived from it. For example, `message.received` contains a `messageReceived` payload, while `approval.granted` and `approval.denied` both use `approvalDecided` with different outcomes. `eventType(event)` returns the friendly name.
 
-There is one envelope and one protocol version, `0.2`. Build events with the typed builders (`messageReceived`, `approvalRequested`, and so on) or `newEvent()`. Serialize with `toJson` / `fromJson` or `toBinary` / `fromBinary`.
+There is one envelope and one protocol version, `2.0`. Build events with the typed builders (`messageReceived`, `approvalRequested`, and so on) or `newEvent()`. Serialize with `toJson` / `fromJson` or `toBinary` / `fromBinary`.
 
 ## Safety semantics
 

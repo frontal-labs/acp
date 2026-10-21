@@ -29,7 +29,7 @@ await app.start();
 `openChannel()` composes the runtime, `AgentHost`, channel source/sink
 registration, action registry, lifecycle, and hooks. Use `AgentHost` directly
 when an application needs lower-level composition. The package also exposes
-the typed event builders through `@frontal-labs/open-channel-protocol`. There is one envelope, version `0.2`.
+the typed event builders through `@frontal-labs/open-channel-protocol`. There is one envelope, version `2.0`.
 
 ## Development
 

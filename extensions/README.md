@@ -2,8 +2,7 @@
 
 Optional integrations for the OCP TypeScript SDK. Every channel extension keeps provider-specific
 payloads at the boundary and exposes the SDK-native `ChannelSource`, `ChannelSink`, or
-`ChannelDefinition` contracts. Normalized events use the stable v1 `EventEnvelope`; v2 remains an
-experimental protocol path and is not required by these packages.
+`ChannelDefinition` contracts. Normalized events use the single `EventEnvelope` of protocol 2.0 from `@frontal-labs/open-channel-protocol`.
 
 ## Channel extensions
 
