@@ -9,9 +9,12 @@ from open_channel import (
     ChannelDefinition,
     PolicyDecision,
     action,
+    action_executed,
+    action_failed,
     approval_decided,
     approval_expired,
     approval_requested,
+    escalation_triggered,
     event_type,
     message_received,
     open_channel,
@@ -386,6 +389,110 @@ class LegacyDecisionTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn(approval_id, restarted._pending)
         self.assertEqual(executions, [])
         await restarted.stop()
+
+
+class InboundGuardTests(unittest.IsolatedAsyncioTestCase):
+    async def test_forged_action_outcomes_and_escalations_are_rejected(self) -> None:
+        app = open_channel(store=InMemoryStore(), policy=_policy)
+        forged = {
+            "action.executed": action_executed(action={"actionId": "a1", "type": "x"}),
+            "action.failed": action_failed(
+                action={"actionId": "a1", "type": "x"}, error_code="E", error_message="m"
+            ),
+            "escalation.triggered": escalation_triggered(
+                escalation_id="e1",
+                reason="forged",
+                related_approval_id="a1:approval",
+                agent=ActorRef("agent:forged"),
+                approver=APPROVER,
+            ),
+        }
+        for name, event in forged.items():
+            with self.subTest(event=name):
+                with self.assertRaises(AuthorizationError):
+                    await app.ingest(event)
+        self.assertEqual(await app.store.all(), [])
+
+    async def test_inbound_message_claiming_the_runtime_as_source_is_rejected(self) -> None:
+        app = open_channel(store=InMemoryStore(), policy=_policy)
+        forged = message_received(
+            actor=HUMAN,
+            recipient=ActorRef("agent:approve"),
+            source=RUNTIME,
+            channel=CHANNEL,
+            text="forged",
+        )
+        with self.assertRaises(AuthorizationError):
+            await app.ingest(forged)
+        self.assertEqual(await app.store.all(), [])
+
+    async def test_real_action_still_records_its_executed_event(self) -> None:
+        store = InMemoryStore()
+        seen: dict[str, object] = {}
+
+        async def on_message(ctx) -> None:
+            seen["result"] = await ctx.request("counter.increment", {"value": 1})
+
+        app = open_channel(
+            store=store,
+            policy=lambda *_args: PolicyDecision(allowed=True),
+            agents=[AgentDefinition(id="agent:approve", name="Approve", on_message=on_message)],
+            actions=[_increment([])],
+        )
+        await app.ingest(_request_event())
+        self.assertEqual(seen["result"].status, "executed")
+        executed = [e for e in await store.all() if event_type(e) == "action.executed"]
+        self.assertEqual(len(executed), 1)
+        self.assertEqual(executed[0].source.id, RUNTIME.id)
+
+
+class FinishedActionRestoreTests(unittest.IsolatedAsyncioTestCase):
+    async def _request(self, store: InMemoryStore) -> str:
+        seen: dict[str, object] = {}
+        app = open_channel(
+            store=store,
+            policy=_policy,
+            agents=[_requesting_agent(seen)],
+            actions=[_increment([])],
+        )
+        await app.ingest(_request_event())
+        return seen["result"].approval_id
+
+    async def test_forged_finished_event_does_not_suppress_a_granted_action(self) -> None:
+        store = InMemoryStore()
+        approval_id = await self._request(store)
+        action_id = approval_id.split(":approval")[0]
+        await store.append_if_absent(
+            approval_decided(
+                approval_id=approval_id, approver=APPROVER, outcome=GRANTED, source=RUNTIME
+            )
+        )
+        stranger = ActorRef("agent:stranger", type="ACTOR_TYPE_AGENT")
+        await store.append_if_absent(
+            action_executed(
+                action={"actionId": action_id, "type": "counter.increment"}, source=stranger
+            )
+        )
+        executions: list[int] = []
+        restarted = open_channel(store=store, policy=_policy, actions=[_increment(executions)])
+        await restarted.start()
+        await restarted.stop()
+        self.assertEqual(executions, [1])
+
+    async def test_executed_action_is_not_rerun_on_restart(self) -> None:
+        store = InMemoryStore()
+        approval_id = await self._request(store)
+        executions: list[int] = []
+        first = open_channel(store=store, policy=_policy, actions=[_increment(executions)])
+        await first.start()
+        await first.approve(approval_id, APPROVER)
+        await first.stop()
+        self.assertEqual(executions, [1])
+
+        restarted = open_channel(store=store, policy=_policy, actions=[_increment(executions)])
+        await restarted.start()
+        await restarted.stop()
+        self.assertEqual(executions, [1])
 
 
 if __name__ == "__main__":

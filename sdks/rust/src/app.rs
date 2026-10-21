@@ -21,8 +21,16 @@ use crate::payloads::ApprovalOutcome;
 const DEFAULT_APPROVAL_TIMEOUT: Duration = Duration::from_secs(60);
 const APPROVAL_EXPIRED_REASON: &str = "Approval deadline expired";
 /// Event names only the application may produce; inbound copies are rejected.
-const APPROVAL_LIFECYCLE_EVENTS: [&str; 4] =
-    ["approval.requested", "approval.granted", "approval.denied", "approval.expired"];
+/// Event types only the application produces. An inbound copy is forged and is rejected.
+const APP_PRODUCED_EVENTS: [&str; 7] = [
+    "approval.requested",
+    "approval.granted",
+    "approval.denied",
+    "approval.expired",
+    "action.executed",
+    "action.failed",
+    "escalation.triggered",
+];
 
 fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
     mutex.lock().unwrap_or_else(PoisonError::into_inner)
@@ -391,14 +399,21 @@ impl OpenChannel {
         Ok(())
     }
 
-    /// Accepts an event. A duplicate event ID is a no-op and returns an empty result. Approval
-    /// lifecycle events are rejected: only the application produces them. Conversations are handled
-    /// under the concurrency limit.
+    /// Accepts an event. A duplicate event ID is a no-op and returns an empty result. Events only
+    /// the application produces (approval lifecycle, action outcomes, escalations) are rejected, and
+    /// so is any event claiming the runtime actor as its source. The application's own writes go
+    /// through `emit`, which does not call this. Conversations are handled under the concurrency limit.
     pub fn ingest(&self, event: EventEnvelope) -> Result<HandleResult, AgentError> {
-        if APPROVAL_LIFECYCLE_EVENTS.contains(&event.event_type()) {
+        if APP_PRODUCED_EVENTS.contains(&event.event_type()) {
             return Err(AgentError::Action(format!(
                 "{} events are produced only by the app; inbound copies are rejected",
                 event.event_type()
+            )));
+        }
+        let runtime_id = &self.inner.runtime_actor.id;
+        if !runtime_id.is_empty() && event.source.as_ref().is_some_and(|s| &s.id == runtime_id) {
+            return Err(AgentError::Action(format!(
+                "inbound events may not claim the runtime actor {runtime_id} as their source"
             )));
         }
         self.inner.expire_approvals();
@@ -748,9 +763,12 @@ impl OpenChannel {
             .filter_map(|event| approval_id_of(&event).map(str::to_owned))
             .collect();
         // Actions whose terminal event (`action.executed` or `action.failed`) is recorded.
+        // Only runtime-produced outcomes count. A forged one from another source is ignored, and an
+        // event without a readable action identifies nothing, so neither suppresses a grant.
         let finished: HashSet<String> = ["action.executed", "action.failed"]
             .iter()
             .flat_map(|event_type| self.inner.store.query_by_type(event_type))
+            .filter(|event| produced_by_runtime(event))
             .filter_map(|event| match &event.payload {
                 EventPayload::ActionExecuted(done) => {
                     done.action.as_ref().map(|a| a.action_id.clone())
@@ -1280,6 +1298,76 @@ mod tests {
         assert_eq!(executions.load(Ordering::SeqCst), 1);
         assert!(app_b.approve(&approval_id, &finance(), "again").is_err());
         assert_eq!(executions.load(Ordering::SeqCst), 1);
+        app_b.stop().expect("stops");
+    }
+
+    /// The action an approval request holds, read back from the store.
+    fn requested_invocation(store: &dyn EventStore) -> ActionInvocation {
+        match &store.query_by_type("approval.requested")[0].payload {
+            EventPayload::ApprovalRequested(payload) => {
+                payload.requested_action.clone().expect("requested action")
+            }
+            _ => panic!("expected an approval request"),
+        }
+    }
+
+    #[test]
+    fn forged_outcomes_and_runtime_sourced_inbound_events_are_rejected() {
+        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
+        let executions = Arc::new(AtomicUsize::new(0));
+        let app =
+            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::clone(&executions), 60_000)
+                .build();
+        app.start().expect("app starts");
+        let approval_id = approval_id_from(&app.ingest(inbound("Refund")).expect("ingested"));
+        let invocation = requested_invocation(store.as_ref());
+
+        let mut forged =
+            events::action_executed(&invocation, serde_json::json!({ "amount": 9999 }));
+        forged.source = Some(ActorRef::agent("agent:attacker", "Attacker"));
+        assert!(app.ingest(forged).is_err(), "a forged action.executed is rejected");
+
+        let mut spoofed = inbound("hello");
+        spoofed.source = Some(runtime_actor_default());
+        assert!(app.ingest(spoofed).is_err(), "a runtime-sourced inbound event is rejected");
+        assert_eq!(executions.load(Ordering::SeqCst), 0);
+
+        // The application's own approval still runs the action and records its real outcome.
+        app.approve(&approval_id, &finance(), "ok").expect("approved");
+        assert_eq!(executions.load(Ordering::SeqCst), 1);
+        let executed = store.query_by_type("action.executed");
+        assert_eq!(executed.len(), 1);
+        assert_eq!(executed[0].source, Some(runtime_actor_default()));
+        app.stop().expect("stops");
+    }
+
+    #[test]
+    fn forged_finished_event_does_not_suppress_a_legitimate_grant() {
+        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
+        let clock: Arc<dyn Clock> = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
+        let executions = Arc::new(AtomicUsize::new(0));
+
+        let app_a =
+            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
+                .build();
+        app_a.start().expect("app A starts");
+        let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ingested"));
+        let invocation = requested_invocation(store.as_ref());
+        app_a.stop().expect("app A stops");
+
+        // A genuine grant from the designated approver, with no terminal event recorded.
+        let mut grant =
+            events::approval_decided(&approval_id, ApprovalOutcome::Granted, &finance(), "ok");
+        grant.source = Some(finance());
+        store.append_if_absent(&grant);
+        // A forged "already executed" marker written from a non-runtime source.
+        let mut forged = events::action_executed(&invocation, serde_json::json!({}));
+        forged.source = Some(ActorRef::agent("agent:attacker", "Attacker"));
+        store.append_if_absent(&forged);
+
+        let app_b = billing(store, clock, Arc::clone(&executions), 60_000).build();
+        app_b.start().expect("app B starts");
+        assert_eq!(executions.load(Ordering::SeqCst), 1, "the grant still runs once");
         app_b.stop().expect("stops");
     }
 

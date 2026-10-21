@@ -237,6 +237,7 @@ class OpenChannelApp implements OpenChannel {
       await this.rebuildPendingAction(requested);
     }
     const requests = await this.runtime.ownedApprovalRequests();
+    const finished = await this.finishedActionIds();
     for (const decided of await this.runtime.queryEvents({ eventType: "approval.granted" })) {
       if (decided.payload.case !== "approvalDecided") {
         continue;
@@ -249,17 +250,43 @@ class OpenChannelApp implements OpenChannel {
       if (!(requested && actionId && this.runtime.isAuthorizedResolution(decided, requested))) {
         continue;
       }
+      if (finished.has(actionId)) {
+        continue;
+      }
+      // Fail closed: a durable store that reports the action as finished also blocks a re-run.
       // biome-ignore lint/performance/noAwaitInLoops: Recovery checks and replays grants in their original order.
       const record = await this.runtime.getAction(actionId);
       if (record?.status === "completed" || record?.status === "failed") {
         continue;
       }
+      // biome-ignore lint/performance/noAwaitInLoops: Recovery checks and replays grants in their original order.
       const pending = await this.rebuildPendingAction(requested);
       if (pending) {
         delete this.pendingActions[decided.payload.value.approvalId];
+        // biome-ignore lint/performance/noAwaitInLoops: Recovery runs one grant at a time.
         await this.executeAction(pending);
       }
     }
+  }
+
+  /** Action IDs that already have a runtime-recorded outcome. These are never re-run on restart. */
+  private async finishedActionIds(): Promise<Set<string>> {
+    const [executed, failed] = await Promise.all([
+      this.runtime.queryEvents({ eventType: "action.executed" }),
+      this.runtime.queryEvents({ eventType: "action.failed" }),
+    ]);
+    const finished = new Set<string>();
+    for (const event of [...executed, ...failed]) {
+      const { payload } = event;
+      const action =
+        payload.case === "actionExecuted" || payload.case === "actionFailed"
+          ? payload.value.action
+          : undefined;
+      if (action?.actionId && this.runtime.ownsEvent(event)) {
+        finished.add(action.actionId);
+      }
+    }
+    return finished;
   }
 
   /** Rebuilds the in-process pending action for a stored approval request. Returns undefined if it cannot. */
@@ -464,7 +491,7 @@ class OpenChannelApp implements OpenChannel {
         recipient: pending.options.recipient,
         source: SYSTEM_ACTOR,
       });
-      await this.runtime.process(event);
+      await this.runtime.processInternal(event);
       const completed: ActionResult<unknown> = {
         actionId: pending.action.actionId,
         result,
@@ -495,7 +522,7 @@ class OpenChannelApp implements OpenChannel {
         recipient: pending.options.recipient,
         source: SYSTEM_ACTOR,
       });
-      await this.runtime.process(failedEvent);
+      await this.runtime.processInternal(failedEvent);
       const failed: ActionResult<unknown> = {
         actionId: pending.action.actionId,
         error: actionError,

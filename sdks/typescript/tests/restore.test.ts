@@ -251,4 +251,30 @@ describe("restart recovery", () => {
 
     expect(executed).toEqual(["ticket:1"]);
   });
+
+  it("does not re-run an approved action after restart on a store without action records", async () => {
+    const store = createTestEventStore();
+    const clock = new ManualClock(START);
+    const executed: string[] = [];
+
+    const first = buildApp(store, clock, executed);
+    await first.app.start();
+    await first.app.ingest(createTestEvent({ recipient: first.agent, text: "refund please" }));
+    await first.app.approve(await approvalId(store), first.manager, "approved");
+    await first.app.stop();
+    expect(executed).toEqual(["ticket:1"]);
+
+    // A store with no action-record support: the in-memory fallback is empty after a restart.
+    const bare = Object.assign(Object.create(store), {
+      claimAction: undefined,
+      completeAction: undefined,
+      failAction: undefined,
+      getAction: undefined,
+    }) as typeof store;
+    const second = buildApp(bare, clock, executed);
+    await second.app.start();
+    await second.app.stop();
+
+    expect(executed).toEqual(["ticket:1"]);
+  });
 });

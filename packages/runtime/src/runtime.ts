@@ -39,6 +39,14 @@ const APPROVAL_LIFECYCLE_EVENTS: ReadonlySet<string> = new Set([
   "approval.expired",
 ]);
 
+/** Events only the runtime may write. Inbound copies are rejected even though they look well-formed. */
+const RUNTIME_ONLY_EVENTS: ReadonlySet<string> = new Set([
+  ...APPROVAL_LIFECYCLE_EVENTS,
+  "action.executed",
+  "action.failed",
+  "escalation.triggered",
+]);
+
 /** Processes OCP events and manages policy-controlled approvals. */
 export class OpenChannelRuntime {
   readonly eventStore: EventStore;
@@ -148,12 +156,22 @@ export class OpenChannelRuntime {
    */
   async process(event: EventEnvelope): Promise<RuntimeResult> {
     const name = eventType(event);
-    if (APPROVAL_LIFECYCLE_EVENTS.has(name)) {
+    if (RUNTIME_ONLY_EVENTS.has(name)) {
       throw new AuthorizationError(
-        `OCP ${name} events are produced by the runtime; use submitAction() or decideApproval()`,
+        `OCP ${name} events are produced by the runtime and cannot be submitted from outside`,
         { stage: "approval" },
       );
     }
+    if (event.source?.id === this.runtimeActor.id) {
+      throw new AuthorizationError("OCP events cannot claim the runtime actor as their source", {
+        stage: "approval",
+      });
+    }
+    return await this.handleEvent(event);
+  }
+
+  /** Records an event the SDK itself produced, such as an action outcome. Not for inbound input. */
+  async processInternal(event: EventEnvelope): Promise<RuntimeResult> {
     return await this.handleEvent(event);
   }
 

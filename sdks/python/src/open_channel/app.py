@@ -32,6 +32,12 @@ from .models import (
 _APPROVAL_LIFECYCLE_EVENTS = frozenset(
     {"approval.requested", "approval.granted", "approval.denied", "approval.expired"}
 )
+# Events only the runtime writes. Inbound events of these types are rejected.
+_RUNTIME_ONLY_EVENTS = _APPROVAL_LIFECYCLE_EVENTS | {
+    "action.executed",
+    "action.failed",
+    "escalation.triggered",
+}
 _RESOLVED_EVENTS = ("approval.granted", "approval.denied", "approval.expired")
 
 InputT = TypeVar("InputT")
@@ -335,12 +341,18 @@ class OpenChannel:
             raise OpenChannelError("OCP app is stopping", stage="accept", retryable=True)
         # Reject forged approval events before they are stored or delivered to agents.
         name = event_type(event)
-        if name in _APPROVAL_LIFECYCLE_EVENTS:
+        if name in _RUNTIME_ONLY_EVENTS:
             raise AuthorizationError(
                 f"OCP {name} events are produced by the app; use the agent's ctx.request(), "
                 "approve(), or deny()",
                 event_id=event.event_id,
                 stage="approval",
+            )
+        if self._is_runtime_event(event):
+            raise AuthorizationError(
+                "Inbound events may not claim the runtime actor as their source",
+                event_id=event.event_id,
+                stage="authorization",
             )
         if not await self._store.append_if_absent(event):
             return IngestResult(duplicate=True)
@@ -703,6 +715,11 @@ class OpenChannel:
         )
 
     async def _finished_action_ids(self) -> set[str]:
+        """Action ids with a terminal event written by this runtime.
+
+        Store errors propagate, so start() fails rather than guessing which grants already ran.
+        """
+
         finished: set[str] = set()
         for name in ("action.executed", "action.failed"):
             for event in await self._events_of_type(name):
