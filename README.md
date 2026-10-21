@@ -10,8 +10,8 @@ It standardizes the interaction contract around messages, tasks, approvals, esca
 
 ## Status
 
-OCP v2.0 is an experimental, spec-first reference implementation. It includes
-versioned protobuf schemas, typed event builders, config-first TypeScript/Python/
+OCP 2.0 is a spec-first reference implementation. It includes protobuf schemas,
+typed event builders, config-first TypeScript/Python/
 Rust application facades, policy-controlled actions, source/sink channel
 contracts, and at-least-once in-process processing.
 
