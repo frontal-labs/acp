@@ -7,7 +7,10 @@ const python = process.env.PYTHON ?? "python3";
 const dryRun = process.argv.includes("--dry-run");
 const run = (command, args) => execFileSync(command, args, { cwd: root, stdio: "inherit" });
 
-run(process.execPath, ["scripts/check-package-owners.mjs"]);
+// Owners only matter for uploads; a dry run never publishes, so it does not need them.
+if (!dryRun) {
+  run(process.execPath, ["scripts/check-package-owners.mjs"]);
+}
 
 // Remove output from earlier builds (including pre-rename open_channel artifacts) so only this build is uploaded.
 for (const dir of ["sdks/python/build", "sdks/python/dist"]) {
