@@ -12,7 +12,7 @@ from .app import (
     OcpHooks,
     PolicyDecision,
 )
-from .errors import ActionError, DeliveryError, OcpError
+from .errors import ActionError, AuthorizationError, DeliveryError, OcpError
 from .host import AgentActions, AgentContext, AgentDefinition, AgentHooks, AgentHost
 from .models import (
     OCP_PROTOCOL_VERSION,
@@ -54,6 +54,7 @@ __all__ = [
     "ActionDefinition",
     "ActionError",
     "ActionExecutionContext",
+    "AuthorizationError",
     "ActionResult",
     "AgentActions",
     "ChannelDefinition",

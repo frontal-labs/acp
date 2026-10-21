@@ -298,7 +298,7 @@ export class OcpRuntime {
         details: { status: pending.status },
       });
     }
-    if (pending.approver && pending.approver.id !== input.approver.id) {
+    if (pending.approver.id !== input.approver.id) {
       throw new AuthorizationError(
         `OCP approval ${input.approvalId} can only be decided by ${pending.approver.id}`,
         { approvalId: input.approvalId, stage: "approval" },
