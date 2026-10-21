@@ -71,7 +71,7 @@ const metadataTextChecks = {
     'name = "openchannel"',
     'readme = "README.md"',
     'repository = "https://github.com/frontal-labs/open-channel"',
-    'documentation = "https://docs.rs/open-channel"',
+    'documentation = "https://docs.rs/openchannel"',
   ],
 };
 

@@ -3,7 +3,7 @@
 OCP uses Changesets for JavaScript package versioning and release orchestration. The public release surface is:
 
 - npm: `openchannel` (TypeScript SDK), `@frontal-labs/open-channel-cli`, and the `@frontal-labs/open-channel-*` packages;
-- GitHub Packages (npm registry, scope `@frontal-labs`): the same TypeScript packages, as a mirror;
+- GitHub Packages (npm registry, scope `@frontal-labs`): the scoped TypeScript packages, as a mirror; `openchannel` is published to npm only;
 - crates.io: `openchannel`;
 - PyPI: `openchannel`.
 
@@ -30,7 +30,7 @@ The `Release` workflow runs on pushes to `main`. When changesets are pending it 
 release PR. When that PR lands, it publishes:
 
 1. the TypeScript packages to npm (`changeset publish`);
-2. the same TypeScript packages to GitHub Packages (`scripts/publish-github-packages.mjs`), skipping any version already there;
+2. the scoped TypeScript packages to GitHub Packages (`scripts/publish-github-packages.mjs`), skipping any version already there;
 3. the Rust crate to crates.io and the Python distributions to PyPI (`scripts/publish-sdk.mjs`).
 
 Configure these repository secrets before enabling publishing:

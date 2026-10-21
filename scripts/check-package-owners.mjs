@@ -69,11 +69,20 @@ if (crateName && expected.crates) {
 
 if (pypiName && expected.pypi) {
   const project = await fetchJson(`https://pypi.org/pypi/${pypiName}/json`);
-  notes.push(
-    project === null
-      ? `PyPI: ${pypiName} is unclaimed; ${expected.pypi} must be the account that uploads it`
-      : `PyPI: ${pypiName} exists; ${expected.pypi} must be confirmed as an owner on pypi.org (not checkable via API)`,
-  );
+  if (project === null) {
+    notes.push(`PyPI: ${pypiName} is unclaimed; this publish will claim it for ${expected.pypi}`);
+  } else {
+    const owners = (project.ownership?.roles ?? [])
+      .filter((role) => role.role === "Owner")
+      .map((role) => role.user);
+    if (owners.includes(expected.pypi)) {
+      notes.push(`PyPI: ${pypiName} is owned by ${expected.pypi}`);
+    } else {
+      failures.push(
+        `PyPI: ${pypiName} is owned by [${owners.join(", ") || "none"}], not ${expected.pypi}`,
+      );
+    }
+  }
 }
 
 for (const note of notes) {
