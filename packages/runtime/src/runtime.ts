@@ -31,6 +31,14 @@ import type {
   SubmitActionResult,
 } from "./types.js";
 
+/** Approval events the runtime produces itself; external callers may not submit them. */
+const APPROVAL_LIFECYCLE_EVENTS: ReadonlySet<string> = new Set([
+  "approval.requested",
+  "approval.granted",
+  "approval.denied",
+  "approval.expired",
+]);
+
 /** Processes ACP events and manages policy-controlled approvals. */
 export class AcpRuntime {
   readonly eventStore: EventStore;
@@ -133,7 +141,22 @@ export class AcpRuntime {
     await this.eventStore.close?.();
   }
 
+  /**
+   * Accepts events from callers and channel ingress. Approval lifecycle events are produced only by
+   * the runtime (`submitAction`, `decideApproval`, and the expiry timer), so they are rejected here
+   * rather than trusted from the envelope.
+   */
   async process(event: EventEnvelope): Promise<RuntimeResult> {
+    if (APPROVAL_LIFECYCLE_EVENTS.has(event.eventType)) {
+      throw new AuthorizationError(
+        `ACP ${event.eventType} events are produced by the runtime; use submitAction() or decideApproval()`,
+        { stage: "approval" },
+      );
+    }
+    return await this.handleEvent(event);
+  }
+
+  private async handleEvent(event: EventEnvelope): Promise<RuntimeResult> {
     let accepted: boolean;
     if (this.eventStore.appendIfAbsent) {
       accepted = await this.eventStore.appendIfAbsent(event);
@@ -223,7 +246,7 @@ export class AcpRuntime {
       recipient: input.recipient,
       source: this.runtimeActor,
     });
-    await this.process(policyEvent);
+    await this.handleEvent(policyEvent);
     const events = [policyEvent];
 
     if (!decision.allowed) {
@@ -259,7 +282,7 @@ export class AcpRuntime {
       recipient: input.approver,
       source: this.runtimeActor,
     });
-    await this.process(approvalEvent);
+    await this.handleEvent(approvalEvent);
     events.push(approvalEvent);
 
     return { approvalId, decision, events, status: "approval_required" };
@@ -303,7 +326,7 @@ export class AcpRuntime {
       recipient: pending.agent,
       source: input.approver,
     });
-    return await this.process(event);
+    return await this.handleEvent(event);
   }
 
   private trackApproval(event: EventEnvelope): void {
@@ -349,7 +372,7 @@ export class AcpRuntime {
         recipient: pending.approver,
         source: this.runtimeActor,
       });
-      await this.process(expired);
+      await this.handleEvent(expired);
     });
     this.pendingApprovals[approval.approvalId] = pending;
   }
