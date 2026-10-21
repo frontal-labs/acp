@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime
 
-from open_channel import (
+from openchannel import (
     ActorRef,
     AgentDefinition,
     AuthorizationError,

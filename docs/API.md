@@ -25,7 +25,7 @@ Approval lifecycle events (`approval.requested`, `approval.granted`, `approval.d
 One function builds an OCP application.
 
 ```ts
-import { ocp } from "open-channel";
+import { ocp } from "openchannel";
 
 const app = ocp({
   policy,                 // required

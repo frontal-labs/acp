@@ -39,9 +39,9 @@ Biome is configured in `biome.json`; it extends the Ultracite presets and the sh
 
 The shared `@frontal-labs/open-channel-testing` package provides deterministic OCP fixtures, event inspection, async coordination, buffered CLI I/O, and in-memory state doubles. Package-local tests and the root integration suite use the same Vitest configuration and aliases.
 
-The published SDK distributions are all named `open-channel` in their registries:
-install with `pnpm add @frontal-labs/open-channel`, `python -m pip install open-channel`, or
-`cargo add open-channel`. The Rust import is `open_channel`; the Python import is `open_channel`.
+The published SDK distributions are all named `openchannel` in their registries:
+install with `pnpm add openchannel`, `python -m pip install openchannel`, or
+`cargo add openchannel`. The Rust and Python import identifier is `openchannel`.
 
 Public TypeScript entrypoints use explicit named exports, and shared failures are represented by `@frontal-labs/open-channel-core` error classes. Validate untrusted event JSON with `fromJson()` or the exported Zod schemas before handing it to an agent or runtime.
 
@@ -50,7 +50,7 @@ Public TypeScript entrypoints use explicit named exports, and shared failures ar
 For new applications, use the config-first `openChannel` facade. It composes the runtime, agent host, channel source/sink registration, action registry, lifecycle, and hooks. Use `AgentHost` directly when you need lower-level composition. This keeps agent discovery and execution separate from channel transport, similar to the useful parts of A2A without importing an A2A transport requirement.
 
 ```ts
-import { openChannel } from "@frontal-labs/open-channel";
+import { openChannel } from "openchannel";
 
 const app = openChannel({
   policy,

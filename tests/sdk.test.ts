@@ -1,5 +1,4 @@
 import { create } from "@bufbuild/protobuf";
-import { AgentHost, eventType } from "@frontal-labs/open-channel";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import { ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
 import { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
@@ -10,6 +9,7 @@ import {
   createTestEventStore,
   createTestHuman,
 } from "@frontal-labs/open-channel-testing";
+import { AgentHost, eventType } from "openchannel";
 import { describe, expect, it } from "vitest";
 
 describe("OCP agent SDK", () => {

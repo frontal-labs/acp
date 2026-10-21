@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from open_channel import EventEnvelope
+from openchannel import EventEnvelope
 
 
 class InMemoryStore:

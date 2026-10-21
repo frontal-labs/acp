@@ -1,5 +1,5 @@
-import type { AgentCard, ChannelDefinition } from "@frontal-labs/open-channel";
 import type { ActorRef } from "@frontal-labs/open-channel-protocol";
+import type { AgentCard, ChannelDefinition } from "openchannel";
 
 /** Outbound A2A message; `taskId` and `contextId` correlate follow-up turns. */
 export interface A2ASendInput {

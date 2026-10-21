@@ -1,14 +1,14 @@
-# open-channel
+# openchannel
 
-The npm package `@frontal-labs/open-channel` for building OCP agents, hosts, policy-controlled
+The npm package `openchannel` for building OCP agents, hosts, policy-controlled
 actions, and channel integrations.
 
 ```bash
-pnpm add @frontal-labs/open-channel
+pnpm add openchannel
 ```
 
 ```ts
-import { openChannel } from "@frontal-labs/open-channel";
+import { openChannel } from "openchannel";
 
 const app = openChannel({
   policy,
@@ -34,9 +34,9 @@ the typed event builders through `@frontal-labs/open-channel-protocol`. There is
 ## Development
 
 ```bash
-pnpm --filter @frontal-labs/open-channel build
-pnpm --filter @frontal-labs/open-channel typecheck
-pnpm --filter @frontal-labs/open-channel test
+pnpm --filter openchannel build
+pnpm --filter openchannel typecheck
+pnpm --filter openchannel test
 ```
 
 ## Recovery, audit, and logging

@@ -62,16 +62,16 @@ const jsonFiles = [
 const metadataTextChecks = {
   "proto/buf.yaml": ["name: buf.build/frontal-labs/open-channel"],
   "sdks/python/pyproject.toml": [
-    'name = "open-channel"',
+    'name = "openchannel"',
     'readme = "README.md"',
     "[project.urls]",
     'Repository = "https://github.com/frontal-labs/open-channel"',
   ],
   "sdks/rust/Cargo.toml": [
-    'name = "open-channel"',
+    'name = "openchannel"',
     'readme = "README.md"',
     'repository = "https://github.com/frontal-labs/open-channel"',
-    'documentation = "https://docs.rs/open-channel"',
+    'documentation = "https://docs.rs/openchannel"',
   ],
 };
 

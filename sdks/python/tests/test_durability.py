@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from datetime import UTC, datetime, timedelta
 
-from open_channel import (
+from openchannel import (
     ActorRef,
     AgentDefinition,
     AuthorizationError,
@@ -19,7 +19,7 @@ from open_channel import (
     message_received,
     open_channel,
 )
-from open_channel.models import DENIED, GRANTED
+from openchannel.models import DENIED, GRANTED
 from support import InMemoryStore
 
 HUMAN = ActorRef("human:requester", type="ACTOR_TYPE_HUMAN")

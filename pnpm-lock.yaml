@@ -33,9 +33,6 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^21.2.0
         version: 21.2.4
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:packages/adapter
@@ -69,6 +66,9 @@ importers:
       lint-staged:
         specifier: ^16.2.7
         version: 16.4.0
+      openchannel:
+        specifier: workspace:*
+        version: link:sdks/typescript
       tsx:
         specifier: ^4.19.2
         version: 4.23.15
@@ -106,9 +106,6 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
@@ -118,6 +115,9 @@ importers:
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -128,12 +128,12 @@ importers:
 
   extensions/calendar:
     dependencies:
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-core':
         specifier: workspace:*
         version: link:../../packages/core
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -166,9 +166,6 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
@@ -178,6 +175,9 @@ importers:
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -191,9 +191,6 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
@@ -206,6 +203,9 @@ importers:
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -216,12 +216,12 @@ importers:
 
   extensions/mcp:
     dependencies:
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-core':
         specifier: workspace:*
         version: link:../../packages/core
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -238,9 +238,6 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
@@ -253,6 +250,9 @@ importers:
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -263,15 +263,15 @@ importers:
 
   extensions/opentelemetry:
     dependencies:
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -364,9 +364,6 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
@@ -379,6 +376,9 @@ importers:
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -392,9 +392,6 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
@@ -407,6 +404,9 @@ importers:
       '@frontal-labs/open-channel-protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
@@ -436,9 +436,6 @@ importers:
 
   packages/demo:
     dependencies:
-      '@frontal-labs/open-channel':
-        specifier: workspace:*
-        version: link:../../sdks/typescript
       '@frontal-labs/open-channel-adapter':
         specifier: workspace:*
         version: link:../adapter
@@ -448,6 +445,9 @@ importers:
       '@frontal-labs/open-channel-testing':
         specifier: workspace:*
         version: link:../testing
+      openchannel:
+        specifier: workspace:*
+        version: link:../../sdks/typescript
     devDependencies:
       vitest:
         specifier: ^4.1.12

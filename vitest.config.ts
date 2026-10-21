@@ -4,9 +4,6 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: {
     alias: {
-      "@frontal-labs/open-channel": fileURLToPath(
-        new URL("./sdks/typescript/src/index.ts", import.meta.url),
-      ),
       "@frontal-labs/open-channel-adapter": fileURLToPath(
         new URL("./packages/adapter/src/index.ts", import.meta.url),
       ),
@@ -70,6 +67,7 @@ export default defineConfig({
       "@frontal-labs/open-channel-testing": fileURLToPath(
         new URL("./packages/testing/src/index.ts", import.meta.url),
       ),
+      openchannel: fileURLToPath(new URL("./sdks/typescript/src/index.ts", import.meta.url)),
     },
   },
   test: {

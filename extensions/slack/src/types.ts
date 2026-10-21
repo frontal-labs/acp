@@ -1,5 +1,5 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
 import type { ActorRef } from "@frontal-labs/open-channel-protocol";
+import type { ChannelDefinition } from "openchannel";
 
 /** Outbound message accepted by a Slack transport implementation. */
 export interface SlackSendInput {

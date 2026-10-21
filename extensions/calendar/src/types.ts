@@ -1,4 +1,4 @@
-import type { ActionDefinition } from "@frontal-labs/open-channel";
+import type { ActionDefinition } from "openchannel";
 
 /** Input accepted by the calendar.create action. */
 export interface CalendarCreateInput {

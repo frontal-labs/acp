@@ -1,5 +1,5 @@
 [package]
-name = "open-channel"
+name = "openchannel"
 version = "2.0.0"
 edition = "2021"
 license = "Apache-2.0"
@@ -8,7 +8,7 @@ readme = "README.md"
 authors = ["Frontal Labs <support@frontal.dev>"]
 repository = "https://github.com/frontal-labs/open-channel"
 homepage = "https://github.com/frontal-labs/open-channel#readme"
-documentation = "https://docs.rs/open-channel"
+documentation = "https://docs.rs/openchannel"
 keywords = ["ocp", "agents", "communication", "protobuf", "ai"]
 categories = ["api-bindings", "network-programming"]
 build = "build.rs"

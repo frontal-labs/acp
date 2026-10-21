@@ -1,10 +1,10 @@
-import { deliveryReceipt } from "@frontal-labs/open-channel";
 import type {
   ChannelSink,
   DeliveryOptions,
   DeliveryReceipt,
 } from "@frontal-labs/open-channel-adapter";
 import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
+import { deliveryReceipt } from "openchannel";
 
 import type { GoogleChatTransport } from "./types.js";
 

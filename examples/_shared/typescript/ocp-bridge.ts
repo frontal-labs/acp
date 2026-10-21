@@ -1,5 +1,4 @@
 import { create } from "@bufbuild/protobuf";
-import { openChannel } from "@frontal-labs/open-channel";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   ActorRefSchema,
@@ -8,6 +7,7 @@ import {
   eventType,
   messageReceived,
 } from "@frontal-labs/open-channel-protocol";
+import { openChannel } from "openchannel";
 
 import { createExampleChannel, createExampleEventStore } from "./example-kit.js";
 

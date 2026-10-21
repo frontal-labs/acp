@@ -2,7 +2,6 @@ import { createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { create } from "@bufbuild/protobuf";
-import { openChannel } from "@frontal-labs/open-channel";
 import {
   createSlackChannel,
   type SlackTransport,
@@ -10,6 +9,7 @@ import {
 } from "@frontal-labs/open-channel-ext-slack";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import { ActorRefSchema, ActorType } from "@frontal-labs/open-channel-protocol";
+import { openChannel } from "openchannel";
 
 import { createExampleEventStore } from "../_shared/typescript/example-kit.js";
 

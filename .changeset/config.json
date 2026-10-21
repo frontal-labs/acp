@@ -9,7 +9,7 @@
   "commit": false,
   "fixed": [
     [
-      "@frontal-labs/open-channel",
+      "openchannel",
       "@frontal-labs/open-channel-adapter",
       "@frontal-labs/open-channel-cli",
       "@frontal-labs/open-channel-core",

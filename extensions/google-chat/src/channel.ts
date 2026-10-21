@@ -1,4 +1,4 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ChannelDefinition } from "openchannel";
 
 import { createGoogleChatSink } from "./sink.js";
 import { createGoogleChatSource } from "./source.js";

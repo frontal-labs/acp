@@ -1,4 +1,4 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ChannelDefinition } from "openchannel";
 
 import { createA2ASink } from "./sink.js";
 import { createA2ASource } from "./source.js";

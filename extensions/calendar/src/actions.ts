@@ -1,6 +1,6 @@
-import type { ActionDefinition } from "@frontal-labs/open-channel";
-import { action } from "@frontal-labs/open-channel";
 import { ActionError } from "@frontal-labs/open-channel-core";
+import type { ActionDefinition } from "openchannel";
+import { action } from "openchannel";
 import { z } from "zod";
 
 import type {

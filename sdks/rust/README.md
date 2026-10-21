@@ -1,17 +1,17 @@
-# open-channel
+# openchannel
 
-The Rust distribution of the OpenChannel Protocol (OCP) is published as `open-channel` on crates.io.
-Rust imports use the identifier `open_channel`. It provides one event envelope, one protocol version
+The Rust distribution of the OpenChannel Protocol (OCP) is published as `openchannel` on crates.io.
+Rust imports use the identifier `openchannel`. It provides one event envelope, one protocol version
 (`PROTOCOL_VERSION`, `2.0`), an agent host with A2A-like agent cards, and the `OpenChannel` application.
 
 ```bash
-cargo add open-channel
+cargo add openchannel
 ```
 
 ## Build an application
 
 ```rust
-use open_channel::{AgentCard, AgentDefinition, MemoryEventStore, OpenChannel};
+use openchannel::{AgentCard, AgentDefinition, MemoryEventStore, OpenChannel};
 
 let mut app = OpenChannel::builder()
     .agent(AgentDefinition::new(
@@ -41,7 +41,7 @@ app.stop()?;
 There is one envelope. Its payload is the event kind, and `event_type()` derives the dot-separated name:
 
 ```rust
-use open_channel::{approval_decided, message_received, ApprovalOutcome, EventEnvelope};
+use openchannel::{approval_decided, message_received, ApprovalOutcome, EventEnvelope};
 
 let event = message_received("hello");
 assert_eq!(event.event_type(), "message.received");

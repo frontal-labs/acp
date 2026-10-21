@@ -1,4 +1,4 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ChannelDefinition } from "openchannel";
 
 import { createSlackSink } from "./sink.js";
 import { createSlackSource } from "./source.js";

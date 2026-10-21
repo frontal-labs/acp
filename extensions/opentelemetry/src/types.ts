@@ -1,6 +1,6 @@
-import type { ActionResult, OpenChannelHooks } from "@frontal-labs/open-channel";
 import type { DeliveryReceipt } from "@frontal-labs/open-channel-adapter";
 import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import type { ActionResult, OpenChannelHooks } from "openchannel";
 
 /** Minimal structural span port compatible with OpenTelemetry API spans. */
 export interface OpenChannelSpan {

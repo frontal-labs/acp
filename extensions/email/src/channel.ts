@@ -1,4 +1,4 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
+import type { ChannelDefinition } from "openchannel";
 
 import { createEmailSink } from "./sink.js";
 import { createEmailSource } from "./source.js";

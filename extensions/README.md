@@ -31,7 +31,7 @@ payloads at the boundary and exposes the SDK-native `ChannelSource`, `ChannelSin
 ## Example
 
 ```ts
-import { openChannel } from "@frontal-labs/open-channel";
+import { openChannel } from "openchannel";
 import { createSlackChannel } from "@frontal-labs/open-channel-ext-slack";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 

@@ -44,7 +44,7 @@ function createSlowEventStore(): TestEventStore {
   };
 }
 
-describe("@frontal-labs/open-channel", () => {
+describe("openchannel", () => {
   it("routes a message to an agent and dispatches its reply", async () => {
     const adapter = createTestChannelAdapter();
     const runtime = new OpenChannelRuntime({
