@@ -1,14 +1,22 @@
-import { InMemoryChannelAdapter } from "@acp/adapter";
 import { RuleBasedPolicyEngine } from "@acp/policy";
 import { AcpRuntime, ChannelGateway } from "@acp/runtime";
-import { createTestAgent, createTestChannel, createTestEvent } from "@acp/testing";
+import {
+  createTestAgent,
+  createTestChannel,
+  createTestChannelAdapter,
+  createTestEvent,
+  createTestEventStore,
+} from "@acp/testing";
 import { describe, expect, it } from "vitest";
 
 describe("ACP channel gateway", () => {
   it("dispatches an outbound event to the adapter for its provider", async () => {
-    const adapter = new InMemoryChannelAdapter();
+    const adapter = createTestChannelAdapter();
     const gateway = new ChannelGateway(
-      new AcpRuntime({ policy: new RuleBasedPolicyEngine({ rules: [] }) }),
+      new AcpRuntime({
+        eventStore: createTestEventStore(),
+        policy: new RuleBasedPolicyEngine({ rules: [] }),
+      }),
       [adapter],
     );
     const event = createTestEvent({
@@ -26,7 +34,10 @@ describe("ACP channel gateway", () => {
 
   it("fails clearly when no provider adapter is registered", async () => {
     const gateway = new ChannelGateway(
-      new AcpRuntime({ policy: new RuleBasedPolicyEngine({ rules: [] }) }),
+      new AcpRuntime({
+        eventStore: createTestEventStore(),
+        policy: new RuleBasedPolicyEngine({ rules: [] }),
+      }),
     );
     const event = createTestEvent({
       channel: createTestChannel("channel-1", "thread-1", "missing"),

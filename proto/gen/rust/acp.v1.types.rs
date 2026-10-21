@@ -7,8 +7,8 @@ pub struct ActionRequest {
     pub r#type: ::prost::alloc::string::String,
     #[prost(string, tag = "3")]
     pub target: ::prost::alloc::string::String,
-    #[prost(map = "string, string", tag = "4")]
-    pub parameters: ::std::collections::HashMap<
+    #[prost(btree_map = "string, string", tag = "4")]
+    pub parameters: ::prost::alloc::collections::BTreeMap<
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,
@@ -249,8 +249,8 @@ pub struct MessageReceived {
     pub text: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "2")]
     pub attachments: ::prost::alloc::vec::Vec<ArtifactRef>,
-    #[prost(map = "string, string", tag = "3")]
-    pub metadata: ::std::collections::HashMap<
+    #[prost(btree_map = "string, string", tag = "3")]
+    pub metadata: ::prost::alloc::collections::BTreeMap<
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,
@@ -261,8 +261,8 @@ pub struct MessageSent {
     pub text: ::prost::alloc::string::String,
     #[prost(message, repeated, tag = "2")]
     pub attachments: ::prost::alloc::vec::Vec<ArtifactRef>,
-    #[prost(map = "string, string", tag = "3")]
-    pub metadata: ::std::collections::HashMap<
+    #[prost(btree_map = "string, string", tag = "3")]
+    pub metadata: ::prost::alloc::collections::BTreeMap<
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,

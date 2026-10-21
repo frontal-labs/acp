@@ -66,7 +66,7 @@ export function createTestActor(
 export function createTestChannel(
   channelId = "channel:test",
   threadId = "thread:test",
-  provider = "memory",
+  provider = "test",
 ): EventEnvelope["channel"] {
   return create(ChannelRefSchema, { channelId, provider, threadId });
 }
@@ -115,7 +115,8 @@ export function createTestMessageSent(text = "Test response") {
 }
 
 /** Options shared by the ACP event fixtures. */
-export interface TestEventOptions extends Partial<Omit<EventInput, "eventType" | "payload">> {
+export interface TestEventOptions
+  extends Partial<Omit<EventInput<"0.1">, "eventType" | "payload" | "protocolVersion">> {
   eventType?: EventName;
   payload?: EventPayload;
   text?: string;
@@ -131,7 +132,7 @@ export function createTestEvent(options: TestEventOptions = {}): EventEnvelope {
   } = options;
   const actor = eventOptions.actor ?? createTestHuman();
 
-  return createEvent({
+  return createEvent<"0.1">({
     ...eventOptions,
     actor,
     channel: eventOptions.channel ?? createTestChannel(),

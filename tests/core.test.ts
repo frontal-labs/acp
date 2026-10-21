@@ -1,5 +1,5 @@
-import { createActionId, createCorrelationId, InMemoryEventBus, ValidationError } from "@acp/core";
-import { createTestEvent } from "@acp/testing";
+import { createActionId, createCorrelationId, ValidationError } from "@acp/core";
+import { createTestEvent, createTestEventBus } from "@acp/testing";
 import { describe, expect, it } from "vitest";
 
 const ACTION_ID_PATTERN = /^action:[0-9a-f-]{36}$/;
@@ -7,7 +7,7 @@ const CORRELATION_ID_PATTERN = /^corr:[0-9a-f-]{36}$/;
 
 describe("ACP core", () => {
   it("publishes events to subscribers and supports unsubscribe", async () => {
-    const bus = new InMemoryEventBus<ReturnType<typeof createTestEvent>>();
+    const bus = createTestEventBus<ReturnType<typeof createTestEvent>>();
     const received: string[] = [];
     const unsubscribe = bus.subscribe((receivedEvent) => {
       received.push(receivedEvent.eventId);

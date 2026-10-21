@@ -11,6 +11,8 @@ fn main() {
     let mut config = prost_build::Config::new();
     config.out_dir(&generated_dir);
     config.include_file("mod.rs");
+    // Deterministic map order so re-encoding matches the TypeScript and Python encoders.
+    config.btree_map(["."]);
     config
         .compile_protos(
             &[proto_root.join("v1/api/events.proto"), proto_root.join("v2/api/events.proto")],

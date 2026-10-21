@@ -1,10 +1,11 @@
 use std::collections::BTreeMap;
 use std::ops::Deref;
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
+
+use crate::events::{self, EventEnvelope};
 
 pub type JsonObject = BTreeMap<String, serde_json::Value>;
 
@@ -102,10 +103,25 @@ impl AgentCard {
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
+pub struct ArtifactRef {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub id: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub uri: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub title: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub media_type: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub source_of_truth: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 pub struct MessageReceived {
     pub text: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attachments: Vec<JsonObject>,
+    pub attachments: Vec<ArtifactRef>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub metadata: BTreeMap<String, String>,
 }
@@ -115,17 +131,72 @@ pub struct MessageReceived {
 pub struct MessageSent {
     pub text: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub attachments: Vec<JsonObject>,
+    pub attachments: Vec<ArtifactRef>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub metadata: BTreeMap<String, String>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
-#[serde(rename_all = "camelCase")]
+/// An action request. On the wire this is `ActionRequest`: `action_type` is `type`, and `input`
+/// travels as a JSON string under `parameters["input"]`, matching the TypeScript SDK.
+#[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
+#[serde(try_from = "ActionRequestJson", into = "ActionRequestJson")]
 pub struct ActionInvocation {
     pub action_id: String,
     pub input: serde_json::Value,
     pub action_type: String,
+    /// `ActionRequest.target`; empty when unset.
+    pub target: String,
+    /// Parameters other than `input`. The `input` key is reserved: it is always written from
+    /// [`ActionInvocation::input`] and is never read from this map.
+    pub parameters: BTreeMap<String, String>,
+}
+
+/// ProtoJSON shape of `acp.v1.types.ActionRequest`.
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ActionRequestJson {
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub(crate) action_id: String,
+    #[serde(default, rename = "type", skip_serializing_if = "String::is_empty")]
+    pub(crate) action_type: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub(crate) target: String,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) parameters: BTreeMap<String, String>,
+}
+
+impl From<ActionInvocation> for ActionRequestJson {
+    fn from(action: ActionInvocation) -> Self {
+        let mut parameters = action.parameters;
+        let input = serde_json::to_string(&action.input).unwrap_or_else(|_| "null".to_owned());
+        parameters.insert("input".to_owned(), input);
+        Self {
+            action_id: action.action_id,
+            action_type: action.action_type,
+            target: action.target,
+            parameters,
+        }
+    }
+}
+
+impl TryFrom<ActionRequestJson> for ActionInvocation {
+    type Error = String;
+
+    fn try_from(json: ActionRequestJson) -> Result<Self, Self::Error> {
+        let mut parameters = json.parameters;
+        let input = match parameters.remove("input") {
+            Some(text) => serde_json::from_str(&text)
+                .map_err(|error| format!("action input is not valid JSON: {error}"))?,
+            None => serde_json::Value::Null,
+        };
+        Ok(Self {
+            action_id: json.action_id,
+            input,
+            action_type: json.action_type,
+            target: json.target,
+            parameters,
+        })
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
@@ -222,126 +293,6 @@ impl ActionDefinition {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-pub enum EventPayload {
-    #[serde(rename = "messageReceived")]
-    MessageReceived(MessageReceived),
-    #[serde(rename = "messageSent")]
-    MessageSent(MessageSent),
-}
-
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
-#[serde(rename_all = "camelCase")]
-pub struct EventEnvelope {
-    pub event_id: String,
-    pub event_type: String,
-    pub protocol_version: String,
-    pub occurred_at: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<ActorRef>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub actor: Option<ActorRef>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub recipient: Option<ActorRef>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub channel: Option<ChannelRef>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub conversation: Option<ConversationRef>,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub correlation_id: String,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub causation_id: String,
-    #[serde(default, skip_serializing_if = "String::is_empty")]
-    pub idempotency_key: String,
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub extensions: BTreeMap<String, String>,
-    #[serde(flatten)]
-    pub payload: EventPayload,
-}
-
-impl EventEnvelope {
-    pub fn message_received(
-        actor: Option<ActorRef>,
-        recipient: Option<ActorRef>,
-        text: impl Into<String>,
-    ) -> Self {
-        Self {
-            actor: actor.clone(),
-            event_id: Uuid::new_v4().to_string(),
-            event_type: "message.received".to_owned(),
-            occurred_at: now_rfc3339(),
-            payload: EventPayload::MessageReceived(MessageReceived {
-                text: text.into(),
-                ..MessageReceived::default()
-            }),
-            protocol_version: "0.1".to_owned(),
-            recipient,
-            source: actor,
-            ..Self::default_without_payload()
-        }
-    }
-
-    fn default_without_payload() -> Self {
-        Self {
-            event_id: String::new(),
-            event_type: String::new(),
-            protocol_version: String::new(),
-            occurred_at: String::new(),
-            source: None,
-            actor: None,
-            recipient: None,
-            channel: None,
-            conversation: None,
-            correlation_id: String::new(),
-            causation_id: String::new(),
-            idempotency_key: String::new(),
-            extensions: BTreeMap::new(),
-            payload: EventPayload::MessageReceived(MessageReceived::default()),
-        }
-    }
-
-    pub fn message_received_payload(&self) -> Option<&MessageReceived> {
-        match &self.payload {
-            EventPayload::MessageReceived(message) => Some(message),
-            EventPayload::MessageSent(_) => None,
-        }
-    }
-
-    pub fn to_proto_json(&self) -> Result<serde_json::Value, serde_json::Error> {
-        serde_json::to_value(self)
-    }
-}
-
-pub(crate) fn now_rfc3339() -> String {
-    let elapsed = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
-    let days = (elapsed.as_secs() / 86_400) as i64;
-    let seconds = elapsed.as_secs() % 86_400;
-    let (year, month, day) = civil_from_days(days);
-    let hour = seconds / 3_600;
-    let minute = (seconds % 3_600) / 60;
-    let second = seconds % 60;
-    format!(
-        "{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}.{:03}Z",
-        elapsed.subsec_millis()
-    )
-}
-
-fn civil_from_days(days_since_epoch: i64) -> (i64, i64, i64) {
-    let shifted_days = days_since_epoch + 719_468;
-    let era =
-        if shifted_days >= 0 { shifted_days / 146_097 } else { (shifted_days - 146_096) / 146_097 };
-    let day_of_era = shifted_days - era * 146_097;
-    let year_of_era =
-        (day_of_era - day_of_era / 1_460 + day_of_era / 36_524 - day_of_era / 146_096) / 365;
-    let year = year_of_era + era * 400;
-    let day_of_year = day_of_era - (365 * year_of_era + year_of_era / 4 - year_of_era / 100);
-    let month_part = (5 * day_of_year + 2) / 153;
-    let day = day_of_year - (153 * month_part + 2) / 5 + 1;
-    let month = month_part + if month_part < 10 { 3 } else { -9 };
-    let year = year + if month <= 2 { 1 } else { 0 };
-    (year, month, day)
-}
-
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum AgentError {
     #[error("ACP agent is already registered: {0}")]
@@ -386,30 +337,23 @@ pub struct AgentContext<'a> {
 
 impl<'a> AgentContext<'a> {
     pub fn reply(&mut self, text: impl Into<String>) -> &EventEnvelope {
-        let reply = EventEnvelope {
-            actor: Some(self.agent.clone()),
-            causation_id: self.event.event_id.clone(),
-            correlation_id: if self.event.correlation_id.is_empty() {
-                self.event.event_id.clone()
-            } else {
-                self.event.correlation_id.clone()
-            },
-            event_id: Uuid::new_v4().to_string(),
-            event_type: "message.sent".to_owned(),
-            occurred_at: now_rfc3339(),
-            payload: EventPayload::MessageSent(MessageSent {
-                text: text.into(),
-                ..MessageSent::default()
-            }),
-            protocol_version: "0.1".to_owned(),
-            recipient: self.event.actor.clone(),
-            source: Some(self.agent.clone()),
-            channel: self.event.channel.clone(),
-            conversation: self.event.conversation.clone(),
-            ..EventEnvelope::default_without_payload()
+        // Replies use the protocol version of the event being answered.
+        let mut reply = events::message_sent(self.event.protocol_version, text);
+        reply.actor = Some(self.agent.clone());
+        reply.causation_id = self.event.event_id.clone();
+        reply.correlation_id = if self.event.correlation_id.is_empty() {
+            self.event.event_id.clone()
+        } else {
+            self.event.correlation_id.clone()
         };
+        reply.recipient = self.event.actor.clone();
+        reply.source = Some(self.agent.clone());
+        reply.channel = self.event.channel.clone();
+        reply.conversation = self.event.conversation.clone();
+        // The index is valid because the reply was pushed on the line above.
+        let index = self.replies.len();
         self.replies.push(reply);
-        self.replies.last().expect("reply was just pushed")
+        &self.replies[index]
     }
 
     pub fn request_action(
@@ -422,6 +366,7 @@ impl<'a> AgentContext<'a> {
             action_id: action_id.clone(),
             input,
             action_type: action_type.into(),
+            ..ActionInvocation::default()
         });
         action_id
     }
@@ -470,7 +415,7 @@ impl AgentHost {
     }
 
     pub fn handle(&self, event: &EventEnvelope) -> Result<HandleResult, AgentError> {
-        if event.event_type != "message.received" {
+        if events::event_type_of(event) != "message.received" {
             return Ok(HandleResult::default());
         }
         let Some(message) = event.message_received_payload().cloned() else {
@@ -829,37 +774,126 @@ impl AcpApp {
 }
 
 #[cfg(test)]
+#[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
+    use crate::events::{EventPayload, ProtocolVersion};
+
+    fn inbound_message(version: ProtocolVersion, text: &str) -> EventEnvelope {
+        let mut event = events::message_received(version, text);
+        event.actor = Some(ActorRef {
+            actor_type: ActorType::Human,
+            id: "human:gabriel".to_owned(),
+            ..ActorRef::default()
+        });
+        event.recipient = Some(ActorRef::agent("agent:support", "Support"));
+        event
+    }
 
     #[test]
-    fn routes_message_and_creates_reply() {
-        let mut host = AgentHost::new();
-        let card = AgentCard::new("agent:support", "Support");
-        host.register(AgentDefinition::new(card, |context| {
-            let text = format!("Received: {}", context.message.text);
-            context.reply(text);
-            Ok(())
-        }))
-        .expect("agent registers");
+    fn routes_message_and_creates_reply_for_both_protocol_versions() {
+        for version in [ProtocolVersion::V0_1, ProtocolVersion::V0_2] {
+            let mut host = AgentHost::new();
+            let card = AgentCard::new("agent:support", "Support");
+            host.register(AgentDefinition::new(card, |context| {
+                let text = format!("Received: {}", context.message.text);
+                context.reply(text);
+                Ok(())
+            }))
+            .expect("agent registers");
 
-        let event = EventEnvelope::message_received(
-            Some(ActorRef {
-                actor_type: ActorType::Human,
-                id: "human:gabriel".to_owned(),
-                ..ActorRef::default()
-            }),
-            Some(ActorRef::agent("agent:support", "Support")),
-            "Can you help?",
+            let event = inbound_message(version, "Can you help?");
+            let result = host.handle(&event).expect("event is handled");
+
+            assert!(result.handled);
+            assert_eq!(result.replies.len(), 1);
+            assert_eq!(result.replies[0].protocol_version, version);
+            assert_eq!(result.replies[0].event_type.is_some(), version == ProtocolVersion::V0_1);
+            assert_eq!(events::event_type_of(&result.replies[0]), "message.sent");
+            assert!(matches!(
+                result.replies[0].payload,
+                EventPayload::MessageSent(MessageSent { ref text, .. }) if text == "Received: Can you help?"
+            ));
+        }
+    }
+
+    struct RequireApprovalPolicy;
+
+    impl ActionPolicy for RequireApprovalPolicy {
+        fn evaluate(&self, _action: &ActionInvocation, _event: &EventEnvelope) -> PolicyDecision {
+            PolicyDecision {
+                allowed: true,
+                approval_required: true,
+                reason: "refunds need approval".to_owned(),
+            }
+        }
+    }
+
+    fn approval_app() -> AcpApp {
+        AcpAppBuilder::new()
+            .agent(AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
+                context.request_action("refund", serde_json::json!({ "amount": 10 }));
+                Ok(())
+            }))
+            .expect("agent registers")
+            .action(ActionDefinition::new("refund", |input, _context| Ok(input.clone())))
+            .expect("action registers")
+            .policy(Box::new(RequireApprovalPolicy))
+            .build()
+    }
+
+    fn approval_message() -> EventEnvelope {
+        let mut event = inbound_message(ProtocolVersion::V0_1, "Refund order 42");
+        event.recipient = Some(ActorRef::agent("agent:billing", "Billing"));
+        event.source = event.actor.clone();
+        event
+    }
+
+    #[test]
+    fn approval_required_result_keeps_requested_action_id_and_resolves_by_approval_id() {
+        let mut app = approval_app();
+        app.start().expect("app starts");
+        let event = approval_message();
+
+        let result = app.ingest(event.clone()).expect("event is ingested");
+
+        assert_eq!(result.actions.len(), 1);
+        let requested_action_id = result.actions[0].action_id.clone();
+        assert_eq!(result.action_results.len(), 1);
+        let ActionResult::ApprovalRequired { action_id, approval_id } = &result.action_results[0]
+        else {
+            panic!("expected approval required, got {:?}", result.action_results[0]);
+        };
+        assert_eq!(action_id, &requested_action_id);
+        assert_eq!(approval_id, &format!("{requested_action_id}:approval"));
+
+        let approved = app.approve(approval_id).expect("approval resolves");
+        assert_eq!(
+            approved,
+            ActionResult::Executed {
+                action_id: requested_action_id.clone(),
+                result: serde_json::json!({ "amount": 10 }),
+            }
         );
-        let result = host.handle(&event).expect("event is handled");
 
-        assert!(result.handled);
-        assert_eq!(result.replies.len(), 1);
-        assert!(matches!(
-            result.replies[0].payload,
-            EventPayload::MessageSent(MessageSent { ref text, .. }) if text == "Received: Can you help?"
-        ));
+        let mut denied_app = approval_app();
+        denied_app.start().expect("app starts");
+        let denied_result = denied_app.ingest(event).expect("event is ingested");
+        let denied_action_id = denied_result.actions[0].action_id.clone();
+        let ActionResult::ApprovalRequired { action_id, approval_id } =
+            &denied_result.action_results[0]
+        else {
+            panic!("expected approval required");
+        };
+        assert_eq!(action_id, &denied_action_id);
+        let denied = denied_app.deny(approval_id, "not authorized").expect("denial resolves");
+        assert_eq!(
+            denied,
+            ActionResult::Blocked {
+                action_id: denied_action_id,
+                reason: "not authorized".to_owned(),
+            }
+        );
     }
 
     #[test]

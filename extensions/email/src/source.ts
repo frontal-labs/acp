@@ -44,6 +44,7 @@ export async function normalizeEmailMessage(
           text: message.text,
         }),
       },
+      recipient: options.recipient,
       threadId,
     },
     { ...metadata, eventId, idempotencyKey: metadata.idempotencyKey ?? eventId },

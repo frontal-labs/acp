@@ -25,8 +25,8 @@ pub struct EventEnvelope {
     pub causation_id: ::prost::alloc::string::String,
     #[prost(string, tag = "11")]
     pub idempotency_key: ::prost::alloc::string::String,
-    #[prost(map = "string, string", tag = "12")]
-    pub extensions: ::std::collections::HashMap<
+    #[prost(btree_map = "string, string", tag = "12")]
+    pub extensions: ::prost::alloc::collections::BTreeMap<
         ::prost::alloc::string::String,
         ::prost::alloc::string::String,
     >,

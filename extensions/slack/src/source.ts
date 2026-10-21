@@ -62,6 +62,7 @@ export async function normalizeSlackEvent(
         case: "messageReceived",
         value: create(MessageReceivedSchema, { text: optionalString(event, "text") ?? "" }),
       },
+      recipient: options.recipient,
       threadId,
     },
     { ...metadata, eventId, idempotencyKey: metadata.idempotencyKey ?? eventId },

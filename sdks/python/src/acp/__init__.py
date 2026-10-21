@@ -10,12 +10,14 @@ from .app import (
     DeliveryReceipt,
     DurableStore,
     IngestResult,
-    InMemoryStore,
     PolicyDecision,
 )
 from .errors import AcpError, ActionError, DeliveryError
 from .host import AgentActions, AgentContext, AgentDefinition, AgentHooks, AgentHost
 from .models import (
+    ACP_PROTOCOL_VERSION,
+    ACP_PROTOCOL_VERSIONS,
+    ACP_V2_PROTOCOL_VERSION,
     ActorRef,
     AgentCapabilities,
     AgentCard,
@@ -23,17 +25,23 @@ from .models import (
     EventEnvelope,
     MessageReceived,
     action_executed,
+    action_failed,
     approval_requested,
     event_from_binary,
     event_from_json,
     event_to_binary,
     event_to_json,
+    event_type_of,
     message_received,
     message_sent,
     parse_event,
+    validate_event,
 )
 
 __all__ = [
+    "ACP_PROTOCOL_VERSION",
+    "ACP_PROTOCOL_VERSIONS",
+    "ACP_V2_PROTOCOL_VERSION",
     "AgentCapabilities",
     "AgentCard",
     "AgentContext",
@@ -54,7 +62,6 @@ __all__ = [
     "DeliveryError",
     "DeliveryReceipt",
     "DurableStore",
-    "InMemoryStore",
     "IngestResult",
     "PolicyDecision",
     "AgentSkill",
@@ -62,12 +69,15 @@ __all__ = [
     "EventEnvelope",
     "MessageReceived",
     "action_executed",
+    "action_failed",
     "approval_requested",
     "event_from_binary",
     "event_from_json",
     "event_to_binary",
     "event_to_json",
+    "event_type_of",
     "message_received",
     "message_sent",
     "parse_event",
+    "validate_event",
 ]

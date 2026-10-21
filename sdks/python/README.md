@@ -1,7 +1,7 @@
 # acp-sdk
 
 The PyPI distribution is `acp-sdk`, imported as `acp`. It provides an
-application facade, an A2A-like agent card and host API, v0.2 event builders,
+application facade, an A2A-like agent card and host API, v0.1 and v0.2 event builders (one API, selected by `protocol_version`),
 and transport-independent source/sink contracts.
 
 ```bash
@@ -10,6 +10,7 @@ python -m pip install acp-sdk
 
 ```python
 app = AcpApp(
+    store=event_store,  # required: any DurableStore (append_if_absent, all, close)
     agents=[agent],
     actions=[ActionDefinition("send_customer_reply", execute_reply)],
     channels=[ChannelDefinition("memory", sink=memory_sink)],
@@ -26,6 +27,7 @@ await app.stop()
 from acp import AcpApp, AgentDefinition, PolicyDecision
 
 app = AcpApp(
+    store=event_store,  # required: no default store is provided
     agents=[
         AgentDefinition(
             id="agent:support",

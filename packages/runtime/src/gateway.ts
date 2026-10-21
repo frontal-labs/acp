@@ -14,9 +14,9 @@ import type { RuntimeResult } from "./types.js";
 
 /** Routes normalized ACP events to provider adapters. */
 export class ChannelGateway {
-  private readonly sinks = new Map<string, ChannelSink>();
-  private readonly sources = new Map<string, ChannelSource>();
-  private readonly sourceRuns = new Map<string, Promise<void>>();
+  private readonly sinks: Record<string, ChannelSink> = Object.create(null);
+  private readonly sources: Record<string, ChannelSource> = Object.create(null);
+  private sourceRuns: Partial<Record<string, Promise<void>>> = Object.create(null);
   readonly runtime: AcpRuntime;
 
   constructor(runtime: AcpRuntime, adapters: ChannelAdapter[] = []) {
@@ -27,11 +27,11 @@ export class ChannelGateway {
   }
 
   register(adapter: ChannelAdapter): void {
-    this.sinks.set(adapter.provider, adapter);
+    this.sinks[adapter.provider] = adapter;
   }
 
   registerSource(source: ChannelSource): void {
-    this.sources.set(source.provider, source);
+    this.sources[source.provider] = source;
   }
 
   registerChannel(channel: { sink?: ChannelSink; source?: ChannelSource }): void {
@@ -52,7 +52,7 @@ export class ChannelGateway {
     input: unknown,
     metadata?: ReceiveMetadata,
   ): Promise<RuntimeResult[]> {
-    const source = this.sources.get(provider);
+    const source: ChannelSource | undefined = this.sources[provider];
     if (!source) {
       throw new TransportError(`No ACP source registered for provider: ${provider}`, {
         details: { provider },
@@ -87,26 +87,23 @@ export class ChannelGateway {
     signal: AbortSignal,
     onError?: (error: AcpError) => void | Promise<void>,
   ): Promise<void> {
-    for (const source of this.sources.values()) {
+    for (const source of Object.values(this.sources)) {
       if (!source.start) {
         continue;
       }
       const run = Promise.resolve(source.start(emit, signal));
-      this.sourceRuns.set(
-        source.provider,
-        run.catch(async (error) => {
-          await onError?.(
-            error instanceof AcpError
-              ? error
-              : new TransportError(`ACP source failed for provider ${source.provider}`, {
-                  cause: error,
-                  provider: source.provider,
-                  retryable: true,
-                  stage: "processing",
-                }),
-          );
-        }),
-      );
+      this.sourceRuns[source.provider] = run.catch(async (error) => {
+        await onError?.(
+          error instanceof AcpError
+            ? error
+            : new TransportError(`ACP source failed for provider ${source.provider}`, {
+                cause: error,
+                provider: source.provider,
+                retryable: true,
+                stage: "processing",
+              }),
+        );
+      });
       // Keep source failures attached to the lifecycle promise without making startup wait for a
       // long-running polling or websocket source.
     }
@@ -114,14 +111,14 @@ export class ChannelGateway {
   }
 
   async stop(): Promise<void> {
-    for (const source of this.sources.values()) {
+    for (const source of Object.values(this.sources)) {
       if (source.stop) {
         // biome-ignore lint/performance/noAwaitInLoops: Sources are stopped deterministically.
         await source.stop();
       }
     }
-    await Promise.allSettled(this.sourceRuns.values());
-    this.sourceRuns.clear();
+    await Promise.allSettled(Object.values(this.sourceRuns));
+    this.sourceRuns = Object.create(null);
   }
 
   async dispatch(event: EventEnvelope, options?: DeliveryOptions): Promise<DeliveryReceipt> {
@@ -132,7 +129,7 @@ export class ChannelGateway {
       );
     }
 
-    const adapter = this.sinks.get(provider);
+    const adapter: ChannelSink | undefined = this.sinks[provider];
     if (!adapter) {
       throw new TransportError(`No ACP adapter registered for provider: ${provider}`, {
         details: { eventId: event.eventId, provider },
@@ -155,7 +152,7 @@ export class ChannelGateway {
   }
 
   async close(): Promise<void> {
-    for (const sink of this.sinks.values()) {
+    for (const sink of Object.values(this.sinks)) {
       // biome-ignore lint/performance/noAwaitInLoops: Sinks close deterministically before shutdown completes.
       await sink.close?.();
     }

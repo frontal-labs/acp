@@ -92,7 +92,7 @@ oneof is canonical and the friendly event name is derived from it. For example,
 `message.received` contains a `messageReceived` payload, while `approval.granted`
 and `approval.denied` use `approvalDecided` with different outcomes.
 
-New integrations can use the v2 helpers (`createV2Event` and `v2EventType`), where the payload oneof is the canonical event kind and the friendly event name is derived by the SDK.
+Both versions share one API. Pass `protocolVersion: "0.2"` to `createEvent` or any typed builder to get the envelope where the payload oneof is the canonical event kind; `eventTypeOf()` derives the friendly event name for either version. The default is `"0.1"`.
 
 ## Safety semantics
 

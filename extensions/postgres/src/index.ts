@@ -3,6 +3,7 @@ export {
   migratePostgresEventStore,
   POSTGRES_EVENT_STORE_MIGRATION,
   PostgresEventStore,
+  postgresEventStoreMigration,
 } from "./store.js";
 export type {
   PostgresClient,

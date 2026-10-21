@@ -25,6 +25,7 @@ environment-variable guidance.
 | [`native-typescript`](./native-typescript/README.md) | TypeScript | `acp-sdk` | Agent cards, message routing, channel dispatch, approval flow |
 | [`native-python`](./native-python/README.md) | Python | ACP Python SDK | Async agent host and ProtoJSON-shaped replies |
 | [`native-rust`](./native-rust/README.md) | Rust | ACP Rust SDK | Typed agent host and reply envelopes |
+| [`slack-typescript`](./slack-typescript/README.md) | TypeScript | Slack Events API and Web API | Real-channel quickstart: signed webhooks in, `chat.postMessage` out |
 | [`langchain-python`](./langchain-python/README.md) | Python | LangChain v1 | `create_agent` mapped to ACP messages |
 | [`langchain-typescript`](./langchain-typescript/README.md) | TypeScript | LangChain v1 | `createAgent` mapped to ACP messages |
 | [`openai-agents-python`](./openai-agents-python/README.md) | Python | OpenAI Agents SDK | `Runner.run` and interruption boundary |

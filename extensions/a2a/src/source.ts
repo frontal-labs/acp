@@ -51,6 +51,7 @@ export function normalizeA2AEvent(
         ...(taskId ? { "a2a.task_id": taskId } : {}),
       },
       payload: { case: "messageReceived", value: create(MessageReceivedSchema, { text }) },
+      recipient: options.recipient,
       threadId: taskId,
     },
     { ...metadata, eventId, idempotencyKey: metadata.idempotencyKey ?? eventId },

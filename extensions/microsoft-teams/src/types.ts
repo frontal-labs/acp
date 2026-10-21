@@ -20,6 +20,8 @@ export interface TeamsTransport {
 export interface TeamsSourceOptions {
   actorResolver?: (id: string) => ActorRef | Promise<ActorRef>;
   botId?: string;
+  /** Agent that receives inbound messages. AgentHost routes only by `recipient`, so without it the message reaches no agent. */
+  recipient?: ActorRef;
 }
 
 /** Complete Teams channel configuration for `createAcp()`. */
@@ -32,4 +34,5 @@ export interface TeamsWebhookRequest {
   headers: Record<string, string | undefined>;
 }
 
+/** ACP channel definition for Microsoft Teams. */
 export type TeamsChannel = ChannelDefinition;

@@ -2,11 +2,11 @@ import type { DirectoryProvider, DirectoryProviderOptions } from "./types.js";
 
 /** Adds bounded in-memory caching to an injected directory transport. */
 export class CachedDirectoryProvider implements DirectoryProvider {
-  private readonly actorCache = new Map<
-    string,
-    { expiresAt: number; value: Awaited<ReturnType<DirectoryProvider["getActor"]>> }
-  >();
-  private readonly groupCache = new Map<string, { expiresAt: number; value: string[] }>();
+  private readonly actorCache: Partial<
+    Record<string, { expiresAt: number; value: Awaited<ReturnType<DirectoryProvider["getActor"]>> }>
+  > = Object.create(null);
+  private readonly groupCache: Partial<Record<string, { expiresAt: number; value: string[] }>> =
+    Object.create(null);
   private readonly ttlMs: number;
   private readonly transport: DirectoryProviderOptions["transport"];
 
@@ -16,22 +16,22 @@ export class CachedDirectoryProvider implements DirectoryProvider {
   }
 
   async getActor(externalId: string) {
-    const cached = this.actorCache.get(externalId);
+    const cached = this.actorCache[externalId];
     if (cached && cached.expiresAt > Date.now()) {
       return cached.value;
     }
     const value = await this.transport.getActor(externalId);
-    this.actorCache.set(externalId, { expiresAt: Date.now() + this.ttlMs, value });
+    this.actorCache[externalId] = { expiresAt: Date.now() + this.ttlMs, value };
     return value;
   }
 
   async getGroupsForActor(actorId: string): Promise<string[]> {
-    const cached = this.groupCache.get(actorId);
+    const cached = this.groupCache[actorId];
     if (cached && cached.expiresAt > Date.now()) {
       return cached.value;
     }
     const value = await this.transport.getGroupsForActor(actorId);
-    this.groupCache.set(actorId, { expiresAt: Date.now() + this.ttlMs, value });
+    this.groupCache[actorId] = { expiresAt: Date.now() + this.ttlMs, value };
     return value;
   }
 

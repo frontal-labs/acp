@@ -2,7 +2,13 @@ import { ValidationError } from "@acp/core";
 
 import type { GoogleChatWebhookRequest } from "./types.js";
 
-/** Verifies a Google Chat webhook through a host-supplied token verifier. */
+/**
+ * Verifies a Google Chat webhook through a host-supplied token verifier.
+ *
+ * The verifier is the authentication boundary. It must validate the Google-issued bearer token
+ * (signature, issuer, audience). A verifier that returns true unconditionally disables
+ * authentication for every inbound Google Chat request.
+ */
 export async function verifyGoogleChatWebhook(
   request: GoogleChatWebhookRequest,
   verifyToken: (request: GoogleChatWebhookRequest) => boolean | Promise<boolean>,

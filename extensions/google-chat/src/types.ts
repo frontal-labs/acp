@@ -20,14 +20,19 @@ export interface GoogleChatTransport {
 export interface GoogleChatSourceOptions {
   actorResolver?: (id: string) => ActorRef | Promise<ActorRef>;
   appId?: string;
+  /** Agent that receives inbound messages. AgentHost routes only by `recipient`, so without it the message reaches no agent. */
+  recipient?: ActorRef;
 }
 
+/** Complete Google Chat channel configuration for `createAcp()`. */
 export interface GoogleChatChannelOptions extends GoogleChatSourceOptions {
   transport: GoogleChatTransport;
 }
 
+/** A Google Chat webhook request with its headers. */
 export interface GoogleChatWebhookRequest {
   headers: Record<string, string | undefined>;
 }
 
+/** ACP channel definition for Google Chat. */
 export type GoogleChatChannel = ChannelDefinition;

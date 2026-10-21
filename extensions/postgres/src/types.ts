@@ -14,9 +14,16 @@ export interface PostgresClient {
 /** PostgreSQL store configuration. */
 export interface PostgresEventStoreOptions {
   client: PostgresClient;
+  /**
+   * How long a claimed action may stay in progress before another worker can take it over.
+   * Without a lease, a worker that crashes after claiming blocks its action ID forever.
+   * Defaults to five minutes. Completed and failed actions are never taken over.
+   */
+  leaseMs?: number;
   tableName?: string;
 }
 
+/** Database row shape for persisted ACP events. */
 export interface PostgresEventRow {
   causation_id: string;
   correlation_id: string;

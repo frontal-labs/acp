@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@acp/testing": "workspace:*",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.12"
   },
   "engines": {
     "node": ">=22.18.0"

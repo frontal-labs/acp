@@ -7,7 +7,7 @@ function decision(value: unknown, fallback: PolicyDecision): PolicyDecision {
   if (value === null || typeof value !== "object") {
     return fallback;
   }
-  const record = value as Record<string, unknown>;
+  const record: Partial<Record<string, unknown>> = { ...value };
   return {
     allowed: record.allowed === true,
     approvalRequired: record.approvalRequired === true,

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 
-import { ACP_PROTOCOL_VERSION, eventFromJson } from "@acp/protocol";
+import { ACP_PROTOCOL_VERSION, eventFromJson, eventTypeOf } from "@acp/protocol";
 import type { JsonValue } from "@bufbuild/protobuf";
 
 /** I/O operations required by the ACP CLI commands. */
@@ -42,7 +42,7 @@ export async function runCommand(args: string[], io: CliIO): Promise<number> {
     try {
       const source = target ? await readFile(target, "utf8") : await io.readStdin();
       const event = eventFromJson(JSON.parse(source) as JsonValue);
-      io.stdout(`valid ACP event: ${event.eventType}`);
+      io.stdout(`valid ACP event: ${eventTypeOf(event)}`);
       return 0;
     } catch (error) {
       io.stderr(`invalid ACP event: ${error instanceof Error ? error.message : String(error)}`);

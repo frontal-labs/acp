@@ -1,7 +1,9 @@
 # Native TypeScript ACP
 
 This is the smallest complete TypeScript example. It uses the config-first
-`createAcp()` API with a policy engine and in-memory channel adapter.
+`createAcp()` API with a policy engine, an example channel, and an example event
+store. The store and channel live in `examples/_shared/typescript/example-kit.ts`;
+they are for demonstration only, not production.
 
 ## Run
 

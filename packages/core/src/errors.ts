@@ -1,6 +1,7 @@
 /** A stable error code emitted by an ACP package. */
 export type AcpErrorCode =
   | "ACP_ACTION"
+  | "ACP_AUTHORIZATION"
   | "ACP_CONFLICT"
   | "ACP_NOT_FOUND"
   | "ACP_PROTOCOL"
@@ -104,6 +105,14 @@ export class ConflictError extends AcpError {
       },
     );
     this.name = "ConflictError";
+  }
+}
+
+/** Indicates that the actor is not allowed to perform the requested ACP operation. */
+export class AuthorizationError extends AcpError {
+  constructor(message: string, options: AcpErrorOptions = {}) {
+    super("ACP_AUTHORIZATION", message, options);
+    this.name = "AuthorizationError";
   }
 }
 

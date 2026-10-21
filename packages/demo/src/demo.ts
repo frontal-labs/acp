@@ -1,11 +1,26 @@
-import { InMemoryChannelAdapter } from "@acp/adapter";
 import { RuleBasedPolicyEngine } from "@acp/policy";
-import { createTestAgent, createTestEvent, createTestHuman } from "@acp/testing";
+import {
+  createTestAgent,
+  createTestChannelAdapter,
+  createTestEvent,
+  createTestEventStore,
+  createTestHuman,
+} from "@acp/testing";
 import { createAcp, defineAction } from "acp-sdk";
+
+/** Narrows unknown action input to the ticket shape this demo expects. */
+function isTicketInput(input: unknown): input is { ticketId: string } {
+  return (
+    typeof input === "object" &&
+    input !== null &&
+    "ticketId" in input &&
+    typeof input.ticketId === "string"
+  );
+}
 
 /** Runs the reference approval flow through the high-level app API. */
 export async function runDemo(): Promise<void> {
-  const adapter = new InMemoryChannelAdapter();
+  const adapter = createTestChannelAdapter();
   const human = createTestHuman("human:gabriel", "Gabriel");
   const agent = createTestAgent("agent:support", "Support Agent");
   const manager = createTestHuman("human:manager", "Support Manager");
@@ -15,11 +30,11 @@ export async function runDemo(): Promise<void> {
       return { sent: true };
     },
     type: "send_customer_reply",
-    validate: (input) => {
-      if (!input || typeof input !== "object" || !("ticketId" in input)) {
+    validate: (input: unknown) => {
+      if (!isTicketInput(input)) {
         throw new Error("ticketId is required");
       }
-      return input as { ticketId: string };
+      return input;
     },
   });
   let approvalId = "";
@@ -43,14 +58,15 @@ export async function runDemo(): Promise<void> {
     ],
     channels: [
       {
-        provider: "memory",
+        provider: "test",
         sink: adapter,
         source: {
           normalize: async () => createTestEvent({ actor: human, recipient: agent }),
-          provider: "memory",
+          provider: "test",
         },
       },
     ],
+    eventStore: createTestEventStore(),
     policy: new RuleBasedPolicyEngine({
       rules: [
         {
@@ -67,7 +83,7 @@ export async function runDemo(): Promise<void> {
   });
 
   await app.start();
-  await app.receive("memory", { text: "Can you answer ticket 99?" });
+  await app.receive("test", { text: "Can you answer ticket 99?" });
   console.log(`action status: ${approvalId ? "approval_required" : "unexpected"}`);
   await app.approve(approvalId, manager, "Approved by the support manager");
   await app.stop();

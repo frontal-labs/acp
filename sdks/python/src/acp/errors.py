@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Any
-
 
 class AcpError(Exception):
     """Classified, vendor-neutral ACP failure."""
@@ -38,7 +36,27 @@ class DeliveryError(AcpError):
     code = "ACP_TRANSPORT"
 
 
-def as_acp_error(error: BaseException | Any, **kwargs: Any) -> AcpError:
+def as_acp_error(
+    error: BaseException,
+    *,
+    stage: str = "processing",
+    retryable: bool = False,
+    event_id: str | None = None,
+    action_id: str | None = None,
+    approval_id: str | None = None,
+    provider: str | None = None,
+) -> AcpError:
+    """Return `error` unchanged if it is already an AcpError, otherwise wrap it with its context."""
+
     if isinstance(error, AcpError):
         return error
-    return AcpError(str(error), cause=error if isinstance(error, BaseException) else None, **kwargs)
+    return AcpError(
+        str(error),
+        stage=stage,
+        retryable=retryable,
+        event_id=event_id,
+        action_id=action_id,
+        approval_id=approval_id,
+        provider=provider,
+        cause=error,
+    )
