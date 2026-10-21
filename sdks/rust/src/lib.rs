@@ -1,6 +1,4 @@
-pub mod generated {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/../../proto/gen/rust/mod.rs"));
-}
+pub mod generated;
 
 mod binary;
 mod events;
