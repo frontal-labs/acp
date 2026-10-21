@@ -54,7 +54,7 @@
     "format": "turbo run format && pnpm format:root",
     "format:root": "ultracite fix .",
     "generate": "pnpm generate:typescript && pnpm generate:python && pnpm generate:rust",
-    "generate:python": "mkdir -p proto/gen/python && protoc --proto_path=proto --python_out=proto/gen/python $(find proto/v1 proto/v2 -name '*.proto' -print)",
+    "generate:python": "node scripts/generate-python.mjs",
     "generate:rust": "cargo build --manifest-path sdks/rust/Cargo.toml",
     "generate:typescript": "BUF_CACHE_DIR=.ocp-buf-cache buf generate --config proto/buf.yaml --template proto/buf.gen.yaml proto",
     "lint": "turbo run lint && pnpm lint:root",

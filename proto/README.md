@@ -22,7 +22,7 @@ Keep package names versioned (`ocp.v1.api`, `ocp.v1.types`, and `ocp.v2.api`) wh
 Run `pnpm generate` from the repository root after changing a schema. The root scripts pass `proto/buf.yaml` and `proto/buf.gen.yaml` explicitly, so Buf configuration stays next to the schema while generated output remains under `proto/gen`. It runs:
 
 - Buf and `protoc-gen-es` for `proto/gen/typescript`;
-- `protoc` for `proto/gen/python`;
+- `protoc` 33.2 for `proto/gen/python` (the version CI pins; `pnpm generate:python` refuses other versions, and `PROTOC` can point at the 33.2 binary);
 - the Rust SDK's `prost-build` for `proto/gen/rust`.
 
 Generated bindings are checked into this reference repository so each SDK has a visible, reproducible wire surface. Do not edit generated files by hand.
