@@ -51,7 +51,6 @@ export async function normalizeWhatsAppEvent(
           channelId: phoneNumberId,
           conversationId: `whatsapp:${from}`,
           conversationParticipants: [actor],
-          eventType: "message.received",
           extensions: {
             "ocp.provider": "whatsapp",
             "whatsapp.phone_number_id": phoneNumberId,
@@ -74,7 +73,7 @@ export async function normalizeWhatsAppEvent(
   return [];
 }
 
-/** Creates a WhatsApp source for `createOcp({ channels })`. */
+/** Creates a WhatsApp source for `openChannel({ channels })`. */
 export function createWhatsAppSource(options: WhatsAppSourceOptions = {}): ChannelSource {
   return createProviderSource("whatsapp", (input, metadata) =>
     normalizeWhatsAppEvent(input, metadata, options),

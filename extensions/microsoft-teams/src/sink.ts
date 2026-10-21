@@ -8,12 +8,12 @@ import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { TeamsTransport } from "./types.js";
 
-/** Creates a Teams sink for `createOcp({ channels })`. */
+/** Creates a Teams sink for `openChannel({ channels })`. */
 export function createTeamsSink(transport: TeamsTransport): ChannelSink {
   return createProviderSink(
     "microsoft-teams",
     async (event, options?: DeliveryOptions): Promise<DeliveryReceipt | undefined> => {
-      if (event.eventType !== "message.sent" || event.payload.case !== "messageSent") {
+      if (event.payload.case !== "messageSent") {
         return undefined;
       }
       const conversationId = event.channel?.channelId;

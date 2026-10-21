@@ -1,9 +1,9 @@
 export { createOpenTelemetryHooks } from "./hooks.js";
 export type {
   EventObserver,
-  OcpCounter,
-  OcpSpan,
-  OcpTracer,
+  OpenChannelCounter,
+  OpenChannelSpan,
+  OpenChannelTracer,
   OpenTelemetryHooks,
   OpenTelemetryOptions,
 } from "./types.js";

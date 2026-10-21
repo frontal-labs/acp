@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { create } from "@bufbuild/protobuf";
-import { createOcp } from "@frontal-labs/open-channel";
+import { openChannel } from "@frontal-labs/open-channel";
 import {
   createSlackChannel,
   type SlackTransport,
@@ -40,7 +40,7 @@ export function createSlackWebApiTransport(token: string, apiBase: string): Slac
 /** The OCP app: a Slack channel, one helper agent, and a policy that starts with no actions. */
 export function createSlackApp(options: { botUserId?: string; transport: SlackTransport }) {
   const helper = create(ActorRefSchema, { id: "agent:slack-helper", type: ActorType.AGENT });
-  return createOcp({
+  return openChannel({
     agents: [
       {
         description: "Replies to Slack messages sent to the workspace",
@@ -59,9 +59,9 @@ export function createSlackApp(options: { botUserId?: string; transport: SlackTr
         transport: options.transport,
       }),
     ],
-    // Example only. Production deployments use a durable store such as @frontal-labs/open-channel-ext-postgres.
-    eventStore: createExampleEventStore(),
     policy: new RuleBasedPolicyEngine({ rules: [] }),
+    // Example only. Production deployments use a durable store such as @frontal-labs/open-channel-ext-postgres.
+    store: createExampleEventStore(),
   });
 }
 

@@ -1,4 +1,4 @@
-import { createOcp, defineAction } from "@frontal-labs/open-channel";
+import { action, eventType, openChannel } from "@frontal-labs/open-channel";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   createTestAgent,
@@ -24,7 +24,7 @@ export async function runDemo(): Promise<void> {
   const human = createTestHuman("human:gabriel", "Gabriel");
   const agent = createTestAgent("agent:support", "Support Agent");
   const manager = createTestHuman("human:manager", "Support Manager");
-  const action = defineAction<{ ticketId: string }, { sent: boolean }>({
+  const sendReply = action<{ ticketId: string }, { sent: boolean }>({
     execute: (input) => {
       console.log(`sending customer reply for ${input.ticketId}`);
       return { sent: true };
@@ -38,14 +38,14 @@ export async function runDemo(): Promise<void> {
     },
   });
   let approvalId = "";
-  const app = createOcp({
-    actions: [action],
+  const app = openChannel({
+    actions: [sendReply],
     agents: [
       {
         id: agent.id,
         name: agent.displayName,
         onMessage: async (context) => {
-          const result = await context.actions.request(
+          const result = await context.request(
             "send_customer_reply",
             { ticketId: "ticket:99" },
             { approver: manager, reason: "Customer-facing replies require review" },
@@ -66,7 +66,6 @@ export async function runDemo(): Promise<void> {
         },
       },
     ],
-    eventStore: createTestEventStore(),
     policy: new RuleBasedPolicyEngine({
       rules: [
         {
@@ -77,6 +76,7 @@ export async function runDemo(): Promise<void> {
         },
       ],
     }),
+    store: createTestEventStore(),
   });
   app.on("action.executed", (event) => {
     console.log(`action executed: ${event.eventId}`);
@@ -90,6 +90,6 @@ export async function runDemo(): Promise<void> {
 
   console.log("\nOCP delivery:");
   for (const event of adapter.sent) {
-    console.log(`${event.eventType} (${event.eventId})`);
+    console.log(`${eventType(event)} (${event.eventId})`);
   }
 }

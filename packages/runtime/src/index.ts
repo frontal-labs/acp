@@ -1,7 +1,7 @@
 export { createActor, SYSTEM_ACTOR } from "./actors.js";
 export { ManualClock, SystemClock } from "./clock.js";
 export { ChannelGateway } from "./gateway.js";
-export { OcpRuntime } from "./runtime.js";
+export { OpenChannelRuntime } from "./runtime.js";
 export type {
   ActionExecutionRecord,
   ChannelGatewayOptions,

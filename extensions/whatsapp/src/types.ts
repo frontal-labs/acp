@@ -23,7 +23,7 @@ export interface WhatsAppSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete WhatsApp channel configuration for `createOcp()`. */
+/** Complete WhatsApp channel configuration for `openChannel()`. */
 export interface WhatsAppChannelOptions extends WhatsAppSourceOptions {
   phoneNumberId: string;
   transport: WhatsAppTransport;

@@ -9,12 +9,12 @@ import {
   eventTypes,
 } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
-import { ManualClock, OcpRuntime } from "../src/index.js";
+import { ManualClock, OpenChannelRuntime } from "../src/index.js";
 
 describe("@frontal-labs/open-channel-runtime", () => {
   it("expires approval requests and emits escalation", async () => {
     const clock = new ManualClock(new Date("2026-10-19T14:00:00.000Z"));
-    const runtime = new OcpRuntime({
+    const runtime = new OpenChannelRuntime({
       clock,
       defaultApprovalTimeoutMs: 1000,
       eventStore: createTestEventStore(),
@@ -43,7 +43,7 @@ describe("@frontal-labs/open-channel-runtime", () => {
   });
 
   it("deduplicates events and resolves an approval", async () => {
-    const runtime = new OcpRuntime({
+    const runtime = new OpenChannelRuntime({
       eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [{ actionType: "send_reply", allowed: true, id: "review", requiresApproval: true }],

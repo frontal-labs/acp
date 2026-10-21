@@ -8,12 +8,12 @@ import { createProviderSink } from "@frontal-labs/open-channel-ext-shared";
 
 import type { SlackTransport } from "./types.js";
 
-/** Creates a Slack `ChannelSink` for `createOcp({ channels })`. */
+/** Creates a Slack `ChannelSink` for `openChannel({ channels })`. */
 export function createSlackSink(transport: SlackTransport): ChannelSink {
   return createProviderSink(
     "slack",
     async (event, options?: DeliveryOptions): Promise<DeliveryReceipt | undefined> => {
-      if (event.eventType !== "message.sent" || event.payload.case !== "messageSent") {
+      if (event.payload.case !== "messageSent") {
         return undefined;
       }
       const channelId = event.channel?.channelId;

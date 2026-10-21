@@ -1,10 +1,6 @@
 import { readFile } from "node:fs/promises";
 import type { JsonValue } from "@bufbuild/protobuf";
-import {
-  eventFromJson,
-  eventTypeOf,
-  OCP_PROTOCOL_VERSION,
-} from "@frontal-labs/open-channel-protocol";
+import { eventType, fromJson, PROTOCOL_VERSION } from "@frontal-labs/open-channel-protocol";
 
 /** I/O operations required by the OCP CLI commands. */
 export interface CliIO {
@@ -14,7 +10,7 @@ export interface CliIO {
 }
 
 /** Human-readable CLI usage text. */
-export const HELP_TEXT = `OCP CLI ${OCP_PROTOCOL_VERSION}
+export const HELP_TEXT = `OCP CLI ${PROTOCOL_VERSION}
 
 Usage:
   ocp help
@@ -37,15 +33,15 @@ export async function runCommand(args: string[], io: CliIO): Promise<number> {
   }
 
   if (command === "version" || command === "--version") {
-    io.stdout(OCP_PROTOCOL_VERSION);
+    io.stdout(PROTOCOL_VERSION);
     return 0;
   }
 
   if (command === "validate") {
     try {
       const source = target ? await readFile(target, "utf8") : await io.readStdin();
-      const event = eventFromJson(JSON.parse(source) as JsonValue);
-      io.stdout(`valid OCP event: ${eventTypeOf(event)}`);
+      const event = fromJson(JSON.parse(source) as JsonValue);
+      io.stdout(`valid OCP event: ${eventType(event)}`);
       return 0;
     } catch (error) {
       io.stderr(`invalid OCP event: ${error instanceof Error ? error.message : String(error)}`);

@@ -1,8 +1,8 @@
 import { create } from "@bufbuild/protobuf";
-import { AgentHost } from "@frontal-labs/open-channel";
+import { AgentHost, eventType } from "@frontal-labs/open-channel";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import { ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
-import { ChannelGateway, OcpRuntime } from "@frontal-labs/open-channel-runtime";
+import { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
 import {
   createTestAgent,
   createTestChannelAdapter,
@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 describe("OCP agent SDK", () => {
   it("routes an inbound message and dispatches the agent reply", async () => {
     const adapter = createTestChannelAdapter();
-    const runtime = new OcpRuntime({
+    const runtime = new OpenChannelRuntime({
       eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
     });
@@ -32,7 +32,7 @@ describe("OCP agent SDK", () => {
       },
       skills: [{ id: "support", name: "Support" }],
     });
-    expect(host.getAgentCard(agent.id)?.skills[0]?.id).toBe("support");
+    expect(host.agentCards().find((card) => card.id === agent.id)?.skills[0]?.id).toBe("support");
     host.attach();
 
     const inbound = createTestEvent({
@@ -45,7 +45,7 @@ describe("OCP agent SDK", () => {
     await runtime.process(inbound);
 
     expect(adapter.sent).toHaveLength(1);
-    expect(adapter.sent[0].eventType).toBe("message.sent");
+    expect(adapter.sent[0] && eventType(adapter.sent[0])).toBe("message.sent");
     if (adapter.sent[0].payload.case === "messageSent") {
       expect(adapter.sent[0].payload.value.text).toBe("Received: Can you help?");
     }

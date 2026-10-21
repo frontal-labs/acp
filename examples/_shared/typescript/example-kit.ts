@@ -1,5 +1,5 @@
 import type { ChannelDefinition } from "@frontal-labs/open-channel";
-import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import { type EventEnvelope, eventType } from "@frontal-labs/open-channel-protocol";
 import type { ActionExecutionRecord, EventStore } from "@frontal-labs/open-channel-runtime";
 
 /**
@@ -51,7 +51,7 @@ function filterEvents(
   options: { eventType?: string; limit?: number },
 ): EventEnvelope[] {
   const matching = options.eventType
-    ? events.filter((event) => event.eventType === options.eventType)
+    ? events.filter((event) => eventType(event) === options.eventType)
     : events;
   return options.limit === undefined ? matching : matching.slice(-options.limit);
 }

@@ -1,3 +1,5 @@
+import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import { eventType } from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 import { createTeamsSource } from "../src/index.js";
 
@@ -12,6 +14,6 @@ describe("@frontal-labs/open-channel-ext-microsoft-teams", () => {
       type: "message",
     });
     expect(Array.isArray(event)).toBe(false);
-    expect((event as { eventType: string }).eventType).toBe("message.received");
+    expect(eventType(event as EventEnvelope)).toBe("message.received");
   });
 });

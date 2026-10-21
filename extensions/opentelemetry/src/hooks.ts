@@ -1,17 +1,17 @@
-import type { OcpHooks } from "@frontal-labs/open-channel";
+import { type EventEnvelope, eventType, type OpenChannelHooks } from "@frontal-labs/open-channel";
 
 import type { OpenTelemetryOptions } from "./types.js";
 
-function eventAttributes(event: { eventId: string; eventType: string; protocolVersion: string }) {
+function eventAttributes(event: EventEnvelope) {
   return {
     "ocp.event_id": event.eventId,
-    "ocp.event_type": event.eventType,
+    "ocp.event_type": eventType(event),
     "ocp.protocol_version": event.protocolVersion,
   };
 }
 
 /** Creates SDK hooks that emit provider-neutral OpenTelemetry spans and counters. */
-export function createOpenTelemetryHooks(options: OpenTelemetryOptions): OcpHooks {
+export function createOpenTelemetryHooks(options: OpenTelemetryOptions): OpenChannelHooks {
   return {
     onActionCompleted: (result) => {
       options.counters?.actions?.add(1, { status: result.status });
@@ -42,7 +42,7 @@ export function createOpenTelemetryHooks(options: OpenTelemetryOptions): OcpHook
       });
     },
     onEventAccepted: (event) => {
-      options.counters?.events?.add(1, { event_type: event.eventType });
+      options.counters?.events?.add(1, { event_type: eventType(event) });
       options.tracer.startActiveSpan("ocp.event.accepted", (span) => {
         for (const [key, value] of Object.entries(eventAttributes(event))) {
           span.setAttribute?.(key, value);

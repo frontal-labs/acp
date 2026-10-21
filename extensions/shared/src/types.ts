@@ -1,9 +1,4 @@
-import type {
-  ActorRef,
-  EventEnvelope,
-  EventName,
-  EventPayload,
-} from "@frontal-labs/open-channel-protocol";
+import type { ActorRef, EventEnvelope, EventPayload } from "@frontal-labs/open-channel-protocol";
 
 /** Provider-neutral input metadata supplied by a webhook, queue, or poller. */
 export interface ProviderReceiveMetadata {
@@ -21,7 +16,6 @@ export interface ProviderEventOptions {
   conversation?: EventEnvelope["conversation"];
   conversationId?: string;
   conversationParticipants?: ActorRef[];
-  eventType: EventName;
   extensions?: Record<string, string>;
   payload: EventPayload;
   recipient?: ActorRef;

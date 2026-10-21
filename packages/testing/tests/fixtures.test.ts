@@ -1,4 +1,4 @@
-import { ActorType } from "@frontal-labs/open-channel-protocol";
+import { ActorType, eventType as typeOf } from "@frontal-labs/open-channel-protocol";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -37,7 +37,7 @@ describe("@frontal-labs/open-channel-testing fixtures", () => {
     ] as const;
 
     for (const eventType of eventTypes) {
-      expect(createTestEvent({ eventType }).eventType).toBe(eventType);
+      expect(typeOf(createTestEvent({ eventType }))).toBe(eventType);
     }
   });
 });

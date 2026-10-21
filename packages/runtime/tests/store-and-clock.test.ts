@@ -1,10 +1,11 @@
-import type { EventEnvelope, EventName } from "@frontal-labs/open-channel-protocol";
+import type { EventEnvelope, EventType } from "@frontal-labs/open-channel-protocol";
+import { eventType } from "@frontal-labs/open-channel-protocol";
 import { createTestEvent, createTestEventStore } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { ManualClock } from "../src/index.js";
 
-function event(eventId: string, eventType: EventName = "message.received"): EventEnvelope {
-  return createTestEvent({ eventId, eventType }) as EventEnvelope;
+function event(eventId: string, type: EventType = "message.received"): EventEnvelope {
+  return createTestEvent({ eventId, eventType: type }) as EventEnvelope;
 }
 
 describe("createTestEventStore", () => {
@@ -41,7 +42,7 @@ describe("createTestEventStore", () => {
     await store.append(event("first", "message.sent"));
 
     expect((await store.all()).map((item) => item.eventId)).toEqual(["first", "second"]);
-    expect((await store.get("first"))?.eventType).toBe("message.sent");
+    expect(eventType((await store.get("first")) as EventEnvelope)).toBe("message.sent");
   });
 
   it("does not append duplicates through appendIfAbsent", async () => {

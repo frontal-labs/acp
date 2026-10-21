@@ -1,87 +1,56 @@
-import { fromBinary, fromJson, type JsonValue, toBinary, toJson } from "@bufbuild/protobuf";
-import { ProtocolError, ValidationError } from "@frontal-labs/open-channel-core";
-import { EventEnvelopeSchema as V2EventEnvelopeSchema } from "../../../proto/gen/typescript/v2/api/events_pb.js";
+import {
+  fromBinary as decodeBinary,
+  fromJson as decodeJson,
+  toBinary as encodeBinary,
+  toJson as encodeJson,
+  type JsonValue,
+} from "@bufbuild/protobuf";
+import { ValidationError } from "@frontal-labs/open-channel-core";
 
-import { OCP_PROTOCOL_VERSION, type ProtocolVersion } from "./constants.js";
-import { type EnvelopeFor, isV2Event, type OcpEvent, validateEvent } from "./events.js";
-import { EventEnvelopeSchema } from "./generated.js";
-import { parseEventJson } from "./schemas.js";
+import { validateEvent } from "./events.js";
+import { type EventEnvelope, EventEnvelopeSchema } from "./generated.js";
 
-/** Serializes a validated envelope of either protocol version to ProtoJSON. */
-export function eventToJson(event: OcpEvent): JsonValue {
+/** Serializes a validated envelope to ProtoJSON. */
+export function toJson(event: EventEnvelope): JsonValue {
   validateEvent(event);
-  if (isV2Event(event)) {
-    return toJson(V2EventEnvelopeSchema, event);
-  }
-  return toJson(EventEnvelopeSchema, event);
+  return encodeJson(EventEnvelopeSchema, event);
 }
 
 /**
- * Parses and validates an untrusted ProtoJSON envelope. The protocol version is read from
- * `protocolVersion`; a missing version is treated as v0.1.
+ * Decodes and validates an untrusted ProtoJSON envelope. Protobuf's JSON decoder rejects unknown
+ * fields and wrong types, so no second schema pass is needed on this path.
  */
-export function eventFromJson(value: unknown): OcpEvent {
-  let parsed: JsonValue;
+export function fromJson(value: unknown): EventEnvelope {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    throw new ValidationError("Invalid OCP ProtoJSON envelope: expected an object");
+  }
+  let event: EventEnvelope;
   try {
-    parsed = parseEventJson(value);
+    event = decodeJson(EventEnvelopeSchema, value as JsonValue);
   } catch (error) {
     throw new ValidationError("Invalid OCP ProtoJSON envelope", {
       cause: error,
       details: { issues: error instanceof Error ? error.message : String(error) },
     });
   }
-  const isV2 = (parsed as { protocolVersion?: unknown }).protocolVersion === "0.2";
-  let event: OcpEvent;
-  try {
-    event = isV2 ? fromJson(V2EventEnvelopeSchema, parsed) : fromJson(EventEnvelopeSchema, parsed);
-  } catch (error) {
-    throw new ProtocolError("Unable to decode OCP ProtoJSON envelope", { cause: error });
-  }
   validateEvent(event);
   return event;
 }
 
-/** Serializes a validated envelope of either protocol version to binary protobuf. */
-export function eventToBinary(event: OcpEvent): Uint8Array {
+/** Serializes a validated envelope to binary protobuf. */
+export function toBinary(event: EventEnvelope): Uint8Array {
   validateEvent(event);
-  if (isV2Event(event)) {
-    return toBinary(V2EventEnvelopeSchema, event);
-  }
-  return toBinary(EventEnvelopeSchema, event);
+  return encodeBinary(EventEnvelopeSchema, event);
 }
 
-/**
- * Parses and validates a binary protobuf envelope. Binary does not carry a version
- * discriminator, so the expected protocol version is passed explicitly (default v0.1).
- */
-export function eventFromBinary<V extends ProtocolVersion = typeof OCP_PROTOCOL_VERSION>(
-  value: Uint8Array,
-  options: { protocolVersion?: V } = {},
-): EnvelopeFor<V> {
-  const protocolVersion = options.protocolVersion ?? OCP_PROTOCOL_VERSION;
-  let event: OcpEvent;
+/** Decodes and validates a binary protobuf envelope. */
+export function fromBinary(bytes: Uint8Array): EventEnvelope {
+  let event: EventEnvelope;
   try {
-    event =
-      protocolVersion === "0.2"
-        ? fromBinary(V2EventEnvelopeSchema, value)
-        : fromBinary(EventEnvelopeSchema, value);
+    event = decodeBinary(EventEnvelopeSchema, bytes);
   } catch (error) {
-    throw new ProtocolError("Unable to decode OCP binary envelope", { cause: error });
+    throw new ValidationError("Invalid OCP binary envelope", { cause: error });
   }
   validateEvent(event);
-  return event as EnvelopeFor<V>;
-}
-
-/**
- * Parses an untrusted event: ProtoJSON for any object, binary protobuf for bytes.
- * Bytes require `protocolVersion` because binary does not carry it.
- */
-export function parseEvent(
-  value: unknown,
-  options: { protocolVersion?: ProtocolVersion } = {},
-): OcpEvent {
-  if (value instanceof Uint8Array) {
-    return eventFromBinary(value, options);
-  }
-  return eventFromJson(value);
+  return event;
 }

@@ -7,7 +7,7 @@ import {
   ChannelRefSchema,
   ConversationRefSchema,
   ConversationStatus,
-  createEvent,
+  newEvent,
 } from "@frontal-labs/open-channel-protocol";
 
 import type { ProviderEventOptions, ProviderReceiveMetadata } from "./types.js";
@@ -48,13 +48,12 @@ export function providerEvent(
         })
       : undefined);
 
-  return createEvent({
+  return newEvent({
     actor: options.actor,
     causationId: options.extensions?.["ocp.causation_id"],
     channel,
     conversation,
     eventId: metadata.eventId,
-    eventType: options.eventType,
     extensions: options.extensions,
     idempotencyKey: metadata.idempotencyKey,
     occurredAt: metadata.receivedAt ? timestampFromDate(metadata.receivedAt) : undefined,

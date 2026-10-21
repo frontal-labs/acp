@@ -1,32 +1,57 @@
 import { create } from "@bufbuild/protobuf";
-import { ActionError, ConflictError, OcpError } from "@frontal-labs/open-channel-core";
+import type { DeliveryReceipt } from "@frontal-labs/open-channel-adapter";
+import { ActionError, ConflictError, OpenChannelError } from "@frontal-labs/open-channel-core";
 import {
+  type ActorRef,
   ActorRefSchema,
   ActorType,
-  createEvent,
   type EventEnvelope,
   type MessageReceived,
   MessageSentSchema,
+  newEvent,
 } from "@frontal-labs/open-channel-protocol";
+import type { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
 
+import { consoleLogger } from "./logger.js";
 import type {
   ActionRequestOptions,
   ActionResult,
-  AgentActionInput,
   AgentCard,
   AgentContext,
   AgentDefinition,
-  AgentHostOptions,
+  AgentLogger,
   ReplyOptions,
 } from "./types.js";
 
-/** Hosts discoverable agents and routes OCP channel messages to them. */
+/** Requests an action on behalf of an agent. Supplied by the application, which owns the registry. */
+export type ActionRequester = <TInput, TResult>(
+  agent: ActorRef,
+  inbound: EventEnvelope,
+  type: string,
+  input: TInput,
+  options?: ActionRequestOptions,
+) => Promise<ActionResult<TResult>>;
+
+/** Dependencies for an agent host. */
+export interface AgentHostOptions {
+  actionRequester?: ActionRequester;
+  agents?: AgentDefinition[];
+  gateway: ChannelGateway;
+  logger?: AgentLogger;
+  maxConcurrentConversations?: number;
+  onDelivery?: (receipt: DeliveryReceipt) => void | Promise<void>;
+  onError?: (error: OpenChannelError) => void | Promise<void>;
+  runtime: OpenChannelRuntime;
+}
+
+/** Hosts agents and routes `message.received` events to them, one message per conversation at a time. */
 export class AgentHost {
-  private readonly runtime: AgentHostOptions["runtime"];
-  private readonly gateway: AgentHostOptions["gateway"];
-  private readonly actionRequester: AgentHostOptions["actionRequester"];
+  private readonly runtime: OpenChannelRuntime;
+  private readonly gateway: ChannelGateway;
+  private readonly actionRequester: ActionRequester;
   private readonly onDelivery: AgentHostOptions["onDelivery"];
   private readonly onError: AgentHostOptions["onError"];
+  private readonly logger: AgentLogger;
   private readonly maxConcurrentConversations: number;
   private readonly agents: Record<string, AgentDefinition> = Object.create(null);
   private readonly queues: Partial<Record<string, Promise<void>>> = Object.create(null);
@@ -37,9 +62,13 @@ export class AgentHost {
   constructor(options: AgentHostOptions) {
     this.runtime = options.runtime;
     this.gateway = options.gateway;
-    this.actionRequester = options.actionRequester;
+    this.actionRequester =
+      options.actionRequester ??
+      (() =>
+        Promise.reject(new ActionError("OCP action handling is not configured for this host")));
     this.onDelivery = options.onDelivery;
     this.onError = options.onError;
+    this.logger = options.logger ?? consoleLogger;
     this.maxConcurrentConversations = Math.max(
       1,
       options.maxConcurrentConversations ?? Number.POSITIVE_INFINITY,
@@ -49,52 +78,37 @@ export class AgentHost {
     }
   }
 
-  register(agent: AgentDefinition): this {
+  register(agent: AgentDefinition): void {
     if (agent.id in this.agents) {
       throw new ConflictError("OCP agent", agent.id);
     }
     this.agents[agent.id] = agent;
-    return this;
   }
 
-  unregister(agentId: string): boolean {
-    if (!(agentId in this.agents)) {
-      return false;
-    }
-    delete this.agents[agentId];
-    return true;
-  }
-
-  getAgent(agentId: string): AgentDefinition | undefined {
-    const agent: AgentDefinition | undefined = this.agents[agentId];
-    return agent;
-  }
-
-  getAgentCard(agentId: string): AgentCard | undefined {
-    const agent = this.getAgent(agentId);
-    return agent ? this.toCard(agent) : undefined;
-  }
-
-  listAgentCards(): AgentCard[] {
+  agentCards(): AgentCard[] {
     return Object.values(this.agents).map((agent) => this.toCard(agent));
   }
 
-  attach(): () => void {
+  attach(): void {
     if (this.detachSubscription) {
-      return this.detachSubscription;
+      return;
     }
     const unsubscribe = this.runtime.subscribe(async (event) => {
       try {
         await this.handle(event);
       } catch (error) {
         await this.onError?.(
-          error instanceof OcpError
+          error instanceof OpenChannelError
             ? error
-            : new OcpError("OCP_ACTION", error instanceof Error ? error.message : String(error), {
-                cause: error,
-                eventId: event.eventId,
-                stage: "processing",
-              }),
+            : new OpenChannelError(
+                "OCP_ACTION",
+                error instanceof Error ? error.message : String(error),
+                {
+                  cause: error,
+                  eventId: event.eventId,
+                  stage: "processing",
+                },
+              ),
         );
       }
     });
@@ -102,15 +116,15 @@ export class AgentHost {
       unsubscribe();
       this.detachSubscription = undefined;
     };
-    return this.detachSubscription;
   }
 
   detach(): void {
     this.detachSubscription?.();
   }
 
+  /** Routes one event to its recipient agent. Returns false when the event is not a message for a registered agent. */
   async handle(event: EventEnvelope): Promise<boolean> {
-    if (event.eventType !== "message.received" || event.payload.case !== "messageReceived") {
+    if (event.payload.case !== "messageReceived") {
       return false;
     }
     const message = event.payload.value;
@@ -144,43 +158,18 @@ export class AgentHost {
     const agent = this.toActor(definition);
     await this.acquireConversation();
     try {
-      const actions = {
-        request: <TInput, TResult = unknown>(
-          type: string,
-          input: TInput,
-          options?: ActionRequestOptions,
-        ): Promise<ActionResult<TResult>> => {
-          if (!this.actionRequester) {
-            return Promise.reject(
-              new ActionError("OCP action handling is not configured for this host"),
-            );
-          }
-          return this.actionRequester(agent, event, type, input, options);
-        },
-      };
       const context: AgentContext = {
-        actions,
-        actor: agent,
         agent,
         channel: event.channel,
         conversation: event.conversation,
-        conversationId: event.conversation?.id,
         event,
-        hooks: { onError: (error) => this.onError?.(error) },
-        logger: {
-          debug: () => undefined,
-          error: () => undefined,
-          info: () => undefined,
-          warn: () => undefined,
-        },
+        logger: this.logger,
         message,
-        rawEvent: event,
-        recipient: event.recipient,
         reply: (text, options) => this.reply(agent, event, text, options),
-        requestAction: (input) => this.requestAction(agent, event, input),
+        request: (type, input, options) => this.actionRequester(agent, event, type, input, options),
         runtime: this.runtime,
       };
-      await definition.onMessage(context, message);
+      await definition.onMessage(context);
       return true;
     } finally {
       this.releaseConversation();
@@ -188,18 +177,17 @@ export class AgentHost {
   }
 
   private async reply(
-    agent: ReturnType<AgentHost["toActor"]>,
+    agent: ActorRef,
     inbound: EventEnvelope,
     text: string,
     options: ReplyOptions = {},
   ): Promise<EventEnvelope> {
-    const event = createEvent({
+    const event = newEvent({
       actor: agent,
       causationId: inbound.eventId,
       channel: options.channel ?? inbound.channel,
       conversation: options.conversation ?? inbound.conversation,
       correlationId: inbound.correlationId || inbound.eventId,
-      eventType: "message.sent",
       payload: {
         case: "messageSent",
         value: create(MessageSentSchema, { text }),
@@ -208,76 +196,14 @@ export class AgentHost {
       source: agent,
     });
     await this.runtime.process(event);
-    if (this.gateway) {
-      const receipt = await this.gateway.dispatch(event);
-      if (receipt) {
-        await this.onDelivery?.(receipt);
-      }
+    const receipt = await this.gateway.dispatch(event);
+    if (receipt) {
+      await this.onDelivery?.(receipt);
     }
     return event;
   }
 
-  private requestAction(
-    agent: ReturnType<AgentHost["toActor"]>,
-    inbound: EventEnvelope,
-    input: AgentActionInput,
-  ) {
-    if (this.actionRequester && input.action) {
-      return this.actionRequester(agent, inbound, input.action.type, input.action, {
-        approver: input.approver,
-        channel: input.channel,
-        conversation: input.conversation,
-        deadline: input.deadline,
-        reason: input.reason,
-        recipient: input.recipient,
-        target: input.action.target,
-      }).then((result) => {
-        if (result.status === "blocked") {
-          return {
-            decision: {
-              allowed: false,
-              approvalRequired: false,
-              policyId: "action-registry",
-              reason: result.reason,
-            },
-            events: [],
-            status: "blocked" as const,
-          };
-        }
-        if (result.status === "approval_required") {
-          return {
-            approvalId: result.approvalId,
-            decision: {
-              allowed: true,
-              approvalRequired: true,
-              policyId: "action-registry",
-              reason: "Approval required",
-            },
-            events: [],
-            status: "approval_required" as const,
-          };
-        }
-        return {
-          decision: {
-            allowed: true,
-            approvalRequired: false,
-            policyId: "action-registry",
-            reason: "Action executed",
-          },
-          events: [],
-          status: "authorized" as const,
-        };
-      });
-    }
-    return this.runtime.submitAction({
-      ...input,
-      actor: agent,
-      channel: input.channel ?? inbound.channel,
-      conversation: input.conversation ?? inbound.conversation,
-    });
-  }
-
-  private toActor(definition: AgentDefinition) {
+  private toActor(definition: AgentDefinition): ActorRef {
     return create(ActorRefSchema, {
       capabilities: definition.actorCapabilities ?? [],
       displayName: definition.name,

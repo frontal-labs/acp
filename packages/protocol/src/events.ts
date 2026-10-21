@@ -1,64 +1,29 @@
 import { randomUUID } from "node:crypto";
 import { create } from "@bufbuild/protobuf";
-import { timestampNow } from "@bufbuild/protobuf/wkt";
+import { type Timestamp, timestampFromDate, timestampNow } from "@bufbuild/protobuf/wkt";
 import { ValidationError } from "@frontal-labs/open-channel-core";
+
+import { type EventType, PROTOCOL_VERSION } from "./constants.js";
 import {
-  type EventEnvelope as GeneratedV2EventEnvelope,
-  EventEnvelopeSchema as V2EventEnvelopeSchema,
-} from "../../../proto/gen/typescript/v2/api/events_pb.js";
+  type ActorRef,
+  type ApprovalDecided,
+  ApprovalOutcome,
+  type ApprovalRequested,
+  type ChannelRef,
+  type ConversationRef,
+  type EventEnvelope,
+  EventEnvelopeSchema,
+} from "./generated.js";
 
-import {
-  type EVENT_TYPES,
-  OCP_PROTOCOL_VERSION,
-  OCP_V2_PROTOCOL_VERSION,
-  type ProtocolVersion,
-} from "./constants.js";
-import { ApprovalOutcome, type EventEnvelope, EventEnvelopeSchema } from "./generated.js";
-import { EventInputSchema } from "./schemas.js";
+export { EVENT_TYPES, type EventType, PROTOCOL_VERSION } from "./constants.js";
 
-export {
-  EVENT_TYPES,
-  OCP_PROTOCOL_VERSION,
-  OCP_PROTOCOL_VERSIONS,
-  OCP_V2_PROTOCOL_VERSION,
-  type ProtocolVersion,
-} from "./constants.js";
-
-/** Event name shared by every supported protocol version. */
-export type EventName = (typeof EVENT_TYPES)[number];
-/** Any populated protobuf payload variant. The domain payloads are shared by v0.1 and v0.2. */
+/** Any populated payload variant of the envelope. */
 export type EventPayload = Exclude<EventEnvelope["payload"], { case: undefined }>;
-/** Envelope for the v0.2 payload-discriminated wire format. */
-export type V2EventEnvelope = GeneratedV2EventEnvelope;
-/** Any OCP envelope, regardless of protocol version. */
-export type OcpEvent = EventEnvelope | V2EventEnvelope;
-/** The envelope type produced for a given protocol version. */
-export type EnvelopeFor<V extends ProtocolVersion> = V extends "0.2"
-  ? V2EventEnvelope
-  : EventEnvelope;
 
 type PayloadCase = Exclude<EventPayload["case"], undefined>;
 
-const PAYLOAD_CASE_BY_EVENT_TYPE: Record<EventName, PayloadCase> = {
-  "action.executed": "actionExecuted",
-  "action.failed": "actionFailed",
-  "approval.denied": "approvalDecided",
-  "approval.expired": "approvalExpired",
-  "approval.granted": "approvalDecided",
-  "approval.requested": "approvalRequested",
-  "escalation.triggered": "escalationTriggered",
-  "handoff.completed": "handoffCompleted",
-  "handoff.initiated": "handoffInitiated",
-  "message.received": "messageReceived",
-  "message.sent": "messageSent",
-  "policy.allowed": "policyEvaluated",
-  "policy.blocked": "policyEvaluated",
-  "task.assigned": "taskAssigned",
-  "task.created": "taskCreated",
-};
-
-/** Event name implied by a payload when the payload alone is ambiguous (approvals and policy decisions). */
-const EVENT_TYPE_BY_PAYLOAD_CASE: Record<PayloadCase, EventName> = {
+/** Event name implied by a payload when the payload alone is unambiguous. */
+const EVENT_TYPE_BY_PAYLOAD_CASE: Record<PayloadCase, EventType> = {
   actionExecuted: "action.executed",
   actionFailed: "action.failed",
   approvalDecided: "approval.granted",
@@ -74,39 +39,24 @@ const EVENT_TYPE_BY_PAYLOAD_CASE: Record<PayloadCase, EventName> = {
   taskCreated: "task.created",
 };
 
-/**
- * Input used to construct and validate an OCP event envelope for any protocol version.
- * `eventType` is required in both versions: v0.1 stores it, v0.2 uses it to select and check the payload.
- */
-export interface EventInput<V extends ProtocolVersion = ProtocolVersion> {
-  actor?: EventEnvelope["actor"];
+/** Input for `newEvent`. The event name is derived from `payload`, so it is not an input. */
+export interface EventInput {
+  actor?: ActorRef;
   causationId?: string;
-  channel?: EventEnvelope["channel"];
-  conversation?: EventEnvelope["conversation"];
+  channel?: ChannelRef;
+  conversation?: ConversationRef;
   correlationId?: string;
   eventId?: string;
-  eventType: EventName;
   extensions?: Record<string, string>;
   idempotencyKey?: string;
-  occurredAt?: EventEnvelope["occurredAt"];
+  occurredAt?: Date | Timestamp;
   payload: EventPayload;
-  protocolVersion?: V;
-  recipient?: EventEnvelope["recipient"];
-  source?: EventEnvelope["source"];
+  recipient?: ActorRef;
+  source?: ActorRef;
 }
 
-/** Returns true when the envelope uses the v0.2 layout, where the payload oneof is the event kind. */
-export function isV2Event(event: OcpEvent): event is V2EventEnvelope {
-  return !("eventType" in event);
-}
-
-/** Returns true when the envelope uses the v0.1 layout, which stores the event name. */
-export function isV1Event(event: OcpEvent): event is EventEnvelope {
-  return !isV2Event(event);
-}
-
-/** Returns the event name implied by the payload oneof. */
-function payloadEventType(payload: EventPayload): EventName {
+/** Event name for the payload, resolving approval outcomes and policy decisions. */
+function payloadEventType(payload: EventPayload): EventType {
   if (payload.case === "approvalDecided") {
     return payload.value.outcome === ApprovalOutcome.DENIED
       ? "approval.denied"
@@ -115,149 +65,97 @@ function payloadEventType(payload: EventPayload): EventName {
   if (payload.case === "policyEvaluated") {
     return payload.value.allowed ? "policy.allowed" : "policy.blocked";
   }
-  return EVENT_TYPE_BY_PAYLOAD_CASE[payload.case as PayloadCase];
+  const name = EVENT_TYPE_BY_PAYLOAD_CASE[payload.case as PayloadCase];
+  if (!name) {
+    throw new ValidationError(`Unsupported OCP payload: ${payload.case}`);
+  }
+  return name;
 }
 
-/** Returns the dot-separated event name for any OCP envelope, derived from its payload. */
-export function eventTypeOf(event: OcpEvent): EventName {
+/** Returns the dot-separated event name, derived from the envelope's payload. */
+export function eventType(event: EventEnvelope): EventType {
   if (!event.payload.case) {
     throw new ValidationError("OCP event must have a payload");
   }
   return payloadEventType(event.payload);
 }
 
-/** v0.2 does not store the event name, so a caller-asserted name must still match the payload. */
-function assertAssertedEventType(eventType: EventName, payload: EventPayload): void {
-  const expectedCase = PAYLOAD_CASE_BY_EVENT_TYPE[eventType];
-  if (payload.case !== expectedCase) {
-    throw new ValidationError(
-      `OCP event ${eventType} requires payload case ${expectedCase}, received ${payload.case ?? "none"}`,
-    );
-  }
-  const derived = payloadEventType(payload);
-  if (derived !== eventType) {
-    throw new ValidationError(`OCP event ${eventType} does not match payload event ${derived}`);
-  }
+function timestamp(value: Date | Timestamp | undefined): Timestamp | undefined {
+  return value instanceof Date ? timestampFromDate(value) : value;
 }
 
-/** Creates a validated envelope for the requested protocol version (default v0.1). */
-export function createEvent<V extends ProtocolVersion = typeof OCP_PROTOCOL_VERSION>(
-  input: EventInput<V>,
-): EnvelopeFor<V> {
-  let validatedInput: EventInput<V>;
-  try {
-    validatedInput = EventInputSchema.parse(input) as unknown as EventInput<V>;
-  } catch (error) {
-    throw new ValidationError("Invalid OCP event input", {
-      cause: error,
-      details: { issues: error instanceof Error ? error.message : String(error) },
-    });
-  }
-
-  const protocolVersion = validatedInput.protocolVersion ?? OCP_PROTOCOL_VERSION;
-  const shared = {
-    actor: validatedInput.actor,
-    causationId: validatedInput.causationId ?? "",
-    channel: validatedInput.channel,
-    conversation: validatedInput.conversation,
-    correlationId: validatedInput.correlationId ?? "",
-    eventId: validatedInput.eventId ?? randomUUID(),
-    extensions: validatedInput.extensions ?? {},
-    idempotencyKey: validatedInput.idempotencyKey ?? "",
-    occurredAt: validatedInput.occurredAt ?? timestampNow(),
-    payload: validatedInput.payload,
-    protocolVersion,
-    recipient: validatedInput.recipient,
-    source: validatedInput.source,
-  };
-  if (protocolVersion === OCP_V2_PROTOCOL_VERSION) {
-    assertAssertedEventType(validatedInput.eventType, validatedInput.payload);
-  }
-  const event: OcpEvent =
-    protocolVersion === OCP_V2_PROTOCOL_VERSION
-      ? create(V2EventEnvelopeSchema, shared)
-      : create(EventEnvelopeSchema, { ...shared, eventType: validatedInput.eventType });
-
+/** Builds and validates an envelope. Typed builders such as `messageReceived` call this. */
+export function newEvent(input: EventInput): EventEnvelope {
+  const event = create(EventEnvelopeSchema, {
+    actor: input.actor,
+    causationId: input.causationId ?? "",
+    channel: input.channel,
+    conversation: input.conversation,
+    correlationId: input.correlationId ?? "",
+    eventId: input.eventId ?? randomUUID(),
+    extensions: input.extensions ?? {},
+    idempotencyKey: input.idempotencyKey ?? "",
+    occurredAt: timestamp(input.occurredAt) ?? timestampNow(),
+    payload: input.payload,
+    protocolVersion: PROTOCOL_VERSION,
+    recipient: input.recipient,
+    source: input.source,
+  });
   validateEvent(event);
-  return event as EnvelopeFor<V>;
+  return event;
 }
 
-/** Validates identity, protocol version, payload mapping, and approval/policy invariants for any version. */
-// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Validation keeps envelope invariants at one protocol boundary.
-export function validateEvent(event: OcpEvent): void {
+/** Checks the envelope's identity, version, and payload invariants. Cheap enough for every hot path. */
+export function validateEvent(event: EventEnvelope): void {
   if (!event.eventId.trim()) {
     throw new ValidationError("OCP event must have an event_id");
   }
-  if (!event.protocolVersion.trim()) {
-    throw new ValidationError("OCP event must have a protocol_version");
-  }
-  const v2 = isV2Event(event);
-  const expectedVersion = v2 ? OCP_V2_PROTOCOL_VERSION : OCP_PROTOCOL_VERSION;
-  if (event.protocolVersion !== expectedVersion) {
+  if (event.protocolVersion !== PROTOCOL_VERSION) {
     throw new ValidationError(
-      `OCP ${v2 ? "v0.2" : "v0.1"} envelope requires protocol_version ${expectedVersion}, received ${event.protocolVersion}`,
+      `OCP event requires protocol_version ${PROTOCOL_VERSION}, received ${event.protocolVersion || "none"}`,
     );
   }
   if (!event.occurredAt) {
     throw new ValidationError("OCP event must have occurred_at");
   }
-  if (!event.payload.case) {
+  const { payload } = event;
+  if (!payload.case) {
     throw new ValidationError("OCP event must have a payload");
   }
-  if (!(v2 || event.eventType.trim())) {
-    throw new ValidationError("OCP event must have an event_type");
+  if (payload.case === "approvalRequested") {
+    validateApprovalRequested(payload.value);
   }
+  if (payload.case === "approvalDecided") {
+    validateApprovalDecided(payload.value, payloadEventType(payload));
+  }
+}
 
-  const name = v2 ? payloadEventType(event.payload) : event.eventType;
-  if (!(name in PAYLOAD_CASE_BY_EVENT_TYPE)) {
-    throw new ValidationError(`Unsupported OCP event type: ${name}`);
+function validateApprovalRequested(value: ApprovalRequested): void {
+  if (!value.approvalId.trim()) {
+    throw new ValidationError("approval.requested must have an approval_id");
   }
-  const expectedPayloadCase = PAYLOAD_CASE_BY_EVENT_TYPE[name as EventName];
-  if (event.payload.case !== expectedPayloadCase) {
-    throw new ValidationError(
-      `OCP event ${name} requires payload case ${expectedPayloadCase}, received ${event.payload.case}`,
-    );
+  if (!(value.agent && value.approver)) {
+    throw new ValidationError("approval.requested must identify an agent and approver");
   }
+  if (!value.requestedAction) {
+    throw new ValidationError("approval.requested must include a requested_action");
+  }
+  if (!value.deadline) {
+    throw new ValidationError("approval.requested must have a deadline");
+  }
+}
 
-  if (event.payload.case === "approvalRequested") {
-    if (!event.payload.value.approvalId.trim()) {
-      throw new ValidationError("approval.requested must have an approval_id");
-    }
-    if (!(event.payload.value.agent && event.payload.value.approver)) {
-      throw new ValidationError("approval.requested must identify an agent and approver");
-    }
-    if (!event.payload.value.requestedAction) {
-      throw new ValidationError("approval.requested must include a requested_action");
-    }
-    if (!event.payload.value.deadline) {
-      throw new ValidationError("approval.requested must have a deadline");
-    }
+function validateApprovalDecided(value: ApprovalDecided, name: EventType): void {
+  if (!value.approvalId.trim()) {
+    throw new ValidationError("approval decision must have an approval_id");
   }
-
-  if (event.payload.case === "approvalDecided") {
-    if (!event.payload.value.approvalId.trim()) {
-      throw new ValidationError("approval decision must have an approval_id");
-    }
-    if (
-      event.payload.value.outcome !== ApprovalOutcome.GRANTED &&
-      event.payload.value.outcome !== ApprovalOutcome.DENIED
-    ) {
-      throw new ValidationError("approval decision must be granted or denied");
-    }
-    if (name === "approval.granted" && event.payload.value.outcome !== ApprovalOutcome.GRANTED) {
-      throw new ValidationError("approval.granted must have a granted outcome");
-    }
-    if (name === "approval.denied" && event.payload.value.outcome !== ApprovalOutcome.DENIED) {
-      throw new ValidationError("approval.denied must have a denied outcome");
-    }
+  if (value.outcome !== ApprovalOutcome.GRANTED && value.outcome !== ApprovalOutcome.DENIED) {
+    throw new ValidationError("approval decision must be granted or denied");
   }
-
-  if (event.payload.case === "policyEvaluated") {
-    if (name === "policy.allowed" && !event.payload.value.allowed) {
-      throw new ValidationError("policy.allowed must have allowed=true");
-    }
-    if (name === "policy.blocked" && event.payload.value.allowed) {
-      throw new ValidationError("policy.blocked must have allowed=false");
-    }
+  if (name === "approval.granted" && value.outcome !== ApprovalOutcome.GRANTED) {
+    throw new ValidationError("approval.granted must have a granted outcome");
+  }
+  if (name === "approval.denied" && value.outcome !== ApprovalOutcome.DENIED) {
+    throw new ValidationError("approval.denied must have a denied outcome");
   }
 }

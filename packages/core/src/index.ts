@@ -1,10 +1,15 @@
-export type { OcpErrorCode, OcpErrorDetails, OcpErrorOptions, OcpErrorStage } from "./errors.js";
+export type {
+  OpenChannelErrorCode,
+  OpenChannelErrorDetails,
+  OpenChannelErrorOptions,
+  OpenChannelErrorStage,
+} from "./errors.js";
 export {
   ActionError,
   AuthorizationError,
   ConflictError,
   NotFoundError,
-  OcpError,
+  OpenChannelError,
   ProtocolError,
   TransportError,
   ValidationError,

@@ -13,7 +13,7 @@ export function createEmailSink(transport: EmailTransport): ChannelSink {
   return createProviderSink(
     "email",
     async (event, options?: DeliveryOptions): Promise<DeliveryReceipt | undefined> => {
-      if (event.eventType !== "message.sent" || event.payload.case !== "messageSent") {
+      if (event.payload.case !== "messageSent") {
         return undefined;
       }
       const recipient = event.recipient?.id ?? event.channel?.address;

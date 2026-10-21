@@ -51,7 +51,6 @@ export async function normalizeSlackEvent(
       channelId,
       conversationId: `slack:${channelId}`,
       conversationParticipants: [actor],
-      eventType: "message.received",
       extensions: {
         "ocp.provider": "slack",
         ...(optionalString(event, "ts")
@@ -69,7 +68,7 @@ export async function normalizeSlackEvent(
   );
 }
 
-/** Creates a Slack `ChannelSource` for `createOcp({ channels })`. */
+/** Creates a Slack `ChannelSource` for `openChannel({ channels })`. */
 export function createSlackSource(options: SlackSourceOptions = {}): ChannelSource {
   return createProviderSource("slack", (input, metadata) =>
     normalizeSlackEvent(input, metadata, options),

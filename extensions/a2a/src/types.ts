@@ -22,7 +22,7 @@ export interface A2ASourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete A2A channel configuration for `createOcp()`. */
+/** Complete A2A channel configuration for `openChannel()`. */
 export interface A2AChannelOptions extends A2ASourceOptions {
   transport: A2ATransport;
 }

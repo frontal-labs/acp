@@ -1,5 +1,5 @@
 import type { ActionDefinition } from "@frontal-labs/open-channel";
-import { defineAction } from "@frontal-labs/open-channel";
+import { action } from "@frontal-labs/open-channel";
 import { ActionError } from "@frontal-labs/open-channel-core";
 import { z } from "zod";
 
@@ -12,7 +12,7 @@ const McpToolCallSchema = z.object({
 
 /** Creates the policy-controlled MCP tool action used by OCP agents. */
 export function createMcpActions(client: McpToolClient): McpActions {
-  const action = defineAction<McpToolCallInput, McpToolResult>({
+  const mcpTool = action<McpToolCallInput, McpToolResult>({
     execute: async (input) => {
       try {
         const result = await client.callTool(input);
@@ -37,7 +37,7 @@ export function createMcpActions(client: McpToolClient): McpActions {
     type: "mcp.tool_call",
     validate: (input) => McpToolCallSchema.parse(input),
   });
-  return [action] as McpActions;
+  return [mcpTool] as McpActions;
 }
 
 /** Closes an MCP client when an SDK application stops. */
@@ -47,7 +47,7 @@ export async function closeMcpClient(client: McpToolClient): Promise<void> {
 
 /** Narrows an action bundle to a typed MCP action definition. */
 export function mcpAction<TInput, TResult>(
-  action: ActionDefinition<TInput, TResult>,
+  definition: ActionDefinition<TInput, TResult>,
 ): ActionDefinition<TInput, TResult> {
-  return action;
+  return definition;
 }

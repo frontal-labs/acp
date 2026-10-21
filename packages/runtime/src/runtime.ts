@@ -9,10 +9,10 @@ import {
   ApprovalExpiredSchema,
   ApprovalOutcome,
   ApprovalRequestedSchema,
-  createEvent,
   EscalationTriggeredSchema,
   type EventEnvelope,
-  type EventName,
+  eventType,
+  newEvent,
   PolicyEvaluatedSchema,
 } from "@frontal-labs/open-channel-protocol";
 
@@ -40,7 +40,7 @@ const APPROVAL_LIFECYCLE_EVENTS: ReadonlySet<string> = new Set([
 ]);
 
 /** Processes OCP events and manages policy-controlled approvals. */
-export class OcpRuntime {
+export class OpenChannelRuntime {
   readonly eventStore: EventStore;
   readonly clock: Clock;
   private readonly policy: RuntimeOptions["policy"];
@@ -131,7 +131,7 @@ export class OcpRuntime {
     }
     return this.eventStore.all().then((events) => {
       const filtered = options.eventType
-        ? events.filter((event) => event.eventType === options.eventType)
+        ? events.filter((event) => eventType(event) === options.eventType)
         : events;
       return options.limit === undefined ? filtered : filtered.slice(-options.limit);
     });
@@ -147,9 +147,10 @@ export class OcpRuntime {
    * rather than trusted from the envelope.
    */
   async process(event: EventEnvelope): Promise<RuntimeResult> {
-    if (APPROVAL_LIFECYCLE_EVENTS.has(event.eventType)) {
+    const name = eventType(event);
+    if (APPROVAL_LIFECYCLE_EVENTS.has(name)) {
       throw new AuthorizationError(
-        `OCP ${event.eventType} events are produced by the runtime; use submitAction() or decideApproval()`,
+        `OCP ${name} events are produced by the runtime; use submitAction() or decideApproval()`,
         { stage: "approval" },
       );
     }
@@ -173,28 +174,24 @@ export class OcpRuntime {
     await this.notify(event);
     const emitted: EventEnvelope[] = [];
 
-    if (event.eventType === "approval.requested" && event.payload.case === "approvalRequested") {
+    if (event.payload.case === "approvalRequested") {
       this.trackApproval(event);
     }
 
-    if (
-      (event.eventType === "approval.granted" || event.eventType === "approval.denied") &&
-      event.payload.case === "approvalDecided"
-    ) {
+    if (event.payload.case === "approvalDecided") {
       this.resolveApproval(event.payload.value.approvalId, event.payload.value.outcome);
     }
 
-    if (event.eventType === "approval.expired" && event.payload.case === "approvalExpired") {
+    if (event.payload.case === "approvalExpired") {
       const pending = this.pendingApprovals[event.payload.value.approvalId];
       if (pending && pending.status === "pending") {
         pending.status = "expired";
-        const escalation = createEvent({
+        const escalation = newEvent({
           actor: this.runtimeActor,
           causationId: event.eventId,
           channel: pending.channel,
           conversation: pending.conversation,
           correlationId: event.correlationId || event.eventId,
-          eventType: "escalation.triggered",
           occurredAt: timestampFromDate(this.clock.now()),
           payload: {
             case: "escalationTriggered",
@@ -225,12 +222,10 @@ export class OcpRuntime {
       target: input.action.target,
     };
     const decision = this.policy.evaluate(context);
-    const policyEventType: EventName = decision.allowed ? "policy.allowed" : "policy.blocked";
-    const policyEvent = createEvent({
+    const policyEvent = newEvent({
       actor: input.actor,
       channel: input.channel,
       conversation: input.conversation,
-      eventType: policyEventType,
       occurredAt: timestampFromDate(this.clock.now()),
       payload: {
         case: "policyEvaluated",
@@ -260,13 +255,12 @@ export class OcpRuntime {
     const approvalId = `${input.action.actionId || input.action.type}:${this.clock.now().getTime()}`;
     const deadline =
       input.deadline ?? new Date(this.clock.now().getTime() + this.defaultApprovalTimeoutMs);
-    const approvalEvent = createEvent({
+    const approvalEvent = newEvent({
       actor: input.actor,
       causationId: policyEvent.eventId,
       channel: input.channel,
       conversation: input.conversation,
       correlationId: policyEvent.eventId,
-      eventType: "approval.requested",
       occurredAt: timestampFromDate(this.clock.now()),
       payload: {
         case: "approvalRequested",
@@ -305,14 +299,11 @@ export class OcpRuntime {
       );
     }
 
-    const eventType: EventName =
-      input.outcome === ApprovalOutcome.GRANTED ? "approval.granted" : "approval.denied";
-    const event = createEvent({
+    const event = newEvent({
       actor: input.approver,
       channel: pending.channel,
       conversation: pending.conversation,
       correlationId: input.approvalId,
-      eventType,
       occurredAt: timestampFromDate(this.clock.now()),
       payload: {
         case: "approvalDecided",
@@ -324,9 +315,76 @@ export class OcpRuntime {
         }),
       },
       recipient: pending.agent,
-      source: input.approver,
+      source: this.runtimeActor,
     });
     return await this.handleEvent(event);
+  }
+
+  /** True when the runtime itself produced the event, judged by its source actor. */
+  ownsEvent(event: EventEnvelope): boolean {
+    return event.source?.id === this.runtimeActor.id;
+  }
+
+  /**
+   * Rebuilds pending approvals from the event store after a restart and reschedules their expiry.
+   * Unresolved `approval.requested` events are tracked again; a deadline that passed while the
+   * process was down expires immediately. Returns the requests that were restored.
+   */
+  async restorePendingApprovals(): Promise<EventEnvelope[]> {
+    const requests = await this.ownedApprovalRequests();
+    const resolved = new Set<string>();
+    for (const type of ["approval.granted", "approval.denied", "approval.expired"]) {
+      for (const event of await this.queryEvents({ eventType: type })) {
+        const approvalId = approvalIdOf(event);
+        const request = approvalId ? requests.get(approvalId) : undefined;
+        if (approvalId && request && this.isAuthorizedResolution(event, request)) {
+          resolved.add(approvalId);
+        }
+      }
+    }
+    const restored: EventEnvelope[] = [];
+    for (const [approvalId, event] of requests) {
+      if (resolved.has(approvalId) || this.pendingApprovals[approvalId]) {
+        continue;
+      }
+      this.trackApproval(event);
+      restored.push(event);
+    }
+    return restored;
+  }
+
+  /** Approval requests the runtime itself produced, keyed by approval ID. Inbound copies are ignored. */
+  async ownedApprovalRequests(): Promise<Map<string, EventEnvelope>> {
+    const requests = new Map<string, EventEnvelope>();
+    for (const event of await this.queryEvents({ eventType: "approval.requested" })) {
+      if (event.payload.case === "approvalRequested" && this.ownsEvent(event)) {
+        requests.set(event.payload.value.approvalId, event);
+      }
+    }
+    return requests;
+  }
+
+  /**
+   * True when a granted, denied, or expired event legitimately resolves `request`. Expiry is the
+   * runtime's own. A decision must come from the runtime and name the designated approver.
+   */
+  isAuthorizedResolution(event: EventEnvelope, request: EventEnvelope): boolean {
+    if (request.payload.case !== "approvalRequested") {
+      return false;
+    }
+    if (event.payload.case === "approvalExpired") {
+      return this.ownsEvent(event);
+    }
+    if (event.payload.case !== "approvalDecided") {
+      return false;
+    }
+    const designated = request.payload.value.approver?.id;
+    if (!designated || event.payload.value.approver?.id !== designated) {
+      return false;
+    }
+    // Runtime-written decisions are the norm. Decisions stored before the source change carry the
+    // approver as their source, so the designated approver's own legacy decision is still honoured.
+    return this.ownsEvent(event) || event.source?.id === designated;
   }
 
   private trackApproval(event: EventEnvelope): void {
@@ -354,13 +412,12 @@ export class OcpRuntime {
       if (pending.status !== "pending") {
         return;
       }
-      const expired = createEvent({
+      const expired = newEvent({
         actor: this.runtimeActor,
         causationId: event.eventId,
         channel: pending.channel,
         conversation: pending.conversation,
         correlationId: event.correlationId || event.eventId,
-        eventType: "approval.expired",
         occurredAt: timestampFromDate(this.clock.now()),
         payload: {
           case: "approvalExpired",
@@ -404,4 +461,12 @@ export class OcpRuntime {
       await handler(event);
     }
   }
+}
+
+/** The approval ID carried by a decision or expiry event, if it has one. */
+function approvalIdOf(event: EventEnvelope): string | undefined {
+  if (event.payload.case === "approvalDecided" || event.payload.case === "approvalExpired") {
+    return event.payload.value.approvalId;
+  }
+  return undefined;
 }

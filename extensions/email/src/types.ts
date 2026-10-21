@@ -42,7 +42,7 @@ export interface EmailSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete email channel configuration for `createOcp()`. */
+/** Complete email channel configuration for `openChannel()`. */
 export interface EmailChannelOptions extends EmailSourceOptions {
   transport: EmailTransport;
 }

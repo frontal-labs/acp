@@ -1,5 +1,5 @@
 import { create } from "@bufbuild/protobuf";
-import { ActorRefSchema, ActorType } from "@frontal-labs/open-channel-protocol";
+import { ActorRefSchema, ActorType, eventType } from "@frontal-labs/open-channel-protocol";
 import { createTestEvent } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { createSlackSink, createSlackSource } from "../src/index.js";
@@ -14,7 +14,7 @@ describe("@frontal-labs/open-channel-ext-slack", () => {
     });
     const event = Array.isArray(normalized) ? normalized[0] : normalized;
 
-    expect(event?.eventType).toBe("message.received");
+    expect(event && eventType(event)).toBe("message.received");
     expect(event?.channel?.provider).toBe("slack");
     expect(event?.payload.case).toBe("messageReceived");
   });

@@ -5,7 +5,7 @@ import {
   ActionError,
   ConflictError,
   createActionId,
-  OcpError,
+  OpenChannelError,
   ValidationError,
 } from "@frontal-labs/open-channel-core";
 import {
@@ -13,12 +13,19 @@ import {
   ActionFailedSchema,
   type ActionRequest,
   ActionRequestSchema,
+  type ActorRef,
   ApprovalOutcome,
-  createEvent,
   type EventEnvelope,
-  type EventName,
+  type EventType,
+  eventType,
+  newEvent,
 } from "@frontal-labs/open-channel-protocol";
-import { ChannelGateway, OcpRuntime, SYSTEM_ACTOR } from "@frontal-labs/open-channel-runtime";
+import {
+  ChannelGateway,
+  type EventStore,
+  OpenChannelRuntime,
+  SYSTEM_ACTOR,
+} from "@frontal-labs/open-channel-runtime";
 import { AgentHost } from "./agent-host.js";
 import type {
   ActionDefinition,
@@ -28,14 +35,14 @@ import type {
   AgentCard,
   AgentDefinition,
   ChannelDefinition,
-  OcpApp,
-  OcpAppOptions,
-  OcpHooks,
+  OpenChannel,
+  OpenChannelHooks,
+  OpenChannelOptions,
 } from "./types.js";
 
 interface PendingAction {
   action: ActionRequest;
-  actor: ActionExecutionContext["actor"];
+  actor: ActorRef;
   definition: ActionDefinition<unknown, unknown>;
   event: EventEnvelope;
   input: unknown;
@@ -44,18 +51,19 @@ interface PendingAction {
 
 type State = "created" | "running" | "stopping" | "stopped";
 
-/** Creates a lifecycle-managed OCP application for agents, channels, and actions. */
-export function createOcp(options: OcpAppOptions): OcpApp {
-  return new OcpApplication(options);
+/** Builds an OCP application from agents, actions, channels, a policy, and an event store. */
+export function openChannel(options: OpenChannelOptions): OpenChannel {
+  return new OpenChannelApp(options);
 }
 
-class OcpApplication implements OcpApp {
+class OpenChannelApp implements OpenChannel {
   readonly gateway: ChannelGateway;
-  readonly runtime: OcpRuntime;
+  readonly runtime: OpenChannelRuntime;
+  readonly store: EventStore;
   private readonly actions: Partial<Record<string, ActionDefinition<unknown, unknown>>> =
     Object.create(null);
-  private readonly defaultApprover: NonNullable<OcpAppOptions["defaultApprover"]>;
-  private readonly hooks: OcpHooks;
+  private readonly approver: ActorRef;
+  private readonly hooks: OpenChannelHooks;
   private readonly pendingActions: Partial<Record<string, PendingAction>> = Object.create(null);
   private readonly actionResults: Partial<Record<string, ActionResult<unknown>>> =
     Object.create(null);
@@ -67,29 +75,31 @@ class OcpApplication implements OcpApp {
   private runtimeSubscription?: () => void;
   private readonly active = new Set<Promise<unknown>>();
 
-  constructor(options: OcpAppOptions) {
+  constructor(options: OpenChannelOptions) {
     this.hooks = options.hooks ?? {};
-    this.defaultApprover = options.defaultApprover ?? SYSTEM_ACTOR;
-    this.runtime = new OcpRuntime({
+    this.store = options.store;
+    this.approver = options.approver ?? SYSTEM_ACTOR;
+    this.runtime = new OpenChannelRuntime({
       clock: options.clock,
-      defaultApprovalTimeoutMs: options.defaultApprovalTimeoutMs,
-      eventStore: options.eventStore,
+      defaultApprovalTimeoutMs: options.approvalTimeoutMs,
+      eventStore: options.store,
       policy: options.policy,
       runtimeActor: options.runtimeActor,
     });
     this.gateway = new ChannelGateway(this.runtime);
     for (const channel of options.channels ?? []) {
-      this.registerChannel(channel);
+      this.addChannel(channel);
     }
     for (const action of options.actions ?? []) {
-      this.registerAction(action);
+      this.addAction(action);
     }
     this.host = new AgentHost({
       actionRequester: (agent, event, type, input, actionOptions) =>
         this.requestAction(agent, event, type, input, actionOptions),
       agents: options.agents,
       gateway: this.gateway,
-      maxConcurrentConversations: options.concurrency?.maxConcurrentConversations,
+      logger: options.logger,
+      maxConcurrentConversations: options.concurrency,
       onDelivery: (receipt) => this.runHook(this.hooks.onDelivery, receipt),
       onError: (error) => this.runHook(this.hooks.onError, error),
       runtime: this.runtime,
@@ -97,32 +107,39 @@ class OcpApplication implements OcpApp {
     this.runtimeSubscription = this.runtime.subscribe((event) => this.handleRuntimeEvent(event));
   }
 
-  registerAgent(agent: AgentDefinition): void {
+  addAgent(agent: AgentDefinition): void {
     this.host.register(agent);
   }
 
-  listAgentCards(): AgentCard[] {
-    return this.host.listAgentCards();
+  agentCards(): AgentCard[] {
+    return this.host.agentCards();
   }
 
-  registerAction<TInput, TResult>(action: ActionDefinition<TInput, TResult>): void {
+  addAction<TInput, TResult>(action: ActionDefinition<TInput, TResult>): void {
     if (action.type in this.actions) {
       throw new ConflictError("OCP action", action.type);
     }
     this.actions[action.type] = action as ActionDefinition<unknown, unknown>;
   }
 
-  on<T extends EventName>(
-    eventType: T,
-    handler: (event: EventEnvelope & { eventType: T }) => void | Promise<void>,
-  ): () => void {
+  addChannel(channel: ChannelDefinition): void {
+    if (channel.sink) {
+      this.gateway.register(channel.sink);
+    }
+    if (channel.source) {
+      this.gateway.registerSource(channel.source);
+    }
+  }
+
+  on(type: EventType, handler: (event: EventEnvelope) => void | Promise<void>): () => void {
     return this.runtime.subscribe(async (event) => {
-      if (event.eventType === eventType) {
-        try {
-          await handler(event as EventEnvelope & { eventType: T });
-        } catch (error) {
-          await this.reportError(error, event.eventId);
-        }
+      if (eventType(event) !== type) {
+        return;
+      }
+      try {
+        await handler(event);
+      } catch (error) {
+        await this.reportError(error, event.eventId);
       }
     });
   }
@@ -132,10 +149,11 @@ class OcpApplication implements OcpApp {
       return;
     }
     if (this.state === "stopping" || this.state === "stopped") {
-      throw new OcpError("OCP_TRANSPORT", `Cannot start OCP app while it is ${this.state}`);
+      throw new OpenChannelError("OCP_TRANSPORT", `Cannot start OCP app while it is ${this.state}`);
     }
     this.sourceAbort = new AbortController();
     this.host.attach();
+    await this.recoverApprovals();
     await this.gateway.start(
       async (event) => {
         try {
@@ -190,7 +208,7 @@ class OcpApplication implements OcpApp {
     return this.track(this.gateway.receive(provider, input, metadata));
   }
 
-  approve(approvalId: string, approver: ActionExecutionContext["actor"], reason?: string) {
+  approve(approvalId: string, approver: ActorRef, reason?: string) {
     return this.runtime.decideApproval({
       approvalId,
       approver,
@@ -199,7 +217,7 @@ class OcpApplication implements OcpApp {
     });
   }
 
-  deny(approvalId: string, approver: ActionExecutionContext["actor"], reason?: string) {
+  deny(approvalId: string, approver: ActorRef, reason?: string) {
     return this.runtime.decideApproval({
       approvalId,
       approver,
@@ -208,17 +226,84 @@ class OcpApplication implements OcpApp {
     });
   }
 
-  registerChannel(channel: ChannelDefinition): void {
-    if (channel.sink) {
-      this.gateway.register(channel.sink);
+  /**
+   * Recovers approval-driven work after a restart. Unresolved approvals are tracked again, and a
+   * granted approval whose action never reached a terminal event runs now. Both rebuild the action
+   * from the stored request, so nothing depends on in-process state.
+   */
+  private async recoverApprovals(): Promise<void> {
+    for (const requested of await this.runtime.restorePendingApprovals()) {
+      // biome-ignore lint/performance/noAwaitInLoops: Recovery rebuilds stored approvals in their original order.
+      await this.rebuildPendingAction(requested);
     }
-    if (channel.source) {
-      this.gateway.registerSource(channel.source);
+    const requests = await this.runtime.ownedApprovalRequests();
+    for (const decided of await this.runtime.queryEvents({ eventType: "approval.granted" })) {
+      if (decided.payload.case !== "approvalDecided") {
+        continue;
+      }
+      const requested = requests.get(decided.payload.value.approvalId);
+      const actionId =
+        requested?.payload.case === "approvalRequested"
+          ? requested.payload.value.requestedAction?.actionId
+          : undefined;
+      if (!(requested && actionId && this.runtime.isAuthorizedResolution(decided, requested))) {
+        continue;
+      }
+      // biome-ignore lint/performance/noAwaitInLoops: Recovery checks and replays grants in their original order.
+      const record = await this.runtime.getAction(actionId);
+      if (record?.status === "completed" || record?.status === "failed") {
+        continue;
+      }
+      const pending = await this.rebuildPendingAction(requested);
+      if (pending) {
+        delete this.pendingActions[decided.payload.value.approvalId];
+        await this.executeAction(pending);
+      }
     }
   }
 
+  /** Rebuilds the in-process pending action for a stored approval request. Returns undefined if it cannot. */
+  private async rebuildPendingAction(requested: EventEnvelope): Promise<PendingAction | undefined> {
+    if (requested.payload.case !== "approvalRequested") {
+      return undefined;
+    }
+    const request = requested.payload.value;
+    const action = request.requestedAction;
+    const definition = action ? this.actions[action.type] : undefined;
+    if (!(action && definition)) {
+      await this.reportError(
+        new ValidationError(
+          `No OCP action is registered for the approved request ${request.approvalId}`,
+        ),
+        requested.eventId,
+      );
+      return undefined;
+    }
+    let input: unknown;
+    try {
+      input = definition.validate(JSON.parse(action.parameters.input));
+    } catch (error) {
+      await this.reportError(error, requested.eventId);
+      return undefined;
+    }
+    const pending: PendingAction = {
+      action,
+      actor: request.agent ?? SYSTEM_ACTOR,
+      definition,
+      event: requested,
+      input,
+      options: {
+        channel: requested.channel,
+        conversation: requested.conversation,
+        recipient: requested.recipient,
+      },
+    };
+    this.pendingActions[request.approvalId] = pending;
+    return pending;
+  }
+
   private async requestAction<TInput, TResult>(
-    actor: ActionExecutionContext["actor"],
+    actor: ActorRef,
     inbound: EventEnvelope,
     type: string,
     input: TInput,
@@ -290,12 +375,12 @@ class OcpApplication implements OcpApp {
       reason: string;
     } = {
       ...options,
-      approver: options.approver ?? this.defaultApprover,
+      approver: options.approver ?? this.approver,
       channel: options.channel ?? inbound.channel,
       conversation: options.conversation ?? inbound.conversation,
       reason: options.reason ?? `Requested by ${actor.id}`,
     };
-    let submission: Awaited<ReturnType<OcpRuntime["submitAction"]>>;
+    let submission: Awaited<ReturnType<OpenChannelRuntime["submitAction"]>>;
     try {
       submission = await this.runtime.submitAction({
         action,
@@ -354,27 +439,20 @@ class OcpApplication implements OcpApp {
   private async executeAction(pending: PendingAction): Promise<ActionResult<unknown>> {
     await this.runHook(this.hooks.onActionStarted, pending.action);
     const context: ActionExecutionContext = {
-      actions: {
-        request: <TInput, TResult = unknown>(
-          type: string,
-          input: TInput,
-          options?: ActionRequestOptions,
-        ): Promise<ActionResult<TResult>> =>
-          this.requestAction(pending.actor, pending.event, type, input, options),
-      },
       actor: pending.actor,
       event: pending.event,
+      request: (type, input, options) =>
+        this.requestAction(pending.actor, pending.event, type, input, options),
       runtime: this.runtime,
     };
     try {
       const result = await pending.definition.execute(pending.input, context);
-      const event = createEvent({
+      const event = newEvent({
         actor: pending.actor,
         causationId: pending.event.eventId,
         channel: pending.options.channel,
         conversation: pending.options.conversation,
         correlationId: pending.event.correlationId || pending.action.actionId,
-        eventType: "action.executed",
         occurredAt: timestampFromDate(this.runtime.clock.now()),
         payload: {
           case: "actionExecuted",
@@ -398,13 +476,12 @@ class OcpApplication implements OcpApp {
       return completed;
     } catch (error) {
       const actionError = this.toActionError(error, pending.action.actionId);
-      const failedEvent = createEvent({
+      const failedEvent = newEvent({
         actor: pending.actor,
         causationId: pending.event.eventId,
         channel: pending.options.channel,
         conversation: pending.options.conversation,
         correlationId: pending.event.correlationId || pending.action.actionId,
-        eventType: "action.failed",
         occurredAt: timestampFromDate(this.runtime.clock.now()),
         payload: {
           case: "actionFailed",
@@ -433,10 +510,13 @@ class OcpApplication implements OcpApp {
 
   private async handleRuntimeEvent(event: EventEnvelope): Promise<void> {
     await this.runHook(this.hooks.onEventAccepted, event);
-    if (event.eventType === "approval.granted" && event.payload.case === "approvalDecided") {
-      const pending = this.pendingActions[event.payload.value.approvalId];
+    const decided = event.payload.case === "approvalDecided" ? event.payload.value : undefined;
+    const expired = event.payload.case === "approvalExpired" ? event.payload.value : undefined;
+
+    if (decided?.outcome === ApprovalOutcome.GRANTED) {
+      const pending = this.pendingActions[decided.approvalId];
       if (pending) {
-        delete this.pendingActions[event.payload.value.approvalId];
+        delete this.pendingActions[decided.approvalId];
         const run = this.executeAction(pending);
         this.actionRuns[pending.action.actionId] = run;
         try {
@@ -445,29 +525,27 @@ class OcpApplication implements OcpApp {
           delete this.actionRuns[pending.action.actionId];
         }
       }
-    }
-    if (
-      (event.eventType === "approval.denied" || event.eventType === "approval.expired") &&
-      (event.payload.case === "approvalDecided" || event.payload.case === "approvalExpired")
-    ) {
-      const pending = this.pendingActions[event.payload.value.approvalId];
+    } else if (decided?.outcome === ApprovalOutcome.DENIED || expired) {
+      const approvalId = decided?.approvalId ?? expired?.approvalId ?? "";
+      const pending = this.pendingActions[approvalId];
       if (pending) {
+        const reason = expired ? "Approval expired" : "Approval denied";
         const blocked: ActionResult<unknown> = {
           actionId: pending.action.actionId,
-          reason: event.eventType === "approval.expired" ? "Approval expired" : "Approval denied",
+          reason,
           status: "blocked",
         };
         this.actionResults[pending.action.actionId] = blocked;
         await this.runtime.failAction(
           pending.action.actionId,
-          new ActionError(blocked.reason, {
+          new ActionError(reason, {
             actionId: pending.action.actionId,
-            approvalId: event.payload.value.approvalId,
+            approvalId,
           }),
         );
         await this.runHook(this.hooks.onActionCompleted, blocked);
       }
-      delete this.pendingActions[event.payload.value.approvalId];
+      delete this.pendingActions[approvalId];
     }
     await this.runHook(this.hooks.onEventProcessed, event);
   }
@@ -482,12 +560,12 @@ class OcpApplication implements OcpApp {
     try {
       await hook(...args);
     } catch (error) {
-      await this.hooks.onError?.(this.toOcpError(error));
+      await this.hooks.onError?.(this.toOpenChannelError(error));
     }
   }
 
   private async reportError(error: unknown, eventId?: string): Promise<void> {
-    await this.runHook(this.hooks.onError, this.toOcpError(error, eventId));
+    await this.runHook(this.hooks.onError, this.toOpenChannelError(error, eventId));
   }
 
   private remainingTimeout(startedAt: number, timeoutMs: number): number {
@@ -507,7 +585,7 @@ class OcpApplication implements OcpApp {
           timeout = setTimeout(
             () =>
               reject(
-                new OcpError("OCP_TRANSPORT", `OCP ${operation} timed out`, {
+                new OpenChannelError("OCP_TRANSPORT", `OCP ${operation} timed out`, {
                   retryable: true,
                   stage: "shutdown",
                 }),
@@ -538,7 +616,7 @@ class OcpApplication implements OcpApp {
         drain(),
         new Promise<never>((_, reject) => {
           timeout = setTimeout(
-            () => reject(new OcpError("OCP_TRANSPORT", "OCP app shutdown timed out")),
+            () => reject(new OpenChannelError("OCP_TRANSPORT", "OCP app shutdown timed out")),
             Math.max(0, timeoutMs),
           );
         }),
@@ -557,7 +635,7 @@ class OcpApplication implements OcpApp {
 
   private assertAccepting(): void {
     if (this.state === "stopping" || this.state === "stopped") {
-      throw new OcpError("OCP_TRANSPORT", `OCP app is ${this.state}`);
+      throw new OpenChannelError("OCP_TRANSPORT", `OCP app is ${this.state}`);
     }
   }
 
@@ -572,10 +650,10 @@ class OcpApplication implements OcpApp {
     });
   }
 
-  private toOcpError(error: unknown, eventId?: string): OcpError {
-    return error instanceof OcpError
+  private toOpenChannelError(error: unknown, eventId?: string): OpenChannelError {
+    return error instanceof OpenChannelError
       ? error
-      : new OcpError("OCP_ACTION", error instanceof Error ? error.message : String(error), {
+      : new OpenChannelError("OCP_ACTION", error instanceof Error ? error.message : String(error), {
           cause: error,
           eventId,
           stage: "processing",
@@ -605,16 +683,11 @@ class OcpApplication implements OcpApp {
   }
 }
 
-/** A small helper for adapters that need to report a successful delivery. */
+/** Builds the delivery receipt a channel sink returns after a successful provider send. */
 export function deliveryReceipt(
   provider: string,
   event: EventEnvelope,
   externalId?: string,
 ): DeliveryReceipt {
   return { deliveredAt: new Date(), eventId: event.eventId, externalId, provider };
-}
-
-/** Type guard useful when an app is configured with a default empty policy. */
-export function isOcpApp(value: unknown): value is OcpApp {
-  return Boolean(value && typeof value === "object" && "ingest" in value && "start" in value);
 }

@@ -1,23 +1,47 @@
+export type {
+  ActionRequest,
+  ActorRef,
+  ChannelRef,
+  ConversationRef,
+  EventEnvelope,
+  EventType,
+  MessageReceived,
+} from "@frontal-labs/open-channel-protocol";
+export {
+  actionExecuted,
+  actionFailed,
+  approvalRequested,
+  EVENT_TYPES,
+  eventType,
+  fromBinary,
+  fromJson,
+  messageReceived,
+  messageSent,
+  newEvent,
+  PROTOCOL_VERSION,
+  toBinary,
+  toJson,
+  validateEvent,
+} from "@frontal-labs/open-channel-protocol";
 export { AgentHost } from "./agent-host.js";
-export { createOcp, deliveryReceipt, isOcpApp } from "./app.js";
+export { deliveryReceipt, openChannel } from "./app.js";
+export { consoleLogger } from "./logger.js";
 export type {
   ActionDefinition,
   ActionExecutionContext,
   ActionRequestOptions,
   ActionResult,
-  AgentActionInput,
-  AgentActions,
   AgentCapabilities,
   AgentCard,
   AgentContext,
   AgentDefinition,
-  AgentHostOptions,
+  AgentLogger,
   AgentSkill,
   ChannelDefinition,
   IngestResult,
-  OcpApp,
-  OcpAppOptions,
-  OcpHooks,
+  OpenChannel,
+  OpenChannelHooks,
+  OpenChannelOptions,
   ReplyOptions,
 } from "./types.js";
-export { defineAction } from "./types.js";
+export { action } from "./types.js";

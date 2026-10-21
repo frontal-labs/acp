@@ -1,18 +1,14 @@
 import { create } from "@bufbuild/protobuf";
 import { ValidationError } from "@frontal-labs/open-channel-core";
 import {
-  createEvent,
-  eventFromBinary,
-  eventFromJson,
-  eventToBinary,
-  eventToJson,
+  fromBinary,
+  fromJson,
   MessageReceivedSchema,
+  newEvent,
+  toBinary,
+  toJson,
 } from "@frontal-labs/open-channel-protocol";
-import {
-  createTestEvent,
-  createTestHuman,
-  createTestMessageReceived,
-} from "@frontal-labs/open-channel-testing";
+import { createTestEvent, createTestHuman } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 
 describe("OCP event envelope", () => {
@@ -29,9 +25,9 @@ describe("OCP event envelope", () => {
       },
     });
 
-    const json = eventToJson(event);
-    const jsonRoundTrip = eventFromJson(json);
-    const binaryRoundTrip = eventFromBinary(eventToBinary(event));
+    const json = toJson(event);
+    const jsonRoundTrip = fromJson(json);
+    const binaryRoundTrip = fromBinary(toBinary(event));
 
     expect(jsonRoundTrip.eventId).toBe("evt-1");
     expect(jsonRoundTrip.payload.case).toBe("messageReceived");
@@ -41,23 +37,16 @@ describe("OCP event envelope", () => {
     }
   });
 
-  it("rejects a payload that does not match its event type", () => {
-    expect(() =>
-      createEvent({
-        eventType: "message.sent",
-        payload: {
-          case: "messageReceived",
-          value: createTestMessageReceived("wrong payload"),
-        },
-      }),
-    ).toThrow("requires payload case messageSent");
+  it("rejects an event whose payload is missing", () => {
+    expect(() => newEvent({ payload: { case: undefined, value: undefined } as never })).toThrow(
+      "must have a payload",
+    );
   });
 
   it("validates untrusted ProtoJSON with Zod before decoding", () => {
-    expect(() => eventFromJson({ eventType: 42 })).toThrow(ValidationError);
+    expect(() => fromJson({ eventId: 42 })).toThrow(ValidationError);
     expect(() =>
-      createEvent({
-        eventType: "message.received",
+      newEvent({
         payload: { case: "unknown", value: {} } as never,
       }),
     ).toThrow(ValidationError);

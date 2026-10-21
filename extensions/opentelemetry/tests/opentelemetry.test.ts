@@ -1,17 +1,14 @@
+import { messageReceived } from "@frontal-labs/open-channel";
 import { describe, expect, it } from "vitest";
 import { createOpenTelemetryHooks } from "../src/index.js";
 
 describe("@frontal-labs/open-channel-ext-opentelemetry", () => {
-  it("creates hooks compatible with OcpApp", async () => {
+  it("creates hooks compatible with OpenChannel", async () => {
     const spans: string[] = [];
     const hooks = createOpenTelemetryHooks({
       tracer: { startActiveSpan: (name, callback) => callback({ end: () => spans.push(name) }) },
     });
-    await hooks.onEventAccepted?.({
-      eventId: "1",
-      eventType: "message.received",
-      protocolVersion: "0.1",
-    } as never);
+    await hooks.onEventAccepted?.(messageReceived({ eventId: "1", text: "hi" }));
     expect(spans).toEqual(["ocp.event.accepted"]);
   });
 });

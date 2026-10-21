@@ -5,14 +5,15 @@ import {
   ActorRefSchema,
   ActorType,
   ApprovalOutcome,
+  eventType,
 } from "@frontal-labs/open-channel-protocol";
-import { OcpRuntime } from "@frontal-labs/open-channel-runtime";
+import { OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
 
 import { createExampleEventStore } from "../_shared/typescript/example-kit.js";
 
 const agent = create(ActorRefSchema, { id: "agent:operator", type: ActorType.AGENT });
 const approver = create(ActorRefSchema, { id: "human:approver", type: ActorType.HUMAN });
-const runtime = new OcpRuntime({
+const runtime = new OpenChannelRuntime({
   eventStore: createExampleEventStore(),
   policy: new RuleBasedPolicyEngine({
     rules: [
@@ -42,7 +43,7 @@ const pending = await runtime.submitAction({
   reason: "Schedule the approved team meeting",
 });
 
-console.log({ events: pending.events.map((event) => event.eventType), status: pending.status });
+console.log({ events: pending.events.map((event) => eventType(event)), status: pending.status });
 
 if (pending.approvalId) {
   await runtime.decideApproval({
@@ -52,5 +53,5 @@ if (pending.approvalId) {
     reason: "Approved by the example approver",
   });
   const recorded = await runtime.queryEvents({});
-  console.log({ recorded: recorded.map((event) => event.eventType) });
+  console.log({ recorded: recorded.map((event) => eventType(event)) });
 }

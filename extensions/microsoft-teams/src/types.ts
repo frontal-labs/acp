@@ -24,7 +24,7 @@ export interface TeamsSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete Teams channel configuration for `createOcp()`. */
+/** Complete Teams channel configuration for `openChannel()`. */
 export interface TeamsChannelOptions extends TeamsSourceOptions {
   transport: TeamsTransport;
 }

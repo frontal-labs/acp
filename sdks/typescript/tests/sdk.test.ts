@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
-import type { OcpError } from "@frontal-labs/open-channel-core";
-import { ActorType, ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
+import type { OpenChannelError } from "@frontal-labs/open-channel-core";
+import { ActorType, ChannelRefSchema, eventType } from "@frontal-labs/open-channel-protocol";
 import {
   createTestAgent,
   createTestChannelAdapter,
@@ -12,8 +12,8 @@ import {
 } from "@frontal-labs/open-channel-testing";
 import { describe, expect, it } from "vitest";
 import { RuleBasedPolicyEngine } from "../../../packages/policy/src/index.js";
-import { ChannelGateway, OcpRuntime } from "../../../packages/runtime/src/index.js";
-import { AgentHost, createOcp, defineAction } from "../src/index.js";
+import { ChannelGateway, OpenChannelRuntime } from "../../../packages/runtime/src/index.js";
+import { AgentHost, action, openChannel } from "../src/index.js";
 
 /** Wraps a test store so each write waits, letting shutdown overlap with runtime processing. */
 function createSlowEventStore(): TestEventStore {
@@ -47,7 +47,7 @@ function createSlowEventStore(): TestEventStore {
 describe("@frontal-labs/open-channel", () => {
   it("routes a message to an agent and dispatches its reply", async () => {
     const adapter = createTestChannelAdapter();
-    const runtime = new OcpRuntime({
+    const runtime = new OpenChannelRuntime({
       eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
     });
@@ -75,7 +75,7 @@ describe("@frontal-labs/open-channel", () => {
       }),
     );
 
-    expect(host.getAgentCard(agent.id)?.skills[0]?.id).toBe("echo");
+    expect(host.agentCards().find((card) => card.id === agent.id)?.skills[0]?.id).toBe("echo");
     expect(adapter.sent).toHaveLength(1);
     expect(adapter.sent[0]?.payload.case).toBe("messageSent");
     expect(agent.type).toBe(ActorType.AGENT);
@@ -86,7 +86,7 @@ describe("@frontal-labs/open-channel", () => {
     const executed: number[] = [];
     const agent = createTestAgent("agent:app", "App Agent");
     const human = createTestHuman("human:app", "App Human");
-    const increment = defineAction<{ value: number }, number>({
+    const increment = action<{ value: number }, number>({
       execute: (input) => {
         executed.push(input.value);
         return input.value + 1;
@@ -99,23 +99,23 @@ describe("@frontal-labs/open-channel", () => {
         return input as { value: number };
       },
     });
-    const app = createOcp({
+    const app = openChannel({
       actions: [increment],
       agents: [
         {
           id: agent.id,
           name: agent.displayName,
           onMessage: async (context) => {
-            await context.actions.request("counter.increment", { value: 2 });
+            await context.request("counter.increment", { value: 2 });
             await context.reply("done");
           },
         },
       ],
       channels: [{ provider: "test", sink: adapter }],
-      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [{ actionType: "counter.increment", allowed: true, id: "counter" }],
       }),
+      store: createTestEventStore(),
     });
 
     await app.start();
@@ -131,7 +131,7 @@ describe("@frontal-labs/open-channel", () => {
 
     expect(executed).toEqual([2]);
     expect(adapter.sent).toHaveLength(1);
-    expect(adapter.sent[0]?.eventType).toBe("message.sent");
+    expect(adapter.sent[0] && eventType(adapter.sent[0])).toBe("message.sent");
   });
 
   it("executes a registered action only after approval", async () => {
@@ -139,7 +139,7 @@ describe("@frontal-labs/open-channel", () => {
     const approver = createTestHuman("human:approver", "Approver");
     let executions = 0;
     let approvalId = "";
-    const app = createOcp({
+    const app = openChannel({
       actions: [
         {
           execute: () => {
@@ -155,7 +155,7 @@ describe("@frontal-labs/open-channel", () => {
           id: agent.id,
           name: agent.displayName,
           onMessage: async (context) => {
-            const result = await context.actions.request(
+            const result = await context.request(
               "sensitive.update",
               {},
               {
@@ -169,7 +169,6 @@ describe("@frontal-labs/open-channel", () => {
           },
         },
       ],
-      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [
           {
@@ -180,6 +179,7 @@ describe("@frontal-labs/open-channel", () => {
           },
         ],
       }),
+      store: createTestEventStore(),
     });
 
     await app.start();
@@ -209,20 +209,20 @@ describe("@frontal-labs/open-channel", () => {
       },
     };
     let rawEvent: unknown;
-    const app = createOcp({
+    const app = openChannel({
       agents: [
         {
           id: agent.id,
           name: agent.displayName,
           onMessage: async (context) => {
-            ({ rawEvent } = context);
-            await context.reply("source reply", { recipient: context.actor });
+            ({ event: rawEvent } = context);
+            await context.reply("source reply", { recipient: context.agent });
           },
         },
       ],
       channels: [{ provider: "test", sink: adapter, source }],
-      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
+      store: createTestEventStore(),
     });
 
     await app.start();
@@ -241,7 +241,7 @@ describe("@frontal-labs/open-channel", () => {
     const agent = createTestAgent("agent:duplicate", "Duplicate Agent");
     const human = createTestHuman("human:duplicate");
     let executions = 0;
-    const app = createOcp({
+    const app = openChannel({
       actions: [
         {
           execute: () => {
@@ -257,14 +257,14 @@ describe("@frontal-labs/open-channel", () => {
           id: agent.id,
           name: agent.displayName,
           onMessage: async (context) => {
-            const first = await context.actions.request(
+            const first = await context.request(
               "duplicate.action",
               {},
               {
                 actionId: "action:once",
               },
             );
-            const second = await context.actions.request(
+            const second = await context.request(
               "duplicate.action",
               {},
               {
@@ -276,10 +276,10 @@ describe("@frontal-labs/open-channel", () => {
           },
         },
       ],
-      eventStore: createTestEventStore(),
       policy: new RuleBasedPolicyEngine({
         rules: [{ actionType: "duplicate.action", allowed: true, id: "allow" }],
       }),
+      store: createTestEventStore(),
     });
 
     await app.start();
@@ -295,7 +295,7 @@ describe("@frontal-labs/open-channel", () => {
     let active = 0;
     let peak = 0;
     const release = new Map<string, () => void>();
-    const app = createOcp({
+    const app = openChannel({
       agents: [
         {
           id: agent.id,
@@ -308,9 +308,9 @@ describe("@frontal-labs/open-channel", () => {
           },
         },
       ],
-      concurrency: { maxConcurrentConversations: 2 },
-      eventStore: createTestEventStore(),
+      concurrency: 2,
       policy: new RuleBasedPolicyEngine({ rules: [] }),
+      store: createTestEventStore(),
     });
     await app.start();
     const first = createTestEvent({
@@ -344,17 +344,17 @@ describe("@frontal-labs/open-channel", () => {
 
   it("isolates a failing app.on handler and reports it through onError", async () => {
     const agent = createTestAgent("agent:on-handler", "On Handler Agent");
-    const errors: OcpError[] = [];
+    const errors: OpenChannelError[] = [];
     const seen: string[] = [];
-    const app = createOcp({
+    const app = openChannel({
       agents: [{ id: agent.id, name: agent.displayName, onMessage: async () => undefined }],
-      eventStore: createTestEventStore(),
       hooks: {
         onError: (error) => {
           errors.push(error);
         },
       },
       policy: new RuleBasedPolicyEngine({ rules: [] }),
+      store: createTestEventStore(),
     });
     app.on("message.received", () => {
       throw new Error("handler boom");
@@ -376,7 +376,7 @@ describe("@frontal-labs/open-channel", () => {
     const adapter = createTestChannelAdapter();
     const agent = createTestAgent("agent:drain", "Drain Agent");
     const human = createTestHuman("human:drain", "Drain Human");
-    const app = createOcp({
+    const app = openChannel({
       agents: [
         {
           id: agent.id,
@@ -387,8 +387,8 @@ describe("@frontal-labs/open-channel", () => {
         },
       ],
       channels: [{ provider: "test", sink: adapter }],
-      eventStore: createSlowEventStore(),
       policy: new RuleBasedPolicyEngine({ rules: [] }),
+      store: createSlowEventStore(),
     });
 
     await app.start();

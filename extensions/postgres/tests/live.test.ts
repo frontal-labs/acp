@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { type EventEnvelope, eventType } from "@frontal-labs/open-channel-protocol";
 import { createTestEvent } from "@frontal-labs/open-channel-testing";
 import pg from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -54,7 +55,9 @@ describe.skipIf(!url)(
       await store.append(event);
       expect(await store.has("live-event-1")).toBe(true);
       expect(await store.appendIfAbsent(event)).toBe(false);
-      expect((await store.get("live-event-1"))?.eventType).toBe("message.received");
+      expect(eventType((await store.get("live-event-1")) as EventEnvelope)).toBe(
+        "message.received",
+      );
       expect(await store.query({ eventType: "message.received" })).toHaveLength(1);
       expect(await store.query({ eventType: "message.sent" })).toHaveLength(0);
     });

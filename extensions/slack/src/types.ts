@@ -27,7 +27,7 @@ export interface SlackSourceOptions {
   recipient?: ActorRef;
 }
 
-/** Complete Slack channel configuration for `createOcp({ channels })`. */
+/** Complete Slack channel configuration for `openChannel({ channels })`. */
 export interface SlackChannelOptions extends SlackSourceOptions {
   transport: SlackTransport;
 }
