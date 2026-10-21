@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-adapter",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Adapter interfaces for connecting OpenChannel Protocol transports and channels",
   "keywords": [
     "openchannel-protocol",
