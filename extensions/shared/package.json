@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-ext-shared",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Shared utilities for OpenChannel Protocol TypeScript extensions",
   "keywords": [
     "openchannel-protocol",
