@@ -1,4 +1,4 @@
-import type { ActionDefinition } from "@frontal-labs/open-channel";
+import type { ActionDefinition } from "openchannel";
 
 /** Provider-neutral MCP tool invocation input. */
 export interface McpToolCallInput {

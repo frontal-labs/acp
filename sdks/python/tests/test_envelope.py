@@ -1,6 +1,6 @@
 import unittest
 
-from open_channel import (
+from openchannel import (
     PROTOCOL_VERSION,
     ActorRef,
     event_type,
@@ -12,7 +12,7 @@ from open_channel import (
     to_json,
     validate_event,
 )
-from open_channel._wire import encode_event
+from openchannel._wire import encode_event
 
 HUMAN = ActorRef("human:gabriel", type="ACTOR_TYPE_HUMAN")
 APPROVER = ActorRef("human:approver", type="ACTOR_TYPE_HUMAN")

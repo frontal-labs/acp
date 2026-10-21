@@ -1,6 +1,6 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
 import { type EventEnvelope, eventType } from "@frontal-labs/open-channel-protocol";
 import type { ActionExecutionRecord, EventStore } from "@frontal-labs/open-channel-runtime";
+import type { ChannelDefinition } from "openchannel";
 
 /**
  * In-memory event store for examples only. OCP requires an explicit `eventStore`; production

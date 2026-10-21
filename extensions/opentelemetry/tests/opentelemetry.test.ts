@@ -1,4 +1,4 @@
-import { messageReceived } from "@frontal-labs/open-channel";
+import { messageReceived } from "openchannel";
 import { describe, expect, it } from "vitest";
 import { createOpenTelemetryHooks } from "../src/index.js";
 

@@ -43,9 +43,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@frontal-labs/open-channel": "workspace:*",
     "@frontal-labs/open-channel-adapter": "workspace:*",
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@frontal-labs/open-channel-protocol": "workspace:*",
+    "openchannel": "workspace:*"
   },
   "devDependencies": {
     "@frontal-labs/open-channel-testing": "workspace:*",

@@ -72,7 +72,7 @@ card shape changes, and test duplicate registration as a conflict.
 Relevant commands:
 
 ```bash
-pnpm --filter @frontal-labs/open-channel test
-pnpm --filter @frontal-labs/open-channel typecheck
+pnpm --filter openchannel test
+pnpm --filter openchannel typecheck
 pnpm test
 ```

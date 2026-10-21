@@ -1,5 +1,5 @@
-import type { ChannelDefinition } from "@frontal-labs/open-channel";
 import type { ActorRef } from "@frontal-labs/open-channel-protocol";
+import type { ChannelDefinition } from "openchannel";
 
 /** Provider-neutral email message used by SMTP, IMAP, or webhook transports. */
 export interface EmailMessage {

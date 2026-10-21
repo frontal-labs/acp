@@ -17,7 +17,7 @@
       "@frontal-labs/open-channel-policy": ["packages/policy/src/index.ts"],
       "@frontal-labs/open-channel-protocol": ["packages/protocol/src/index.ts"],
       "@frontal-labs/open-channel-runtime": ["packages/runtime/src/index.ts"],
-      "@frontal-labs/open-channel": ["sdks/typescript/src/index.ts"],
+      "openchannel": ["sdks/typescript/src/index.ts"],
       "@frontal-labs/open-channel-testing": ["packages/testing/src/index.ts"],
       "@frontal-labs/open-channel-ext-a2a": ["extensions/a2a/src/index.ts"],
       "@frontal-labs/open-channel-ext-calendar": [

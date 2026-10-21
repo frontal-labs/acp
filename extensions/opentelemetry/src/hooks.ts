@@ -1,4 +1,4 @@
-import { type EventEnvelope, eventType, type OpenChannelHooks } from "@frontal-labs/open-channel";
+import { type EventEnvelope, eventType, type OpenChannelHooks } from "openchannel";
 
 import type { OpenTelemetryOptions } from "./types.js";
 

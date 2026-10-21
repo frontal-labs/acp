@@ -43,8 +43,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@frontal-labs/open-channel": "workspace:*",
     "@frontal-labs/open-channel-core": "workspace:*",
+    "openchannel": "workspace:*",
     "zod": "^4.6.7"
   },
   "devDependencies": {

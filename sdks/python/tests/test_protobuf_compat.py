@@ -9,7 +9,7 @@ import unittest
 from datetime import UTC, datetime
 from pathlib import Path
 
-from open_channel import (
+from openchannel import (
     ActorRef,
     action_executed,
     action_failed,

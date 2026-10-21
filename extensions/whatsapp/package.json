@@ -44,11 +44,11 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.5",
-    "@frontal-labs/open-channel": "workspace:*",
     "@frontal-labs/open-channel-adapter": "workspace:*",
     "@frontal-labs/open-channel-core": "workspace:*",
     "@frontal-labs/open-channel-ext-shared": "workspace:*",
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@frontal-labs/open-channel-protocol": "workspace:*",
+    "openchannel": "workspace:*"
   },
   "devDependencies": {
     "@frontal-labs/open-channel-testing": "workspace:*",

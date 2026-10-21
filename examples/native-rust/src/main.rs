@@ -1,4 +1,4 @@
-use open_channel::{
+use openchannel::{
     approval_requested, message_received, ActionInvocation, ActorRef, ActorType, AgentCard,
     AgentDefinition, AgentHost, EventEnvelope, StderrLogger,
 };

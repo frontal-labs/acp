@@ -2,21 +2,19 @@
 
 OCP uses Changesets for JavaScript package versioning and release orchestration. The public release surface is:
 
-- npm: `@frontal-labs/open-channel-cli` and the `@frontal-labs/open-channel-*` packages;
+- npm: `openchannel` (TypeScript SDK), `@frontal-labs/open-channel-cli`, and the `@frontal-labs/open-channel-*` packages;
 - GitHub Packages (npm registry, scope `@frontal-labs`): the same TypeScript packages, as a mirror;
-- crates.io: `open-channel`;
-- PyPI: `open-channel`.
+- crates.io: `openchannel`;
+- PyPI: `openchannel`.
 
 GitHub Packages only hosts npm packages here. Rust and Python are published to crates.io and PyPI only.
 
-The SDK distribution name is `open-channel` on crates.io and PyPI, and
-`@frontal-labs/open-channel` on npm (npm requires a scope for this name). The
-language-specific import identifiers are `@frontal-labs/open-channel` for
-TypeScript, `open_channel` for Python, and `open_channel` for Rust.
+The SDK distribution name is `openchannel` on npm, PyPI, and crates.io. The
+import identifier is `openchannel` in TypeScript, Python, and Rust.
 
 Release image/container identifiers retain ecosystem suffixes (`open-channel-ts`,
 `open-channel-py`, and `open-channel-rs`) even though the published SDK package names are
-unified as `open-channel`.
+unified as `openchannel`.
 
 ## Prepare a release
 
@@ -38,8 +36,8 @@ release PR. When that PR lands, it publishes:
 Configure these repository secrets before enabling publishing:
 
 - `NPM_TOKEN`: npm publish token for the `@frontal-labs` scope;
-- `CARGO_REGISTRY_TOKEN`: crates.io token for `open-channel`;
-- `PYPI_API_TOKEN`: PyPI token for `open-channel`.
+- `CARGO_REGISTRY_TOKEN`: crates.io token for `openchannel`;
+- `PYPI_API_TOKEN`: PyPI token for `openchannel`.
 
 GitHub Packages uses the workflow's `GITHUB_TOKEN`. The release job requests `packages: write`, so no extra secret is needed.
 

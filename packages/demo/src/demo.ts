@@ -1,4 +1,3 @@
-import { action, eventType, openChannel } from "@frontal-labs/open-channel";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   createTestAgent,
@@ -7,6 +6,7 @@ import {
   createTestEventStore,
   createTestHuman,
 } from "@frontal-labs/open-channel-testing";
+import { action, eventType, openChannel } from "openchannel";
 
 /** Narrows unknown action input to the ticket shape this demo expects. */
 function isTicketInput(input: unknown): input is { ticketId: string } {
