@@ -29,7 +29,7 @@ export interface A2AChannelOptions extends A2ASourceOptions {
 
 /** Source of the A2A agent cards advertised to peers. */
 export interface AgentCardRegistry {
-  listAgentCards: () => AgentCard[];
+  agentCards: () => AgentCard[];
 }
 
 /** OCP channel definition for A2A. */

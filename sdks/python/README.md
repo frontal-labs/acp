@@ -76,17 +76,17 @@ from_json(payload)  # rejects other versions and any eventType field
 
 ## Application API
 
-| Call | Purpose |
-| --- | --- |
-| `open_channel(...)` | Build an application (`OpenChannel`) |
-| `start()`, `stop(timeout_ms=...)` | Lifecycle |
-| `receive(provider, value)` | Normalize provider input and ingest it |
-| `ingest(event)` | Ingest a built event |
-| `approve(id, approver)`, `deny(id, approver)` | Decide an approval |
-| `on(event_name, handler)` | Observe accepted events; returns an unsubscribe function |
-| `agent_cards()` | Discovery |
-| `add_agent`, `add_action`, `add_channel` | Register after construction |
-| `store` | The event store, for audit queries |
+| Call                                          | Purpose                                                  |
+| --------------------------------------------- | -------------------------------------------------------- |
+| `open_channel(...)`                           | Build an application (`OpenChannel`)                     |
+| `start()`, `stop(timeout_ms=...)`             | Lifecycle                                                |
+| `receive(provider, value)`                    | Normalize provider input and ingest it                   |
+| `ingest(event)`                               | Ingest a built event                                     |
+| `approve(id, approver)`, `deny(id, approver)` | Decide an approval                                       |
+| `on(event_name, handler)`                     | Observe accepted events; returns an unsubscribe function |
+| `agent_cards()`                               | Discovery                                                |
+| `add_agent`, `add_action`, `add_channel`      | Register after construction                              |
+| `store`                                       | The event store, for audit queries                       |
 
 Inside an agent, `ctx.message`, `ctx.event`, `ctx.agent`, `ctx.conversation`, `ctx.channel`,
 `ctx.logger`, `ctx.reply(text)`, and `ctx.request(action_type, input, ...)` are available.

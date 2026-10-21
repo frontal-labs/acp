@@ -5,11 +5,11 @@ The TypeScript, Python, and Rust distributions use the common package name
 `@frontal-labs` scope). Their import/module identifiers are
 language-specific:
 
-| SDK | Distribution | Import/module | Primary API |
-| --- | --- | --- | --- |
-| [`typescript/`](./typescript/) | npm `@frontal-labs/open-channel` | `@frontal-labs/open-channel` | `openChannel`, `AgentHost` |
-| [`python/`](./python/) | PyPI `open-channel` | `open_channel` | `OpenChannel`, `AgentHost` |
-| [`rust/`](./rust/) | crates.io `open-channel` | `open_channel` | `OpenChannelBuilder`, `AgentHost` |
+| SDK                            | Distribution                     | Import/module                | Primary API                       |
+| ------------------------------ | -------------------------------- | ---------------------------- | --------------------------------- |
+| [`typescript/`](./typescript/) | npm `@frontal-labs/open-channel` | `@frontal-labs/open-channel` | `openChannel`, `AgentHost`        |
+| [`python/`](./python/)         | PyPI `open-channel`              | `open_channel`               | `OpenChannel`, `AgentHost`        |
+| [`rust/`](./rust/)             | crates.io `open-channel`         | `open_channel`               | `OpenChannelBuilder`, `AgentHost` |
 
 All SDKs expose one event API for both wire versions: `2.0` is the canonical
 envelope in `proto/ocp`. There is one envelope and one protocol version, `2.0`.

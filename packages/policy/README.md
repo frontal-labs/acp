@@ -6,8 +6,6 @@ Reference policy interfaces and ordered rule-based evaluation for OCP actions.
 
 ```ts
 new RuleBasedPolicyEngine({
-  rules: [
-    { id: "internal", actionType: "message_internal_channel", allowed: true },
-  ],
+  rules: [{ id: "internal", actionType: "message_internal_channel", allowed: true }],
 });
 ```

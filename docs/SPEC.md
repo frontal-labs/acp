@@ -14,21 +14,21 @@ The event name is derived from the payload `oneof`; the envelope does not store 
 
 ## 3. Event and payload mapping
 
-| Event type | Payload case |
-| --- | --- |
-| `message.received` | `messageReceived` |
-| `message.sent` | `messageSent` |
-| `task.created` | `taskCreated` |
-| `task.assigned` | `taskAssigned` |
-| `approval.requested` | `approvalRequested` |
-| `approval.granted` / `approval.denied` | `approvalDecided` |
-| `approval.expired` | `approvalExpired` |
-| `escalation.triggered` | `escalationTriggered` |
-| `handoff.initiated` | `handoffInitiated` |
-| `handoff.completed` | `handoffCompleted` |
-| `policy.allowed` / `policy.blocked` | `policyEvaluated` |
-| `action.executed` | `actionExecuted` |
-| `action.failed` | `actionFailed` |
+| Event type                             | Payload case          |
+| -------------------------------------- | --------------------- |
+| `message.received`                     | `messageReceived`     |
+| `message.sent`                         | `messageSent`         |
+| `task.created`                         | `taskCreated`         |
+| `task.assigned`                        | `taskAssigned`        |
+| `approval.requested`                   | `approvalRequested`   |
+| `approval.granted` / `approval.denied` | `approvalDecided`     |
+| `approval.expired`                     | `approvalExpired`     |
+| `escalation.triggered`                 | `escalationTriggered` |
+| `handoff.initiated`                    | `handoffInitiated`    |
+| `handoff.completed`                    | `handoffCompleted`    |
+| `policy.allowed` / `policy.blocked`    | `policyEvaluated`     |
+| `action.executed`                      | `actionExecuted`      |
+| `action.failed`                        | `actionFailed`        |
 
 Consumers MUST reject an event whose payload is missing or unknown. The event name is always derived from the payload, so a mismatched name cannot be expressed. Consumers MAY preserve unknown extension fields for forward compatibility.
 

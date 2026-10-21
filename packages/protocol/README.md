@@ -5,20 +5,27 @@ Canonical OCP event model: the protobuf-generated types, typed event builders, v
 There is one envelope and one protocol version, `PROTOCOL_VERSION` (`"2.0"`). The payload `oneof` is the event kind, so `eventType(event)` derives the friendly name (for example `approval.granted`) instead of storing a second copy.
 
 ```ts
-import { approvalRequested, eventType, fromBinary, toBinary } from "@frontal-labs/open-channel-protocol";
+import {
+  approvalRequested,
+  eventType,
+  fromBinary,
+  toBinary,
+} from "@frontal-labs/open-channel-protocol";
 
-const event = approvalRequested({ /* agent, approver, requestedAction, deadline, ... */ });
+const event = approvalRequested({
+  /* agent, approver, requestedAction, deadline, ... */
+});
 eventType(event); // "approval.requested"
 fromBinary(toBinary(event)); // round-trips, no version argument
 ```
 
 ## API
 
-| Concern | Exports |
-| --- | --- |
-| Build | `newEvent`, `messageReceived`, `messageSent`, `approvalRequested`, `actionExecuted`, `actionFailed` |
-| Inspect | `eventType`, `validateEvent`, `EVENT_TYPES`, `PROTOCOL_VERSION` |
-| Serialize | `toJson`, `fromJson`, `toBinary`, `fromBinary` |
+| Concern   | Exports                                                                                             |
+| --------- | --------------------------------------------------------------------------------------------------- |
+| Build     | `newEvent`, `messageReceived`, `messageSent`, `approvalRequested`, `actionExecuted`, `actionFailed` |
+| Inspect   | `eventType`, `validateEvent`, `EVENT_TYPES`, `PROTOCOL_VERSION`                                     |
+| Serialize | `toJson`, `fromJson`, `toBinary`, `fromBinary`                                                      |
 
 `fromJson` and `fromBinary` validate untrusted input and throw `ValidationError` from `@frontal-labs/open-channel-core` when it is invalid.
 

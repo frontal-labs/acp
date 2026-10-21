@@ -6,27 +6,27 @@ payloads at the boundary and exposes the SDK-native `ChannelSource`, `ChannelSin
 
 ## Channel extensions
 
-| Package | Provider | Main exports |
-| --- | --- | --- |
-| `@frontal-labs/open-channel-ext-slack` | Slack Events API/Web API | `createSlackChannel`, webhook verification |
-| `@frontal-labs/open-channel-ext-microsoft-teams` | Microsoft Teams | `createTeamsChannel`, approval-card normalization |
-| `@frontal-labs/open-channel-ext-google-chat` | Google Chat | `createGoogleChatChannel`, token verification |
-| `@frontal-labs/open-channel-ext-email` | SMTP/IMAP-compatible hosts | `createEmailChannel`, polling lifecycle |
-| `@frontal-labs/open-channel-ext-whatsapp` | WhatsApp Business Cloud | `createWhatsAppChannel`, HMAC/challenge verification |
-| `@frontal-labs/open-channel-ext-a2a` | A2A-compatible transports | `createA2AChannel`, agent-card port |
+| Package                                          | Provider                   | Main exports                                         |
+| ------------------------------------------------ | -------------------------- | ---------------------------------------------------- |
+| `@frontal-labs/open-channel-ext-slack`           | Slack Events API/Web API   | `createSlackChannel`, webhook verification           |
+| `@frontal-labs/open-channel-ext-microsoft-teams` | Microsoft Teams            | `createTeamsChannel`, approval-card normalization    |
+| `@frontal-labs/open-channel-ext-google-chat`     | Google Chat                | `createGoogleChatChannel`, token verification        |
+| `@frontal-labs/open-channel-ext-email`           | SMTP/IMAP-compatible hosts | `createEmailChannel`, polling lifecycle              |
+| `@frontal-labs/open-channel-ext-whatsapp`        | WhatsApp Business Cloud    | `createWhatsAppChannel`, HMAC/challenge verification |
+| `@frontal-labs/open-channel-ext-a2a`             | A2A-compatible transports  | `createA2AChannel`, agent-card port                  |
 
 ## Runtime extensions
 
-| Package | Purpose |
-| --- | --- |
-| `@frontal-labs/open-channel-ext-calendar` | Zod-validated, policy-controlled calendar actions |
-| `@frontal-labs/open-channel-ext-mcp` | Zod-validated, policy-controlled MCP tool actions |
-| `@frontal-labs/open-channel-ext-postgres` | Durable PostgreSQL `EventStore` and migration |
-| `@frontal-labs/open-channel-ext-opentelemetry` | Provider-neutral SDK lifecycle hooks and spans/counters |
-| `@frontal-labs/open-channel-ext-directory` | Cached directory lookup ports for Google/Microsoft hosts |
-| `@frontal-labs/open-channel-ext-policy-opa` | OPA decision adapter for the synchronous policy contract |
-| `@frontal-labs/open-channel-ext-policy-cedar` | Cedar evaluator adapter |
-| `@frontal-labs/open-channel-ext-shared` | Boundary validation, event construction, signatures, and error classification |
+| Package                                        | Purpose                                                                       |
+| ---------------------------------------------- | ----------------------------------------------------------------------------- |
+| `@frontal-labs/open-channel-ext-calendar`      | Zod-validated, policy-controlled calendar actions                             |
+| `@frontal-labs/open-channel-ext-mcp`           | Zod-validated, policy-controlled MCP tool actions                             |
+| `@frontal-labs/open-channel-ext-postgres`      | Durable PostgreSQL `EventStore` and migration                                 |
+| `@frontal-labs/open-channel-ext-opentelemetry` | Provider-neutral SDK lifecycle hooks and spans/counters                       |
+| `@frontal-labs/open-channel-ext-directory`     | Cached directory lookup ports for Google/Microsoft hosts                      |
+| `@frontal-labs/open-channel-ext-policy-opa`    | OPA decision adapter for the synchronous policy contract                      |
+| `@frontal-labs/open-channel-ext-policy-cedar`  | Cedar evaluator adapter                                                       |
+| `@frontal-labs/open-channel-ext-shared`        | Boundary validation, event construction, signatures, and error classification |
 
 ## Example
 

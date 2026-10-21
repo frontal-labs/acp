@@ -6,27 +6,27 @@ needs a target environment, which this document does not assume.
 
 ## What was verified
 
-| Check | How | Result |
-| --- | --- | --- |
-| Full repository check | `pnpm check` | Passes. |
-| Slack quickstart end to end | `examples/slack-typescript --selftest`: signed webhook in, agent reply out to a fake Slack API | Passes. |
-| Development server behavior | Started `examples/slack-typescript/main.ts` with placeholder credentials and probed it over HTTP | Unsigned POST returns 401; other paths return 404. |
-| Loopback-only binding | Probed the server on the LAN address | Refused. The server binds to `127.0.0.1` by default. |
-| Graceful shutdown | Sent SIGINT to the running server | Logged the signal, closed the listener, stopped the app, exited. |
-| Postgres store logic | `extensions/postgres/tests/*.test.ts` without a database | Passes (7 tests). |
-| Postgres store against a live server | `OCP_POSTGRES_URL` with `live.test.ts`, run against PostgreSQL 18.6 in a Docker container | Passes: 12 of 12 tests, on three consecutive runs. The migration also upgrades a pre-existing action table that has no `claimed_at` column. |
+| Check                                | How                                                                                              | Result                                                                                                                                      |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Full repository check                | `pnpm check`                                                                                     | Passes.                                                                                                                                     |
+| Slack quickstart end to end          | `examples/slack-typescript --selftest`: signed webhook in, agent reply out to a fake Slack API   | Passes.                                                                                                                                     |
+| Development server behavior          | Started `examples/slack-typescript/main.ts` with placeholder credentials and probed it over HTTP | Unsigned POST returns 401; other paths return 404.                                                                                          |
+| Loopback-only binding                | Probed the server on the LAN address                                                             | Refused. The server binds to `127.0.0.1` by default.                                                                                        |
+| Graceful shutdown                    | Sent SIGINT to the running server                                                                | Logged the signal, closed the listener, stopped the app, exited.                                                                            |
+| Postgres store logic                 | `extensions/postgres/tests/*.test.ts` without a database                                         | Passes (7 tests).                                                                                                                           |
+| Postgres store against a live server | `OCP_POSTGRES_URL` with `live.test.ts`, run against PostgreSQL 18.6 in a Docker container        | Passes: 12 of 12 tests, on three consecutive runs. The migration also upgrades a pre-existing action table that has no `claimed_at` column. |
 
 ## Configuration
 
-| Variable | Used by | Notes |
-| --- | --- | --- |
-| `SLACK_BOT_TOKEN` | Slack example | Bot token (`xoxb-…`). Required. Keep it in a local `.env` that is not committed. |
-| `SLACK_SIGNING_SECRET` | Slack example | Verifies every inbound webhook. Required. |
-| `SLACK_BOT_USER_ID` | Slack example | Optional. Stops the bot answering its own messages. |
-| `SLACK_API_BASE` | Slack example | Optional. Defaults to `https://slack.com/api`. Point it at a fake server in tests. |
-| `PORT` | Slack example | Defaults to 3000. |
-| `HOST` | Slack example | Defaults to `127.0.0.1`. Set it only when a reverse proxy is in front. |
-| `OCP_POSTGRES_URL` | Postgres live test | Enables `live.test.ts`. Use a disposable local database. |
+| Variable               | Used by            | Notes                                                                              |
+| ---------------------- | ------------------ | ---------------------------------------------------------------------------------- |
+| `SLACK_BOT_TOKEN`      | Slack example      | Bot token (`xoxb-…`). Required. Keep it in a local `.env` that is not committed.   |
+| `SLACK_SIGNING_SECRET` | Slack example      | Verifies every inbound webhook. Required.                                          |
+| `SLACK_BOT_USER_ID`    | Slack example      | Optional. Stops the bot answering its own messages.                                |
+| `SLACK_API_BASE`       | Slack example      | Optional. Defaults to `https://slack.com/api`. Point it at a fake server in tests. |
+| `PORT`                 | Slack example      | Defaults to 3000.                                                                  |
+| `HOST`                 | Slack example      | Defaults to `127.0.0.1`. Set it only when a reverse proxy is in front.             |
+| `OCP_POSTGRES_URL`     | Postgres live test | Enables `live.test.ts`. Use a disposable local database.                           |
 
 No value is read from a tracked file. The self-test uses placeholder values that never reach Slack.
 

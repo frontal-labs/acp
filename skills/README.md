@@ -14,15 +14,15 @@ These project-local skills give agents focused guidance for changing the OCP
 protocol and its reference implementations. Load the narrowest skill that
 matches the work:
 
-| Skill | Use it for |
-| --- | --- |
-| [`ocp-protocol`](./ocp-protocol/SKILL.md) | Protobuf schemas, event mappings, generated bindings, and wire compatibility |
-| [`ocp-agent`](./ocp-agent/SKILL.md) | Agent definitions, cards, message handling, and SDK behavior |
-| [`ocp-policy`](./ocp-policy/SKILL.md) | Policy decisions, approvals, escalation, and runtime safety semantics |
-| [`ocp-adapter`](./ocp-adapter/SKILL.md) | Provider adapters, channel gateways, inbound normalization, and dispatch |
-| [`ocp-testing`](./ocp-testing/SKILL.md) | Vitest tests, deterministic fixtures, test doubles, and validation |
-| [`ocp-examples`](./ocp-examples/SKILL.md) | Framework bridges, harness integrations, tool boundaries, and example DX |
-| [`ocp-governance`](./ocp-governance/SKILL.md) | Repository docs, security, releases, Renovate, and agent tooling |
+| Skill                                         | Use it for                                                                   |
+| --------------------------------------------- | ---------------------------------------------------------------------------- |
+| [`ocp-protocol`](./ocp-protocol/SKILL.md)     | Protobuf schemas, event mappings, generated bindings, and wire compatibility |
+| [`ocp-agent`](./ocp-agent/SKILL.md)           | Agent definitions, cards, message handling, and SDK behavior                 |
+| [`ocp-policy`](./ocp-policy/SKILL.md)         | Policy decisions, approvals, escalation, and runtime safety semantics        |
+| [`ocp-adapter`](./ocp-adapter/SKILL.md)       | Provider adapters, channel gateways, inbound normalization, and dispatch     |
+| [`ocp-testing`](./ocp-testing/SKILL.md)       | Vitest tests, deterministic fixtures, test doubles, and validation           |
+| [`ocp-examples`](./ocp-examples/SKILL.md)     | Framework bridges, harness integrations, tool boundaries, and example DX     |
+| [`ocp-governance`](./ocp-governance/SKILL.md) | Repository docs, security, releases, Renovate, and agent tooling             |
 
 The skills are intentionally independent. Use more than one when a change
 crosses boundaries, such as adding a protocol event and an SDK feature.
