@@ -1,1 +1,1 @@
-"""Generated ACP protobuf package namespace."""
+"""Generated OCP protobuf package namespace."""

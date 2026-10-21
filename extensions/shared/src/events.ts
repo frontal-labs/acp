@@ -34,7 +34,7 @@ export function providerEvent(
       ? create(ChannelRefSchema, {
           address: options.address,
           channelId: options.channelId,
-          provider: options.extensions?.["acp.provider"] ?? "",
+          provider: options.extensions?.["ocp.provider"] ?? "",
           threadId: options.threadId,
         })
       : undefined);
@@ -50,7 +50,7 @@ export function providerEvent(
 
   return createEvent({
     actor: options.actor,
-    causationId: options.extensions?.["acp.causation_id"],
+    causationId: options.extensions?.["ocp.causation_id"],
     channel,
     conversation,
     eventId: metadata.eventId,

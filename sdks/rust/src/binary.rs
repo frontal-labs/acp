@@ -1,8 +1,8 @@
 //! Binary protobuf codec: maps the domain envelope onto the prost types generated from
 //! `proto/v1` and `proto/v2`. Nothing here is hand-encoded; prost does the wire format.
 //!
-//! Both protocol versions share the payload messages in `acp.v1.types`; only the envelope and its
-//! oneof differ (`acp.v1.api.EventEnvelope` stores `event_type`, `acp.v2.api.EventEnvelope` does
+//! Both protocol versions share the payload messages in `ocp.v1.types`; only the envelope and its
+//! oneof differ (`ocp.v1.api.EventEnvelope` stores `event_type`, `ocp.v2.api.EventEnvelope` does
 //! not).
 
 use std::collections::BTreeMap;
@@ -12,7 +12,7 @@ use prost::Message;
 use crate::events::{
     from_timestamp, invalid, to_timestamp, EventEnvelope, EventError, EventPayload, ProtocolVersion,
 };
-use crate::generated::acp::{v1, v2};
+use crate::generated::ocp::{v1, v2};
 use crate::models::ActionRequestJson;
 use crate::models::{
     ActionInvocation, ActorRef, ActorType, ArtifactRef, ChannelRef, ConversationRef,
@@ -86,7 +86,7 @@ macro_rules! from_oneof {
     };
 }
 
-/// Encodes the envelope as `acp.v1.api.EventEnvelope` (0.1) or `acp.v2.api.EventEnvelope` (0.2).
+/// Encodes the envelope as `ocp.v1.api.EventEnvelope` (0.1) or `ocp.v2.api.EventEnvelope` (0.2).
 pub(crate) fn encode_envelope(event: &EventEnvelope) -> Result<Vec<u8>, EventError> {
     let payload = payload_to_proto(&event.payload)?;
     let source = event.source.as_ref().map(actor_to_proto);

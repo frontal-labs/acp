@@ -151,7 +151,7 @@ pub struct ActionInvocation {
     pub parameters: BTreeMap<String, String>,
 }
 
-/// ProtoJSON shape of `acp.v1.types.ActionRequest`.
+/// ProtoJSON shape of `ocp.v1.types.ActionRequest`.
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ActionRequestJson {

@@ -381,7 +381,7 @@ impl EventEnvelope {
         Ok(event)
     }
 
-    /// Encodes as binary protobuf (`acp.v1.api.EventEnvelope` for 0.1, `acp.v2.api.EventEnvelope`
+    /// Encodes as binary protobuf (`ocp.v1.api.EventEnvelope` for 0.1, `ocp.v2.api.EventEnvelope`
     /// for 0.2). Every payload kind has a protobuf encoding.
     pub fn to_binary(&self) -> Result<Vec<u8>, EventError> {
         self.validate()?;
@@ -818,7 +818,7 @@ mod tests {
     use prost::Message as _;
 
     use super::*;
-    use crate::generated::acp::{
+    use crate::generated::ocp::{
         v1::api::EventEnvelope as V1Envelope, v2::api::EventEnvelope as V2Envelope,
     };
     use crate::models::{ActorType, ArtifactRef};

@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from v1.types import actors_pb2 as v1_dot_types_dot_actors__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17v1/types/handoffs.proto\x12\x0c\x61\x63p.v1.types\x1a\x15v1/types/actors.proto\"\x98\x01\n\x10HandoffInitiated\x12\x12\n\nhandoff_id\x18\x01 \x01(\t\x12$\n\x04\x66rom\x18\x02 \x01(\x0b\x32\x16.acp.v1.types.ActorRef\x12\"\n\x02to\x18\x03 \x01(\x0b\x32\x16.acp.v1.types.ActorRef\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x16\n\x0eopen_questions\x18\x05 \x03(\t\"e\n\x10HandoffCompleted\x12\x12\n\nhandoff_id\x18\x01 \x01(\t\x12,\n\x0c\x63ompleted_by\x18\x02 \x01(\x0b\x32\x16.acp.v1.types.ActorRef\x12\x0f\n\x07outcome\x18\x03 \x01(\tb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x17v1/types/handoffs.proto\x12\x0cocp.v1.types\x1a\x15v1/types/actors.proto\"\x98\x01\n\x10HandoffInitiated\x12\x12\n\nhandoff_id\x18\x01 \x01(\t\x12$\n\x04\x66rom\x18\x02 \x01(\x0b\x32\x16.ocp.v1.types.ActorRef\x12\"\n\x02to\x18\x03 \x01(\x0b\x32\x16.ocp.v1.types.ActorRef\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x16\n\x0eopen_questions\x18\x05 \x03(\t\"e\n\x10HandoffCompleted\x12\x12\n\nhandoff_id\x18\x01 \x01(\t\x12,\n\x0c\x63ompleted_by\x18\x02 \x01(\x0b\x32\x16.ocp.v1.types.ActorRef\x12\x0f\n\x07outcome\x18\x03 \x01(\tb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)

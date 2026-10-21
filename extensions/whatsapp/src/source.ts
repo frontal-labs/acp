@@ -53,7 +53,7 @@ export async function normalizeWhatsAppEvent(
           conversationParticipants: [actor],
           eventType: "message.received",
           extensions: {
-            "acp.provider": "whatsapp",
+            "ocp.provider": "whatsapp",
             "whatsapp.phone_number_id": phoneNumberId,
             ...(eventId ? { "whatsapp.message_id": eventId } : {}),
           },

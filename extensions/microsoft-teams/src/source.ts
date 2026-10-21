@@ -40,7 +40,7 @@ export async function normalizeTeamsEvent(
         channelId: optionalString(body, "conversationId") ?? "teams:approval",
         conversationId: `teams:${optionalString(body, "conversationId") ?? approvalId}`,
         eventType: actionName === "approve" ? "approval.granted" : "approval.denied",
-        extensions: { "acp.provider": "microsoft-teams", "teams.approval_id": approvalId },
+        extensions: { "ocp.provider": "microsoft-teams", "teams.approval_id": approvalId },
         payload: {
           case: "approvalDecided",
           value: create(ApprovalDecidedSchema, {
@@ -83,7 +83,7 @@ export async function normalizeTeamsEvent(
       conversationId: `teams:${conversationId}`,
       conversationParticipants: [actor],
       eventType: "message.received",
-      extensions: { "acp.provider": "microsoft-teams" },
+      extensions: { "ocp.provider": "microsoft-teams" },
       payload: {
         case: "messageReceived",
         value: create(MessageReceivedSchema, {

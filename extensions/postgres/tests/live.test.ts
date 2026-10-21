@@ -74,7 +74,7 @@ describe.skipIf(!url)(
       expect(await short.claimAction("live-action-2", "worker-b")).toBe(true);
 
       const owner = await client.query<{ owner: string }>(
-        "SELECT owner FROM acp_actions WHERE action_id = $1",
+        "SELECT owner FROM ocp_actions WHERE action_id = $1",
         ["live-action-2"],
       );
       expect(owner.rows[0]?.owner).toBe("worker-b");
@@ -93,7 +93,7 @@ describe.skipIf(!url)(
     it("lets exactly one of many concurrent claimants win an expired lease", async () => {
       // Plant a claim that expired an hour ago, then race ten workers for it with the default lease.
       await client.query(
-        `INSERT INTO acp_actions (action_id, owner, status, claimed_at)
+        `INSERT INTO ocp_actions (action_id, owner, status, claimed_at)
        VALUES ($1, 'worker-dead', 'claimed', NOW() - INTERVAL '1 hour')`,
         ["live-action-4"],
       );

@@ -23,7 +23,7 @@ describe("@frontal-labs/open-channel-ext-postgres action leases", () => {
     expect(await store.claimAction("action:1", "worker-a")).toBe(true);
     const sql = calls[0]?.sql ?? "";
     expect(sql).toContain("ON CONFLICT (action_id) DO UPDATE");
-    expect(sql).toContain("acp_actions.status = 'claimed'");
+    expect(sql).toContain("ocp_actions.status = 'claimed'");
     expect(sql).toContain("INTERVAL '1 millisecond'");
     expect(calls[0]?.values).toEqual(["action:1", "worker-a", 60_000]);
   });
@@ -39,7 +39,7 @@ describe("@frontal-labs/open-channel-ext-postgres action leases", () => {
 
   it("adds the claimed_at column to existing action tables", () => {
     expect(postgresEventStoreMigration()).toContain(
-      "ALTER TABLE acp_actions ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ",
+      "ALTER TABLE ocp_actions ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ",
     );
   });
 });

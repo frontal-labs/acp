@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16v1/types/actions.proto\x12\x0c\x61\x63p.v1.types\"\xb4\x01\n\rActionRequest\x12\x11\n\taction_id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0e\n\x06target\x18\x03 \x01(\t\x12?\n\nparameters\x18\x04 \x03(\x0b\x32+.acp.v1.types.ActionRequest.ParametersEntry\x1a\x31\n\x0fParametersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01*\x8c\x01\n\x0f\x41pprovalOutcome\x12 \n\x1c\x41PPROVAL_OUTCOME_UNSPECIFIED\x10\x00\x12\x1c\n\x18\x41PPROVAL_OUTCOME_GRANTED\x10\x01\x12\x1b\n\x17\x41PPROVAL_OUTCOME_DENIED\x10\x02\x12\x1c\n\x18\x41PPROVAL_OUTCOME_EXPIRED\x10\x03\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x16v1/types/actions.proto\x12\x0cocp.v1.types\"\xb4\x01\n\rActionRequest\x12\x11\n\taction_id\x18\x01 \x01(\t\x12\x0c\n\x04type\x18\x02 \x01(\t\x12\x0e\n\x06target\x18\x03 \x01(\t\x12?\n\nparameters\x18\x04 \x03(\x0b\x32+.ocp.v1.types.ActionRequest.ParametersEntry\x1a\x31\n\x0fParametersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01*\x8c\x01\n\x0f\x41pprovalOutcome\x12 \n\x1c\x41PPROVAL_OUTCOME_UNSPECIFIED\x10\x00\x12\x1c\n\x18\x41PPROVAL_OUTCOME_GRANTED\x10\x01\x12\x1b\n\x17\x41PPROVAL_OUTCOME_DENIED\x10\x02\x12\x1c\n\x18\x41PPROVAL_OUTCOME_EXPIRED\x10\x03\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)

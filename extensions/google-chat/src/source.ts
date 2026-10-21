@@ -49,7 +49,7 @@ export async function normalizeGoogleChatEvent(
       conversationId: `google-chat:${spaceName}`,
       conversationParticipants: [actor],
       eventType: "message.received",
-      extensions: { "acp.provider": "google-chat" },
+      extensions: { "ocp.provider": "google-chat" },
       payload: {
         case: "messageReceived",
         value: create(MessageReceivedSchema, { text: optionalString(message, "text") ?? "" }),

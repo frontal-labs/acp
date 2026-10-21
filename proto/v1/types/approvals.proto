@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package acp.v1.types;
+package ocp.v1.types;
 
 import "google/protobuf/timestamp.proto";
 import "v1/types/actions.proto";

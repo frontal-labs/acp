@@ -18,4 +18,4 @@ export function createActor(
 }
 
 /** Actor identity used by the reference runtime for internally emitted events. */
-export const SYSTEM_ACTOR: ActorRef = createActor("acp.runtime", ActorType.SYSTEM, "OCP Runtime");
+export const SYSTEM_ACTOR: ActorRef = createActor("ocp.runtime", ActorType.SYSTEM, "OCP Runtime");

@@ -6,7 +6,7 @@ OCP defines an event protocol for communication between agents, humans, and comp
 
 ## 2. Envelope
 
-`acp.v1.api.EventEnvelope` is the canonical wire object. Producers MUST populate `event_id`, `event_type`, `protocol_version`, `occurred_at`, and exactly one payload. Producers SHOULD populate actor, recipient, channel, conversation, correlation, causation, and idempotency fields when available.
+`ocp.v1.api.EventEnvelope` is the canonical wire object. Producers MUST populate `event_id`, `event_type`, `protocol_version`, `occurred_at`, and exactly one payload. Producers SHOULD populate actor, recipient, channel, conversation, correlation, causation, and idempotency fields when available.
 
 The protocol version for this release is `0.1`. The protobuf field numbers in `proto/v1/api/events.proto` and `proto/v1/types/*.proto` are stable for the v0.1 compatibility line.
 
@@ -60,9 +60,9 @@ The repository contains two envelopes for the same domain payloads. Both are
 created, validated, and serialized through one API; the protocol version selects
 the envelope shape:
 
-- `0.1` (default) uses `acp.v1.api.EventEnvelope`, which stores an `event_type`
+- `0.1` (default) uses `ocp.v1.api.EventEnvelope`, which stores an `event_type`
   string that must match the payload case.
-- `0.2` uses `acp.v2.api.EventEnvelope`, which removes the duplicated
+- `0.2` uses `ocp.v2.api.EventEnvelope`, which removes the duplicated
   `event_type` string. The payload `oneof` is the canonical event discriminant,
   and `eventTypeOf()` derives the friendly dot-separated name from it.
 

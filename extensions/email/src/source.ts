@@ -34,7 +34,7 @@ export async function normalizeEmailMessage(
       conversationParticipants: [actor],
       eventType: "message.received",
       extensions: {
-        "acp.provider": "email",
+        "ocp.provider": "email",
         ...(message.subject ? { "email.subject": message.subject } : {}),
         ...(message.id ? { "email.message_id": message.id } : {}),
       },

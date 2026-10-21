@@ -17,7 +17,7 @@ const DEFAULT_ACTION_LEASE_MS = 5 * 60_000;
  * SQL migration for the append-only OCP event table. The table name must match the store's
  * `tableName` option; it is validated before it is interpolated, and index names derive from it.
  */
-export function postgresEventStoreMigration(tableName = "acp_events"): string {
+export function postgresEventStoreMigration(tableName = "ocp_events"): string {
   const table = validatedTableName(tableName);
   return `
 CREATE TABLE IF NOT EXISTS ${table} (
@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS ${table} (
 CREATE INDEX IF NOT EXISTS ${table}_type_idx ON ${table} (event_type, sequence);
 CREATE INDEX IF NOT EXISTS ${table}_correlation_idx ON ${table} (correlation_id, sequence);
 CREATE INDEX IF NOT EXISTS ${table}_idempotency_idx ON ${table} (idempotency_key);
-CREATE TABLE IF NOT EXISTS acp_actions (
+CREATE TABLE IF NOT EXISTS ocp_actions (
   action_id TEXT PRIMARY KEY,
   owner TEXT,
   status TEXT NOT NULL,
@@ -44,11 +44,11 @@ CREATE TABLE IF NOT EXISTS acp_actions (
   claimed_at TIMESTAMPTZ,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-ALTER TABLE acp_actions ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
+ALTER TABLE ocp_actions ADD COLUMN IF NOT EXISTS claimed_at TIMESTAMPTZ;
 `;
 }
 
-/** Default migration, for stores that use the 'acp_events' table. */
+/** Default migration, for stores that use the 'ocp_events' table. */
 export const POSTGRES_EVENT_STORE_MIGRATION = postgresEventStoreMigration();
 
 function validatedTableName(value: string): string {
@@ -81,7 +81,7 @@ export class PostgresEventStore implements EventStore {
 
   constructor(options: PostgresEventStoreOptions) {
     this.client = options.client;
-    this.table = validatedTableName(options.tableName ?? "acp_events");
+    this.table = validatedTableName(options.tableName ?? "ocp_events");
     const leaseMs = options.leaseMs ?? DEFAULT_ACTION_LEASE_MS;
     if (!Number.isInteger(leaseMs) || leaseMs < 0) {
       throw new ValidationError(
@@ -188,12 +188,12 @@ export class PostgresEventStore implements EventStore {
    */
   async claimAction(actionId: string, owner: string): Promise<boolean> {
     const result = await this.client.query<{ action_id: string }>(
-      `INSERT INTO acp_actions (action_id, owner, status, claimed_at)
+      `INSERT INTO ocp_actions (action_id, owner, status, claimed_at)
        VALUES ($1, $2, 'claimed', NOW())
        ON CONFLICT (action_id) DO UPDATE
          SET owner = EXCLUDED.owner, claimed_at = NOW(), updated_at = NOW()
-         WHERE acp_actions.status = 'claimed'
-           AND COALESCE(acp_actions.claimed_at, acp_actions.updated_at)
+         WHERE ocp_actions.status = 'claimed'
+           AND COALESCE(ocp_actions.claimed_at, ocp_actions.updated_at)
                < NOW() - ($3::bigint * INTERVAL '1 millisecond')
        RETURNING action_id`,
       [actionId, owner, this.leaseMs],
@@ -203,7 +203,7 @@ export class PostgresEventStore implements EventStore {
 
   async completeAction(actionId: string, result: unknown): Promise<void> {
     await this.client.query(
-      `UPDATE acp_actions SET status = 'completed', result_json = $2::jsonb, updated_at = NOW()
+      `UPDATE ocp_actions SET status = 'completed', result_json = $2::jsonb, updated_at = NOW()
        WHERE action_id = $1`,
       [actionId, JSON.stringify(result)],
     );
@@ -211,7 +211,7 @@ export class PostgresEventStore implements EventStore {
 
   async failAction(actionId: string, error: unknown): Promise<void> {
     await this.client.query(
-      `UPDATE acp_actions SET status = 'failed', error_json = $2::jsonb, updated_at = NOW()
+      `UPDATE ocp_actions SET status = 'failed', error_json = $2::jsonb, updated_at = NOW()
        WHERE action_id = $1`,
       [actionId, JSON.stringify(error)],
     );
@@ -225,7 +225,7 @@ export class PostgresEventStore implements EventStore {
       result_json: unknown;
       status: ActionExecutionRecord["status"];
     }>(
-      "SELECT action_id, owner, status, result_json, error_json FROM acp_actions WHERE action_id = $1",
+      "SELECT action_id, owner, status, result_json, error_json FROM ocp_actions WHERE action_id = $1",
       [actionId],
     );
     const [row] = result.rows;

@@ -53,7 +53,7 @@ export async function normalizeSlackEvent(
       conversationParticipants: [actor],
       eventType: "message.received",
       extensions: {
-        "acp.provider": "slack",
+        "ocp.provider": "slack",
         ...(optionalString(event, "ts")
           ? { "slack.message_ts": optionalString(event, "ts") as string }
           : {}),

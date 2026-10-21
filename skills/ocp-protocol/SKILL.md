@@ -22,7 +22,7 @@ not alter the wire contract.
 
 ## Required invariants
 
-1. Keep packages versioned as `acp.v1.api` and `acp.v1.types`.
+1. Keep packages versioned as `ocp.v1.api` and `ocp.v1.types`.
 2. Treat existing protobuf field numbers as stable for the v0.1 compatibility
    line. Add fields instead of renumbering or reusing old numbers.
 3. Every event name must map to exactly one protobuf payload case. Update the

@@ -25,7 +25,7 @@ _sym_db = _symbol_database.Default()
 from v1.types import actors_pb2 as v1_dot_types_dot_actors__pb2
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15v1/types/policy.proto\x12\x0c\x61\x63p.v1.types\x1a\x15v1/types/actors.proto\"\xa0\x01\n\x0fPolicyEvaluated\x12\x11\n\tpolicy_id\x18\x01 \x01(\t\x12\x0f\n\x07\x61llowed\x18\x02 \x01(\x08\x12\x19\n\x11\x61pproval_required\x18\x03 \x01(\x08\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x13\n\x0b\x61\x63tion_type\x18\x05 \x01(\t\x12)\n\trecipient\x18\x06 \x01(\x0b\x32\x16.acp.v1.types.ActorRefb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x15v1/types/policy.proto\x12\x0cocp.v1.types\x1a\x15v1/types/actors.proto\"\xa0\x01\n\x0fPolicyEvaluated\x12\x11\n\tpolicy_id\x18\x01 \x01(\t\x12\x0f\n\x07\x61llowed\x18\x02 \x01(\x08\x12\x19\n\x11\x61pproval_required\x18\x03 \x01(\x08\x12\x0e\n\x06reason\x18\x04 \x01(\t\x12\x13\n\x0b\x61\x63tion_type\x18\x05 \x01(\t\x12)\n\trecipient\x18\x06 \x01(\x0b\x32\x16.ocp.v1.types.ActorRefb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)

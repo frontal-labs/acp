@@ -12,6 +12,6 @@ describe("@frontal-labs/open-channel-ext-opentelemetry", () => {
       eventType: "message.received",
       protocolVersion: "0.1",
     } as never);
-    expect(spans).toEqual(["acp.event.accepted"]);
+    expect(spans).toEqual(["ocp.event.accepted"]);
   });
 });

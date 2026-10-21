@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package acp.v1.api;
+package ocp.v1.api;
 
 import "google/protobuf/timestamp.proto";
 import "v1/types/actions_result.proto";
@@ -36,29 +36,29 @@ message EventEnvelope {
   string event_type = 2;
   string protocol_version = 3;
   google.protobuf.Timestamp occurred_at = 4;
-  acp.v1.types.ActorRef source = 5;
-  acp.v1.types.ActorRef actor = 6;
-  acp.v1.types.ActorRef recipient = 7;
-  acp.v1.types.ChannelRef channel = 8;
-  acp.v1.types.ConversationRef conversation = 9;
+  ocp.v1.types.ActorRef source = 5;
+  ocp.v1.types.ActorRef actor = 6;
+  ocp.v1.types.ActorRef recipient = 7;
+  ocp.v1.types.ChannelRef channel = 8;
+  ocp.v1.types.ConversationRef conversation = 9;
   string correlation_id = 10;
   string causation_id = 11;
   string idempotency_key = 12;
   map<string, string> extensions = 13;
 
   oneof payload {
-    acp.v1.types.MessageReceived message_received = 20;
-    acp.v1.types.MessageSent message_sent = 21;
-    acp.v1.types.TaskCreated task_created = 22;
-    acp.v1.types.TaskAssigned task_assigned = 23;
-    acp.v1.types.ApprovalRequested approval_requested = 24;
-    acp.v1.types.ApprovalDecided approval_decided = 25;
-    acp.v1.types.ApprovalExpired approval_expired = 26;
-    acp.v1.types.EscalationTriggered escalation_triggered = 27;
-    acp.v1.types.HandoffInitiated handoff_initiated = 28;
-    acp.v1.types.HandoffCompleted handoff_completed = 29;
-    acp.v1.types.PolicyEvaluated policy_evaluated = 30;
-    acp.v1.types.ActionExecuted action_executed = 31;
-    acp.v1.types.ActionFailed action_failed = 32;
+    ocp.v1.types.MessageReceived message_received = 20;
+    ocp.v1.types.MessageSent message_sent = 21;
+    ocp.v1.types.TaskCreated task_created = 22;
+    ocp.v1.types.TaskAssigned task_assigned = 23;
+    ocp.v1.types.ApprovalRequested approval_requested = 24;
+    ocp.v1.types.ApprovalDecided approval_decided = 25;
+    ocp.v1.types.ApprovalExpired approval_expired = 26;
+    ocp.v1.types.EscalationTriggered escalation_triggered = 27;
+    ocp.v1.types.HandoffInitiated handoff_initiated = 28;
+    ocp.v1.types.HandoffCompleted handoff_completed = 29;
+    ocp.v1.types.PolicyEvaluated policy_evaluated = 30;
+    ocp.v1.types.ActionExecuted action_executed = 31;
+    ocp.v1.types.ActionFailed action_failed = 32;
   }
 }

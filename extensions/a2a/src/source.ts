@@ -47,7 +47,7 @@ export function normalizeA2AEvent(
       conversationParticipants: [actor],
       eventType: "message.received",
       extensions: {
-        "acp.provider": "a2a",
+        "ocp.provider": "a2a",
         ...(taskId ? { "a2a.task_id": taskId } : {}),
       },
       payload: { case: "messageReceived", value: create(MessageReceivedSchema, { text }) },
