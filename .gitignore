@@ -16,6 +16,8 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 sdks/python/.venv/
+sdks/python/build/
+*.egg-info/
 sdks/rust/target/
 examples/native-rust/target/
 .DS_Store

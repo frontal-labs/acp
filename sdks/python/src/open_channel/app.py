@@ -9,7 +9,12 @@ from uuid import uuid4
 
 from .errors import ActionError, AuthorizationError, DeliveryError, OcpError, as_ocp_error
 from .host import AgentDefinition, AgentHost, _maybe_await
-from .models import ActorRef, AgentCard, EventEnvelope
+from .models import ActorRef, AgentCard, EventEnvelope, event_type_of
+
+# Approval lifecycle events are produced only by the app (request_action, approve, deny, expiry).
+_APPROVAL_LIFECYCLE_EVENTS = frozenset(
+    {"approval.requested", "approval.granted", "approval.denied", "approval.expired"}
+)
 
 InputT = TypeVar("InputT")
 
@@ -244,6 +249,15 @@ class OcpApp:
     async def ingest(self, event: EventEnvelope) -> IngestResult:
         if not self._accepting:
             raise OcpError("OCP app is stopping", stage="accept", retryable=True)
+        # Reject forged approval events before they are stored or delivered to agents.
+        event_name = event_type_of(event)
+        if event_name in _APPROVAL_LIFECYCLE_EVENTS:
+            raise AuthorizationError(
+                f"OCP {event_name} events are produced by the app; "
+                "use request_action(), approve(), or deny()",
+                event_id=event.event_id,
+                stage="approval",
+            )
         if not await self._store.append_if_absent(event):
             return IngestResult(duplicate=True)
         self._events[event.event_id] = event
