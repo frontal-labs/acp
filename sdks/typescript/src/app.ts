@@ -489,7 +489,7 @@ class OpenChannelApp implements OpenChannel {
           }),
         },
         recipient: pending.options.recipient,
-        source: SYSTEM_ACTOR,
+        source: this.runtime.runtimeActor,
       });
       await this.runtime.processInternal(event);
       const completed: ActionResult<unknown> = {
@@ -520,7 +520,7 @@ class OpenChannelApp implements OpenChannel {
           }),
         },
         recipient: pending.options.recipient,
-        source: SYSTEM_ACTOR,
+        source: this.runtime.runtimeActor,
       });
       await this.runtime.processInternal(failedEvent);
       const failed: ActionResult<unknown> = {

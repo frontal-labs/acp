@@ -3,6 +3,7 @@ import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
 import {
   ActionRequestSchema,
+  type ActorRef,
   ApprovalDecidedSchema,
   ApprovalOutcome,
   ApprovalRequestedSchema,
@@ -33,6 +34,7 @@ function buildApp(
   clock: ManualClock,
   executed: string[],
   approvalTimeoutMs = 60_000,
+  runtimeActor?: ActorRef,
 ): Harness {
   const agent = createTestAgent("agent:support", "Support Agent");
   const manager = createTestHuman("human:manager", "Support Manager");
@@ -65,6 +67,7 @@ function buildApp(
     policy: new RuleBasedPolicyEngine({
       rules: [{ actionType: "send_reply", allowed: true, id: "review", requiresApproval: true }],
     }),
+    runtimeActor,
     store,
   });
   return { agent, app, manager };
@@ -272,6 +275,32 @@ describe("restart recovery", () => {
       getAction: undefined,
     }) as typeof store;
     const second = buildApp(bare, clock, executed);
+    await second.app.start();
+    await second.app.stop();
+
+    expect(executed).toEqual(["ticket:1"]);
+  });
+
+  it("does not re-run an approved action when the app uses a custom runtime actor", async () => {
+    const store = createTestEventStore();
+    const clock = new ManualClock(START);
+    const executed: string[] = [];
+    const custom = createTestHuman("system:custom-runtime", "Custom Runtime");
+
+    const first = buildApp(store, clock, executed, 60_000, custom);
+    await first.app.start();
+    await first.app.ingest(createTestEvent({ recipient: first.agent, text: "refund please" }));
+    await first.app.approve(await approvalId(store), first.manager, "approved");
+    await first.app.stop();
+    expect(executed).toEqual(["ticket:1"]);
+
+    const bare = Object.assign(Object.create(store), {
+      claimAction: undefined,
+      completeAction: undefined,
+      failAction: undefined,
+      getAction: undefined,
+    }) as typeof store;
+    const second = buildApp(bare, clock, executed, 60_000, custom);
     await second.app.start();
     await second.app.stop();
 

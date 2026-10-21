@@ -53,7 +53,8 @@ export class OpenChannelRuntime {
   readonly clock: Clock;
   private readonly policy: RuntimeOptions["policy"];
   private readonly defaultApprovalTimeoutMs: number;
-  private readonly runtimeActor: ActorRef;
+  /** The identity the runtime stamps on the events it produces. */
+  readonly runtimeActor: ActorRef;
   private readonly pendingApprovals: Partial<Record<string, PendingApproval>> = Object.create(null);
   private readonly handlers = new Set<EventHandler>();
   private readonly actionRecords: Partial<Record<string, ActionExecutionRecord>> =
