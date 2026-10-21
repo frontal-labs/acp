@@ -35,7 +35,7 @@ pnpm fix         # safe repository-wide Ultracite fixes
 
 Biome is configured in `biome.json`; it extends the Ultracite presets and the shared project settings in `ultracite.json`. The editor configuration uses the Biome extension as the TypeScript formatter and enables format-on-save.
 
-`pnpm generate` produces all language bindings: Buf/protoc-gen-es writes TypeScript, `protoc` writes Python, and the Rust SDK's `prost-build` writes Rust modules. The canonical schema is split between `proto/v1` for the legacy envelope and `proto/v2` for the typed envelope, with shared domain messages under `proto/v1/types`.
+`pnpm generate` produces all language bindings: Buf/protoc-gen-es writes TypeScript, `protoc` writes Python, and the Rust SDK's `prost-build` writes Rust modules. The canonical schema is split between `proto/v1` for the protocol 0.1 envelope and `proto/v2` for the protocol 0.2 envelope, with shared domain messages under `proto/v1/types`.
 
 The shared `@frontal-labs/open-channel-testing` package provides deterministic OCP fixtures, event inspection, async coordination, buffered CLI I/O, and in-memory state doubles. Package-local tests and the root integration suite use the same Vitest configuration and aliases.
 

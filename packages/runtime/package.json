@@ -1,6 +1,6 @@
 {
   "name": "@frontal-labs/open-channel-runtime",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "description": "OpenChannel Protocol runtime orchestration for requests, approvals, escalation, and audit events",
   "keywords": [
     "openchannel-protocol",
