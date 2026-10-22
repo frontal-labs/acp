@@ -1,1 +1,3 @@
-# The native example uses the local OCP Python SDK.
+# The native example needs only the OCP Python SDK. Run it from the repository root with
+# PYTHONPATH=sdks/python/src, or install the published package:
+openchannel>=2.0.0,<3
