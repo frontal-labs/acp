@@ -5,13 +5,15 @@
   "description": "LangChain TypeScript agent behind an OCP message boundary",
   "type": "module",
   "scripts": {
-    "start": "tsx main.ts"
+    "start": "tsx src/main.ts"
   },
   "dependencies": {
-    "@langchain/openai": "^1.0.0",
-    "langchain": "^1.0.0"
+    "@langchain/core": "^1.2.20",
+    "@langchain/openai": "^1.6.3",
+    "langchain": "^1.5.19",
+    "openchannel": "^2.0.0"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "^4.23.15"
   }
 }

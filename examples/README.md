@@ -10,7 +10,7 @@ Run the deterministic native examples without external model credentials:
 
 ```bash
 pnpm examples:typescript
-PYTHONPATH=sdks/python/src:examples/_shared/python python3 examples/native-python/main.py
+PYTHONPATH=sdks/python/src python3 examples/native-python/main.py
 cargo run --manifest-path examples/native-rust/Cargo.toml
 ```
 
