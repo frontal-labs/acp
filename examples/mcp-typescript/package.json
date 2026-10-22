@@ -5,12 +5,13 @@
   "description": "MCP tool result bridged into an OCP response",
   "type": "module",
   "scripts": {
-    "start": "tsx main.ts"
+    "start": "tsx src/main.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/client": "^1.29.0"
+    "@modelcontextprotocol/client": "^2.3.1",
+    "openchannel": "^2.0.0"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "^4.23.15"
   }
 }

@@ -58,8 +58,8 @@ deployed environment, live provider accounts, or secrets management on a target 
   idempotency key. The offline tests cover the SQL, and the live tests (including the one-winner race) pass.
 - **No rate limiting on webhook endpoints.** The Slack example has a size limit but no per-client
   limit. Put the endpoint behind a gateway that rate-limits.
-- **Example stores and channels are in memory.** `examples/_shared/typescript/example-kit.ts`
-  loses state on restart. Production uses `@frontal-labs/open-channel-ext-postgres`.
+- **Example stores and channels are in memory.** The in-memory store in each example
+  (for instance `examples/native-typescript`) loses state on restart. Production uses `@frontal-labs/open-channel-ext-postgres`.
 - **Empty policy in examples.** The examples can only reply. Any action needs explicit rules.
 - **Dependency advisories that remain** (`pnpm audit`, after the vitest upgrade):
   - `braces` (high) and `sprintf-js` (moderate): transitive through `@changesets/cli`, a release

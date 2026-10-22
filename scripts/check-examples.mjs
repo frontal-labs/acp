@@ -33,11 +33,14 @@ for (const entry of exampleDirectories) {
     failures.push(`examples/${entry.name}/README.md is missing`);
   }
 
-  const hasRunner = files.includes("main.py") || files.includes("main.ts");
+  const hasRunner =
+    files.includes("main.py") ||
+    files.includes("main.ts") ||
+    (await exists(join(directory, "src/main.ts")));
   const hasRustRunner =
     files.includes("Cargo.toml") && (await exists(join(directory, "src/main.rs")));
   if (!(hasRunner || hasRustRunner)) {
-    failures.push(`examples/${entry.name} needs main.py, main.ts, or src/main.rs`);
+    failures.push(`examples/${entry.name} needs main.py, main.ts, src/main.ts, or src/main.rs`);
   }
 
   const hasManifest = files.some((file) =>

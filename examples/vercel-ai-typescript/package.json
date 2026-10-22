@@ -5,13 +5,14 @@
   "description": "Vercel AI SDK text generation behind an OCP message boundary",
   "type": "module",
   "scripts": {
-    "start": "tsx main.ts"
+    "start": "tsx src/main.ts"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^2.0.0",
-    "ai": "^6.0.0"
+    "@ai-sdk/openai": "^4.0.99",
+    "ai": "^7.0.148",
+    "openchannel": "^2.0.0"
   },
   "devDependencies": {
-    "tsx": "^4.19.2"
+    "tsx": "^4.23.15"
   }
 }
