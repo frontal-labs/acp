@@ -29,7 +29,7 @@ import type { TeamsSourceOptions } from "./types.js";
  * @param input - Parsed JSON body of the Teams activity. Untrusted; not verified here.
  * @param metadata - Event ID, idempotency key, and receive time from the transport, if known.
  * @param options - Actor resolution, bot identity, and the recipient agent.
- * @throws ValidationError when an approval action names no actor.
+ * @throws ValidationError when an approval action has no sender.
  */
 export async function normalizeTeamsEvent(
   input: unknown,
@@ -48,8 +48,10 @@ export async function normalizeTeamsEvent(
 
 /**
  * Turns an approval-card submission into `approval.decided`. The approver is the Teams user who
- * pressed the button. A submission without a user ID is rejected rather than attributed to an
- * unknown approver.
+ * pressed the button, taken from the activity sender (`from`). Any actor ID inside the card's
+ * submitted value is ignored: the card author controls that value, so trusting it would let a
+ * card attribute a decision to someone else. A submission without a sender is rejected rather
+ * than attributed to an unknown approver.
  */
 async function normalizeApprovalDecision(
   body: TeamsRecord,
@@ -59,14 +61,20 @@ async function normalizeApprovalDecision(
   metadata: ReceiveMetadata,
   options: TeamsSourceOptions,
 ): Promise<EventEnvelope> {
-  const externalActorId = optionalString(action, "actorId") ?? optionalString(body, "actorId");
+  const from = optionalRecord(body.from) ?? {};
+  // aadObjectId is the stable Entra identity; `id` is the bot-scoped Teams ID and is the fallback.
+  const externalActorId = optionalString(from, "aadObjectId") ?? optionalString(from, "id");
   if (!externalActorId) {
-    throw new ValidationError("Microsoft Teams approval action has no actor", {
+    throw new ValidationError("Microsoft Teams approval action has no sender", {
       provider: "microsoft-teams",
       stage: "normalize",
     });
   }
-  const actor = await resolveActor(externalActorId, externalActorId, options);
+  const actor = await resolveActor(
+    externalActorId,
+    optionalString(from, "name") ?? externalActorId,
+    options,
+  );
   const conversationId = optionalString(body, "conversationId");
   return newEvent({
     actor,
