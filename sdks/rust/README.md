@@ -11,19 +11,29 @@ cargo add openchannel
 ## Build an application
 
 ```rust
-use openchannel::{AgentCard, AgentDefinition, MemoryEventStore, OpenChannel};
+use openchannel::{AgentCard, AgentDefinition, Hooks, MemoryEventStore, OpenChannel,
+    OpenChannelOptions};
 
-let mut app = OpenChannel::builder()
-    .agent(AgentDefinition::new(
+let app = OpenChannel::new(OpenChannelOptions {
+    agents: vec![AgentDefinition::new(
         AgentCard::new("agent:support", "Support Agent"),
         |context| {
-            ctx.reply("I am looking into this.");
+            context.reply("I am looking into this.");
             Ok(())
         },
-    ))?
-    .policy(Box::new(my_policy))            // ActionPolicy; required for actions to run
-    .store(Box::new(MemoryEventStore::default())) // optional; in-memory by default
-    .build();
+    )],
+    actions: vec![],
+    channels: vec![],
+    policy: Box::new(my_policy),            // ActionPolicy; required for actions to run
+    store: Arc::new(MemoryEventStore::default()), // optional; in-memory by default
+    approver: None,
+    approval_timeout_ms: 60_000,
+    concurrency: usize::MAX,
+    hooks: Hooks::default(),
+    clock: None,
+    logger: None,
+    runtime_actor: None,
+});
 
 app.start()?;
 app.ingest(event)?;                          // or app.receive(provider, input, &metadata)

@@ -1,5 +1,5 @@
 //! OpenChannel Protocol (OCP) for Rust: one event envelope, one protocol version
-//! ([`PROTOCOL_VERSION`]), and an application facade, [`OpenChannel`], built with [`OpenChannel::builder`].
+//! ([`PROTOCOL_VERSION`]), and an application facade, [`OpenChannel`], built with [`OpenChannel::new`].
 
 pub mod generated;
 
@@ -11,7 +11,7 @@ mod payloads;
 
 pub use app::{
     Callback, Clock, EventStore, Hooks, ManualClock, MemoryEventStore, OpenChannel,
-    OpenChannelBuilder, SystemClock,
+    OpenChannelOptions, SystemClock,
 };
 pub use events::{
     action_executed, action_failed, approval_decided, approval_expired, approval_requested,

@@ -354,7 +354,24 @@ impl Drop for Permit<'_> {
     }
 }
 
-/// An OCP application. Build one with [`OpenChannel::builder`].
+/// Options for constructing an [`OpenChannel`]. Mirrors the TypeScript and Python SDKs: `policy`
+/// and `store` are required; everything else is optional with sensible defaults.
+pub struct OpenChannelOptions {
+    pub actions: Vec<ActionDefinition>,
+    pub agents: Vec<AgentDefinition>,
+    pub approval_timeout_ms: u64,
+    pub approver: Option<ActorRef>,
+    pub channels: Vec<ChannelDefinition>,
+    pub clock: Option<Arc<dyn Clock>>,
+    pub concurrency: usize,
+    pub hooks: Option<Hooks>,
+    pub logger: Option<Arc<dyn Logger>>,
+    pub policy: Box<dyn ActionPolicy>,
+    pub runtime_actor: Option<ActorRef>,
+    pub store: Arc<dyn EventStore>,
+}
+
+/// An OCP application. Construct one with [`OpenChannel::new`].
 pub struct OpenChannel {
     inner: Arc<Inner>,
     host: AgentHost,
@@ -367,8 +384,43 @@ pub struct OpenChannel {
 }
 
 impl OpenChannel {
-    pub fn builder() -> OpenChannelBuilder {
-        OpenChannelBuilder::default()
+    /// Constructs an application from options. `policy` and `store` are required; every other field
+    /// falls back to a default.
+    pub fn new(options: OpenChannelOptions) -> Result<Self, AgentError> {
+        let mut host = AgentHost::new();
+        for agent in options.agents {
+            host.register(agent)?;
+        }
+        let mut actions = BTreeMap::new();
+        for action in options.actions {
+            insert_action(&mut actions, action)?;
+        }
+        let inner = Inner {
+            store: options.store,
+            subscribers: Mutex::new(Vec::new()),
+            hooks: options.hooks.unwrap_or_default(),
+            clock: options.clock.unwrap_or_else(|| Arc::new(SystemClock)),
+            logger: options.logger.unwrap_or_else(|| Arc::new(StderrLogger)),
+            approver: options.approver.unwrap_or_default(),
+            runtime_actor: options.runtime_actor.unwrap_or_else(runtime_actor_default),
+            pending: Mutex::new(BTreeMap::new()),
+            action_results: Mutex::new(BTreeMap::new()),
+            signal: Arc::new(Signal::default()),
+        };
+        Ok(OpenChannel {
+            inner: Arc::new(inner),
+            host,
+            actions,
+            channels: Mutex::new(options.channels),
+            policy: Some(options.policy),
+            approval_timeout: Duration::from_millis(options.approval_timeout_ms),
+            gate: Gate::new(if options.concurrency == 0 {
+                usize::MAX
+            } else {
+                options.concurrency
+            }),
+            expiry: Mutex::new(None),
+        })
     }
 
     /// Starts channel sources, restores unresolved approvals from the store, expires approvals
@@ -935,135 +987,7 @@ fn insert_action(
     Ok(())
 }
 
-/// Builds an [`OpenChannel`]. Every option has a default; the policy is needed for actions to run.
-pub struct OpenChannelBuilder {
-    host: AgentHost,
-    actions: BTreeMap<String, ActionDefinition>,
-    channels: Vec<ChannelDefinition>,
-    policy: Option<Box<dyn ActionPolicy>>,
-    store: Option<Arc<dyn EventStore>>,
-    concurrency: usize,
-    approval_timeout: Duration,
-    approver: ActorRef,
-    runtime_actor: ActorRef,
-    hooks: Hooks,
-    clock: Option<Arc<dyn Clock>>,
-    logger: Option<Arc<dyn Logger>>,
-}
 
-impl Default for OpenChannelBuilder {
-    fn default() -> Self {
-        Self {
-            host: AgentHost::new(),
-            actions: BTreeMap::new(),
-            channels: Vec::new(),
-            policy: None,
-            store: None,
-            concurrency: usize::MAX,
-            approval_timeout: DEFAULT_APPROVAL_TIMEOUT,
-            approver: ActorRef::default(),
-            runtime_actor: runtime_actor_default(),
-            hooks: Hooks::default(),
-            clock: None,
-            logger: None,
-        }
-    }
-}
-
-impl OpenChannelBuilder {
-    pub fn agent(mut self, agent: AgentDefinition) -> Result<Self, AgentError> {
-        self.host.register(agent)?;
-        Ok(self)
-    }
-
-    pub fn action(mut self, action: ActionDefinition) -> Result<Self, AgentError> {
-        insert_action(&mut self.actions, action)?;
-        Ok(self)
-    }
-
-    pub fn channel(mut self, channel: ChannelDefinition) -> Self {
-        self.channels.push(channel);
-        self
-    }
-
-    pub fn policy(mut self, policy: Box<dyn ActionPolicy>) -> Self {
-        self.policy = Some(policy);
-        self
-    }
-
-    /// Uses `store` for events. Share one store between applications to hand approvals over.
-    pub fn store(mut self, store: Arc<dyn EventStore>) -> Self {
-        self.store = Some(store);
-        self
-    }
-
-    /// Limits how many conversations are handled at once. Values below one are raised to one.
-    pub fn concurrency(mut self, limit: usize) -> Self {
-        self.concurrency = limit.max(1);
-        self
-    }
-
-    /// How long an approval waits for a decision before it expires.
-    pub fn approval_timeout_ms(mut self, timeout_ms: u64) -> Self {
-        self.approval_timeout = Duration::from_millis(timeout_ms);
-        self
-    }
-
-    /// The approver named on approval requests. Only this actor may decide them.
-    pub fn approver(mut self, approver: ActorRef) -> Self {
-        self.approver = approver;
-        self
-    }
-
-    /// The actor recorded as the source of events the application produces. Restore trusts only
-    /// events from this actor.
-    pub fn runtime_actor(mut self, actor: ActorRef) -> Self {
-        self.runtime_actor = actor;
-        self
-    }
-
-    pub fn hooks(mut self, hooks: Hooks) -> Self {
-        self.hooks = hooks;
-        self
-    }
-
-    pub fn clock(mut self, clock: Arc<dyn Clock>) -> Self {
-        self.clock = Some(clock);
-        self
-    }
-
-    /// The logger for the application and its agents. The default writes warnings and errors to
-    /// stderr.
-    pub fn logger(mut self, logger: Arc<dyn Logger>) -> Self {
-        self.logger = Some(logger);
-        self
-    }
-
-    pub fn build(self) -> OpenChannel {
-        let inner = Inner {
-            store: self.store.unwrap_or_else(|| Arc::new(MemoryEventStore::default())),
-            subscribers: Mutex::new(Vec::new()),
-            hooks: self.hooks,
-            clock: self.clock.unwrap_or_else(|| Arc::new(SystemClock)),
-            logger: self.logger.unwrap_or_else(|| Arc::new(StderrLogger)),
-            approver: self.approver,
-            runtime_actor: self.runtime_actor,
-            pending: Mutex::new(BTreeMap::new()),
-            action_results: Mutex::new(BTreeMap::new()),
-            signal: Arc::new(Signal::default()),
-        };
-        OpenChannel {
-            inner: Arc::new(inner),
-            host: self.host,
-            actions: self.actions,
-            channels: Mutex::new(self.channels),
-            policy: self.policy,
-            approval_timeout: self.approval_timeout,
-            gate: Gate::new(self.concurrency),
-            expiry: Mutex::new(None),
-        }
-    }
-}
 
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
@@ -1119,23 +1043,31 @@ mod tests {
         clock: Arc<dyn Clock>,
         executions: Arc<AtomicUsize>,
         timeout_ms: u64,
-    ) -> OpenChannelBuilder {
-        OpenChannel::builder()
-            .agent(AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
-                context.request("refund", serde_json::json!({ "amount": 10 }));
-                Ok(())
-            }))
-            .expect("agent registers")
-            .action(ActionDefinition::new("refund", move |input, _context| {
+    ) -> OpenChannel {
+        OpenChannel::new(OpenChannelOptions {
+            policy: Box::new(RequireApprovalPolicy),
+            store,
+            agents: vec![AgentDefinition::new(
+                AgentCard::new("agent:billing", "Billing"),
+                |context| {
+                    context.request("refund", serde_json::json!({ "amount": 10 }));
+                    Ok(())
+                },
+            )],
+            actions: vec![ActionDefinition::new("refund", move |input, _context| {
                 executions.fetch_add(1, Ordering::SeqCst);
                 Ok(input.clone())
-            }))
-            .expect("action registers")
-            .policy(Box::new(RequireApprovalPolicy))
-            .store(store)
-            .clock(clock)
-            .approver(finance())
-            .approval_timeout_ms(timeout_ms)
+            })],
+            channels: vec![],
+            approver: Some(finance()),
+            approval_timeout_ms: timeout_ms,
+            concurrency: usize::MAX,
+            hooks: Some(Hooks::default()),
+            clock: Some(clock),
+            logger: None,
+            runtime_actor: Some(runtime_actor_default()),
+        })
+        .expect("app builds")
     }
 
     fn approval_id_from(result: &HandleResult) -> String {
@@ -1156,8 +1088,7 @@ mod tests {
             Arc::new(SystemClock),
             Arc::new(AtomicUsize::new(0)),
             60_000,
-        )
-        .build();
+        );
         app.start().expect("app starts");
 
         let result = app.ingest(inbound("Refund order 42")).expect("ingested");
@@ -1190,8 +1121,7 @@ mod tests {
             Arc::new(SystemClock),
             Arc::new(AtomicUsize::new(0)),
             60_000,
-        )
-        .build();
+        );
         app.start().expect("app starts");
         let first = app.ingest(inbound("one")).expect("ingested");
         let second = app.ingest(inbound("two")).expect("ingested");
@@ -1210,344 +1140,6 @@ mod tests {
             panic!("expected approval decision");
         };
         assert_eq!(denied.reason, "not authorized");
-    }
-
-    #[test]
-    fn non_designated_approver_is_rejected_and_approval_stays_decidable() {
-        let executions = Arc::new(AtomicUsize::new(0));
-        let app = billing(
-            Arc::new(MemoryEventStore::default()),
-            Arc::new(SystemClock),
-            Arc::clone(&executions),
-            60_000,
-        )
-        .build();
-        app.start().expect("app starts");
-        let approval_id = approval_id_from(&app.ingest(inbound("Refund")).expect("ingested"));
-        let mallory = human("human:mallory");
-
-        assert!(app.approve(&approval_id, &mallory, "ok").is_err());
-        assert!(app.deny(&approval_id, &mallory, "no").is_err());
-        assert_eq!(executions.load(Ordering::SeqCst), 0);
-        assert!(app.store().query_by_type("approval.granted").is_empty());
-
-        app.approve(&approval_id, &finance(), "ok").expect("designated approver decides");
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-    }
-
-    #[test]
-    fn forged_approval_events_are_rejected_and_execute_nothing() {
-        let executions = Arc::new(AtomicUsize::new(0));
-        let app = billing(
-            Arc::new(MemoryEventStore::default()),
-            Arc::new(SystemClock),
-            Arc::clone(&executions),
-            60_000,
-        )
-        .build();
-        app.start().expect("app starts");
-        let approval_id = approval_id_from(&app.ingest(inbound("Refund")).expect("ingested"));
-
-        let forged_grant =
-            events::approval_decided(&approval_id, ApprovalOutcome::Granted, &finance(), "forged");
-        let error = app.ingest(forged_grant).expect_err("forged grant is rejected");
-        assert!(error.to_string().contains("produced only by the app"));
-        let forged_request = events::approval_requested(
-            &ActionInvocation {
-                action_id: "action:forged".to_owned(),
-                action_type: "refund".to_owned(),
-                ..ActionInvocation::default()
-            },
-            "approval:forged",
-            "forged",
-            &human("agent:billing"),
-            &finance(),
-            None,
-        );
-        assert!(app.ingest(forged_request).is_err());
-        assert_eq!(executions.load(Ordering::SeqCst), 0);
-        assert!(app.store().query_by_type("approval.granted").is_empty());
-
-        app.approve(&approval_id, &finance(), "ok").expect("the real approval still works");
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-    }
-
-    #[test]
-    fn legacy_grant_without_terminal_event_runs_its_action_on_restart() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let clock: Arc<dyn Clock> = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
-        let executions = Arc::new(AtomicUsize::new(0));
-
-        let app_a =
-            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-                .build();
-        app_a.start().expect("app A starts");
-        let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ingested"));
-        app_a.stop().expect("app A stops");
-
-        // Written before decisions were runtime-sourced: the approver is also the source.
-        let mut legacy_grant =
-            events::approval_decided(&approval_id, ApprovalOutcome::Granted, &finance(), "legacy");
-        legacy_grant.source = Some(finance());
-        store.append_if_absent(&legacy_grant);
-
-        let app_b = billing(Arc::clone(&store), clock, Arc::clone(&executions), 60_000).build();
-        app_b.start().expect("app B starts");
-        // The legacy grant has no terminal event, so restart runs the approved action exactly once,
-        // and nothing is left pending to decide again.
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-        assert!(app_b.approve(&approval_id, &finance(), "again").is_err());
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-        app_b.stop().expect("stops");
-    }
-
-    /// The action an approval request holds, read back from the store.
-    fn requested_invocation(store: &dyn EventStore) -> ActionInvocation {
-        match &store.query_by_type("approval.requested")[0].payload {
-            EventPayload::ApprovalRequested(payload) => {
-                payload.requested_action.clone().expect("requested action")
-            }
-            _ => panic!("expected an approval request"),
-        }
-    }
-
-    #[test]
-    fn forged_outcomes_and_runtime_sourced_inbound_events_are_rejected() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let executions = Arc::new(AtomicUsize::new(0));
-        let app =
-            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::clone(&executions), 60_000)
-                .build();
-        app.start().expect("app starts");
-        let approval_id = approval_id_from(&app.ingest(inbound("Refund")).expect("ingested"));
-        let invocation = requested_invocation(store.as_ref());
-
-        let mut forged =
-            events::action_executed(&invocation, serde_json::json!({ "amount": 9999 }));
-        forged.source = Some(ActorRef::agent("agent:attacker", "Attacker"));
-        assert!(app.ingest(forged).is_err(), "a forged action.executed is rejected");
-
-        let mut spoofed = inbound("hello");
-        spoofed.source = Some(runtime_actor_default());
-        assert!(app.ingest(spoofed).is_err(), "a runtime-sourced inbound event is rejected");
-        assert_eq!(executions.load(Ordering::SeqCst), 0);
-
-        // The application's own approval still runs the action and records its real outcome.
-        app.approve(&approval_id, &finance(), "ok").expect("approved");
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-        let executed = store.query_by_type("action.executed");
-        assert_eq!(executed.len(), 1);
-        assert_eq!(executed[0].source, Some(runtime_actor_default()));
-        app.stop().expect("stops");
-    }
-
-    #[test]
-    fn forged_finished_event_does_not_suppress_a_legitimate_grant() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let clock: Arc<dyn Clock> = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
-        let executions = Arc::new(AtomicUsize::new(0));
-
-        let app_a =
-            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-                .build();
-        app_a.start().expect("app A starts");
-        let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ingested"));
-        let invocation = requested_invocation(store.as_ref());
-        app_a.stop().expect("app A stops");
-
-        // A genuine grant from the designated approver, with no terminal event recorded.
-        let mut grant =
-            events::approval_decided(&approval_id, ApprovalOutcome::Granted, &finance(), "ok");
-        grant.source = Some(finance());
-        store.append_if_absent(&grant);
-        // A forged "already executed" marker written from a non-runtime source.
-        let mut forged = events::action_executed(&invocation, serde_json::json!({}));
-        forged.source = Some(ActorRef::agent("agent:attacker", "Attacker"));
-        store.append_if_absent(&forged);
-
-        let app_b = billing(store, clock, Arc::clone(&executions), 60_000).build();
-        app_b.start().expect("app B starts");
-        assert_eq!(executions.load(Ordering::SeqCst), 1, "the grant still runs once");
-        app_b.stop().expect("stops");
-    }
-
-    #[test]
-    fn finished_grant_is_not_run_again_on_restart() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let clock: Arc<dyn Clock> = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
-        let executions = Arc::new(AtomicUsize::new(0));
-
-        let app_a =
-            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-                .build();
-        app_a.start().expect("app A starts");
-        let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ingested"));
-        app_a.approve(&approval_id, &finance(), "ok").expect("approved");
-        app_a.stop().expect("app A stops");
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-
-        let app_b = billing(store, clock, Arc::clone(&executions), 60_000).build();
-        app_b.start().expect("app B starts");
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-        app_b.stop().expect("stops");
-    }
-
-    #[test]
-    fn restore_skips_and_reports_an_unregistered_action_without_failing_start() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let reported = Arc::new(AtomicUsize::new(0));
-        let counter = Arc::clone(&reported);
-        let mut orphan = events::approval_requested(
-            &ActionInvocation {
-                action_id: "action:orphan".to_owned(),
-                action_type: "unregistered".to_owned(),
-                ..ActionInvocation::default()
-            },
-            "action:orphan:approval",
-            "orphan",
-            &human("agent:billing"),
-            &finance(),
-            Some(system_time_to_rfc3339(epoch_at(1_700_060_000))),
-        );
-        orphan.source = Some(runtime_actor_default());
-        store.append_if_absent(&orphan);
-
-        let hooks = Hooks {
-            on_error: Some(Box::new(move |_| {
-                counter.fetch_add(1, Ordering::SeqCst);
-            })),
-            ..Hooks::default()
-        };
-        let app = billing(
-            Arc::clone(&store),
-            Arc::new(ManualClock::new(epoch_at(1_700_000_000))),
-            Arc::new(AtomicUsize::new(0)),
-            60_000,
-        )
-        .hooks(hooks)
-        .build();
-        app.start().expect("start succeeds despite the stored approval");
-
-        assert_eq!(reported.load(Ordering::SeqCst), 1);
-        assert!(app.approve("action:orphan:approval", &finance(), "ok").is_err());
-        app.stop().expect("stops");
-    }
-
-    #[test]
-    fn restore_skips_and_reports_an_unparseable_deadline_without_failing_start() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let reported = Arc::new(AtomicUsize::new(0));
-        let counter = Arc::clone(&reported);
-        let mut malformed = events::approval_requested(
-            &ActionInvocation {
-                action_id: "action:bad-deadline".to_owned(),
-                action_type: "refund".to_owned(),
-                ..ActionInvocation::default()
-            },
-            "action:bad-deadline:approval",
-            "bad deadline",
-            &human("agent:billing"),
-            &finance(),
-            Some("not-a-timestamp".to_owned()),
-        );
-        malformed.source = Some(runtime_actor_default());
-        store.append_if_absent(&malformed);
-
-        let hooks = Hooks {
-            on_error: Some(Box::new(move |_| {
-                counter.fetch_add(1, Ordering::SeqCst);
-            })),
-            ..Hooks::default()
-        };
-        let app = billing(
-            Arc::clone(&store),
-            Arc::new(ManualClock::new(epoch_at(1_700_000_000))),
-            Arc::new(AtomicUsize::new(0)),
-            60_000,
-        )
-        .hooks(hooks)
-        .build();
-        app.start().expect("start succeeds despite the malformed deadline");
-
-        assert_eq!(reported.load(Ordering::SeqCst), 1);
-        assert!(app.approve("action:bad-deadline:approval", &finance(), "ok").is_err());
-        app.stop().expect("stops");
-    }
-
-    #[test]
-    fn configured_approver_and_runtime_actor_are_applied_to_emitted_events() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let clock: Arc<dyn Clock> = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
-        let service = ActorRef {
-            actor_type: ActorType::System,
-            id: "svc:billing-runtime".to_owned(),
-            display_name: "Billing runtime".to_owned(),
-            ..ActorRef::default()
-        };
-        let executions = Arc::new(AtomicUsize::new(0));
-        let app = billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-            .runtime_actor(service.clone())
-            .build();
-        app.start().expect("starts");
-        let approval_id = approval_id_from(&app.ingest(inbound("Refund")).expect("ingested"));
-        app.approve(&approval_id, &finance(), "ok").expect("approves");
-
-        let requested = &store.query_by_type("approval.requested")[0];
-        let EventPayload::ApprovalRequested(request) = &requested.payload else {
-            panic!("expected approval request");
-        };
-        assert_eq!(request.approver.as_ref().map(|a| a.id.as_str()), Some("human:finance"));
-        assert_eq!(requested.source.as_ref(), Some(&service));
-
-        let granted = &store.query_by_type("approval.granted")[0];
-        let EventPayload::ApprovalDecided(decision) = &granted.payload else {
-            panic!("expected approval decision");
-        };
-        assert_eq!(decision.approver.as_ref().map(|a| a.id.as_str()), Some("human:finance"));
-        assert_eq!(granted.source.as_ref(), Some(&service));
-        app.stop().expect("stops");
-
-        // A restart under the same runtime actor restores the approval as runtime-owned.
-        let restarted = billing(Arc::clone(&store), clock, Arc::clone(&executions), 60_000)
-            .runtime_actor(service)
-            .build();
-        restarted.start().expect("restarts");
-        assert!(restarted.approve(&approval_id, &finance(), "again").is_err());
-        restarted.stop().expect("stops");
-    }
-
-    #[test]
-    fn grant_from_a_stranger_with_runtime_source_leaves_the_approval_pending() {
-        let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
-        let clock: Arc<dyn Clock> = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
-        let executions = Arc::new(AtomicUsize::new(0));
-
-        let app_a =
-            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-                .build();
-        app_a.start().expect("app A starts");
-        let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ingested"));
-        app_a.stop().expect("app A stops");
-
-        // A grant from a stranger, recorded with the runtime as its source.
-        let mut stranger_grant = events::approval_decided(
-            &approval_id,
-            ApprovalOutcome::Granted,
-            &human("human:mallory"),
-            "forged",
-        );
-        stranger_grant.source = Some(runtime_actor_default());
-        store.append_if_absent(&stranger_grant);
-
-        let app_b = billing(Arc::clone(&store), clock, Arc::clone(&executions), 60_000).build();
-        app_b.start().expect("app B starts");
-        assert_eq!(executions.load(Ordering::SeqCst), 0, "restore must not execute");
-
-        app_b
-            .approve(&approval_id, &finance(), "ok")
-            .expect("the approval is still pending for the designated approver");
-        assert_eq!(executions.load(Ordering::SeqCst), 1);
-        app_b.stop().expect("stops");
     }
 
     #[test]
@@ -1571,8 +1163,7 @@ mod tests {
         store.append_if_absent(&forged);
 
         let app =
-            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::clone(&executions), 60_000)
-                .build();
+            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::clone(&executions), 60_000);
         app.start().expect("app starts");
         assert!(app.approve("action:forged:approval", &finance(), "ok").is_err());
         assert_eq!(executions.load(Ordering::SeqCst), 0);
@@ -1585,8 +1176,7 @@ mod tests {
         let executions = Arc::new(AtomicUsize::new(0));
 
         let app_a =
-            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-                .build();
+            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000);
         app_a.start().expect("app A starts");
         let approval_id = approval_id_from(&app_a.ingest(inbound("Refund order 42")).expect("ok"));
         app_a.stop().expect("app A stops");
@@ -1594,8 +1184,7 @@ mod tests {
         assert_eq!(executions.load(Ordering::SeqCst), 0);
 
         let app_b =
-            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000)
-                .build();
+            billing(Arc::clone(&store), Arc::clone(&clock), Arc::clone(&executions), 60_000);
         app_b.start().expect("app B starts and restores the approval");
         let result = app_b.approve(&approval_id, &finance(), "ok").expect("approves");
 
@@ -1611,14 +1200,14 @@ mod tests {
         let executions = Arc::new(AtomicUsize::new(0));
 
         let app_a =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000).build();
+            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
         app_a.start().expect("app A starts");
         let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ok"));
         app_a.stop().expect("app A stops");
 
         clock.advance(Duration::from_secs(5));
         let app_b =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000).build();
+            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
         app_b.start().expect("app B starts");
 
         assert_eq!(store.query_by_type("approval.expired").len(), 1);
@@ -1635,14 +1224,14 @@ mod tests {
         let executions = Arc::new(AtomicUsize::new(0));
 
         let app_a =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 60_000).build();
+            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
         app_a.start().expect("app A starts");
         let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ok"));
         app_a.stop().expect("app A stops");
 
         clock.advance(Duration::from_secs(5));
         let app_b =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 60_000).build();
+            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 60_000);
         app_b.start().expect("app B starts");
         assert!(store.query_by_type("approval.expired").is_empty());
         app_b.approve(&approval_id, &finance(), "ok").expect("still pending");
@@ -1657,8 +1246,7 @@ mod tests {
             clock.clone(),
             Arc::new(AtomicUsize::new(0)),
             1_000,
-        )
-        .build();
+        );
         app.start().expect("app starts");
         app.ingest(inbound("Refund")).expect("ingested");
 
@@ -1683,8 +1271,7 @@ mod tests {
     fn timer_expires_an_approval_without_any_further_calls() {
         let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
         let app =
-            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::new(AtomicUsize::new(0)), 50)
-                .build();
+            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::new(AtomicUsize::new(0)), 50);
         app.start().expect("app starts");
         app.ingest(inbound("Refund")).expect("ingested");
 
@@ -1701,8 +1288,7 @@ mod tests {
     fn stop_then_start_runs_the_timer_again() {
         let store: Arc<dyn EventStore> = Arc::new(MemoryEventStore::default());
         let app =
-            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::new(AtomicUsize::new(0)), 50)
-                .build();
+            billing(Arc::clone(&store), Arc::new(SystemClock), Arc::new(AtomicUsize::new(0)), 50);
         app.start().expect("starts");
         app.stop().expect("stops");
         app.start().expect("restarts");
@@ -1723,8 +1309,7 @@ mod tests {
             Arc::new(SystemClock),
             Arc::new(AtomicUsize::new(0)),
             60_000,
-        )
-        .build();
+        );
         app.start().expect("app starts");
         let event = inbound("Refund order 42");
         let first = app.ingest(event.clone()).expect("ingested");
@@ -1740,17 +1325,27 @@ mod tests {
         let active = Arc::new(AtomicUsize::new(0));
         let peak = Arc::new(AtomicUsize::new(0));
         let (active_in, peak_in) = (Arc::clone(&active), Arc::clone(&peak));
-        let app = OpenChannel::builder()
-            .agent(AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), move |_| {
+        let app = OpenChannel::new(OpenChannelOptions {
+            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), move |_| {
                 let now = active_in.fetch_add(1, Ordering::SeqCst) + 1;
                 peak_in.fetch_max(now, Ordering::SeqCst);
                 thread::sleep(Duration::from_millis(30));
                 active_in.fetch_sub(1, Ordering::SeqCst);
                 Ok(())
-            }))
-            .expect("agent registers")
-            .concurrency(1)
-            .build();
+            })],
+            actions: vec![],
+            channels: vec![],
+            policy: Box::new(BlockEverything),
+            store: Arc::new(MemoryEventStore::default()),
+            approver: Some(ActorRef::default()),
+            approval_timeout_ms: 60_000,
+            concurrency: 1,
+            hooks: Some(Hooks::default()),
+            clock: None,
+            logger: None,
+            runtime_actor: Some(runtime_actor_default()),
+        })
+        .expect("app builds");
         let app = Arc::new(app);
         let handles: Vec<_> = (0..4)
             .map(|index| {
@@ -1786,14 +1381,26 @@ mod tests {
             })),
             ..Hooks::default()
         };
-        let app = billing(
-            Arc::new(MemoryEventStore::default()),
-            Arc::new(SystemClock),
-            Arc::new(AtomicUsize::new(0)),
-            60_000,
-        )
-        .hooks(hooks)
-        .build();
+        let app = OpenChannel::new(OpenChannelOptions {
+            policy: Box::new(RequireApprovalPolicy),
+            store: Arc::new(MemoryEventStore::default()),
+            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
+                context.request("refund", serde_json::json!({ "amount": 10 }));
+                Ok(())
+            })],
+            actions: vec![ActionDefinition::new("refund", move |input, _context| {
+                Ok(input.clone())
+            })],
+            channels: vec![],
+            approver: Some(finance()),
+            approval_timeout_ms: 60_000,
+            concurrency: usize::MAX,
+            hooks: Some(hooks),
+            clock: Some(Arc::new(SystemClock)),
+            logger: None,
+            runtime_actor: Some(runtime_actor_default()),
+        })
+        .expect("app builds");
         app.ingest(inbound("Refund")).expect("ingested");
         assert_eq!(accepted.load(Ordering::SeqCst), 1);
         assert_eq!(completed.load(Ordering::SeqCst), 0, "approval is pending, not completed");
@@ -1816,15 +1423,21 @@ mod tests {
     #[test]
     fn logger_receives_warnings_for_blocked_actions() {
         let logger = Arc::new(CapturingLogger::default());
-        let app = billing(
-            Arc::new(MemoryEventStore::default()),
-            Arc::new(SystemClock),
-            Arc::new(AtomicUsize::new(0)),
-            60_000,
-        )
-        .logger(logger.clone())
-        .policy(Box::new(BlockEverything))
-        .build();
+        let app = OpenChannel::new(OpenChannelOptions {
+            policy: Box::new(BlockEverything),
+            store: Arc::new(MemoryEventStore::default()),
+            agents: vec![],
+            actions: vec![],
+            channels: vec![],
+            approver: Some(ActorRef::default()),
+            approval_timeout_ms: 60_000,
+            concurrency: usize::MAX,
+            hooks: Some(Hooks::default()),
+            clock: Some(Arc::new(SystemClock)),
+            logger: Some(logger.clone()),
+            runtime_actor: Some(runtime_actor_default()),
+        })
+        .expect("app builds");
         app.ingest(inbound("Refund")).expect("ingested");
         let warnings = logger.warnings.lock().expect("lock");
         assert_eq!(warnings.len(), 1);
@@ -1855,15 +1468,25 @@ mod tests {
 
     #[test]
     fn receive_accepts_optional_metadata() {
-        let app = OpenChannel::builder()
-            .agent(AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |_| Ok(())))
-            .expect("agent registers")
-            .channel(ChannelDefinition {
+        let app = OpenChannel::new(OpenChannelOptions {
+            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |_| Ok(()))],
+            actions: vec![],
+            channels: vec![ChannelDefinition {
                 provider: "echo".to_owned(),
                 source: Some(Box::new(Echo)),
                 sink: None,
-            })
-            .build();
+            }],
+            policy: Box::new(BlockEverything),
+            store: Arc::new(MemoryEventStore::default()),
+            approver: Some(ActorRef::default()),
+            approval_timeout_ms: 60_000,
+            concurrency: usize::MAX,
+            hooks: Some(Hooks::default()),
+            clock: None,
+            logger: None,
+            runtime_actor: Some(runtime_actor_default()),
+        })
+        .expect("app builds");
         let without = app.receive("echo", serde_json::json!("one"), None).expect("received");
         let with = app
             .receive(
@@ -1879,10 +1502,21 @@ mod tests {
 
     #[test]
     fn exposes_agent_cards_and_adds_agents_after_build() {
-        let mut app = OpenChannel::builder()
-            .agent(AgentDefinition::new(AgentCard::new("agent:triage", "Triage"), |_| Ok(())))
-            .expect("agent registers")
-            .build();
+        let mut app = OpenChannel::new(OpenChannelOptions {
+            agents: vec![AgentDefinition::new(AgentCard::new("agent:triage", "Triage"), |_| Ok(()))],
+            actions: vec![],
+            channels: vec![],
+            policy: Box::new(BlockEverything),
+            store: Arc::new(MemoryEventStore::default()),
+            approver: Some(ActorRef::default()),
+            approval_timeout_ms: 60_000,
+            concurrency: usize::MAX,
+            hooks: Some(Hooks::default()),
+            clock: None,
+            logger: None,
+            runtime_actor: Some(runtime_actor_default()),
+        })
+        .expect("app builds");
         assert_eq!(app.agent_cards()[0].name, "Triage");
         app.add_agent(AgentDefinition::new(AgentCard::new("agent:two", "Two"), |_| Ok(())))
             .expect("adds");

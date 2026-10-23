@@ -11,10 +11,10 @@
 use std::error::Error;
 
 use openchannel::{
-    message_received, ActionDefinition, ActionInvocation, ActionPolicy, ActionResult, ActorRef,
+    message_received, ActionDefinition, ActionInvocation, ActionResult, ActorRef,
     ActorType, AgentCard, AgentDefinition, AgentError, ChannelDefinition, ChannelRef, ChannelSink,
-    ConversationRef, DeliveryReceipt, EventEnvelope, EventPayload, HandleResult, OpenChannel,
-    PolicyDecision,
+    ConversationRef, DeliveryReceipt, EventEnvelope, EventPayload, HandleResult, Hooks,
+    MemoryEventStore, OpenChannel, OpenChannelOptions, PolicyDecision,
 };
 
 /// Stable OCP identifier of the example agent.
@@ -100,17 +100,24 @@ fn build_app() -> Result<OpenChannel, AgentError> {
         Ok(serde_json::json!({ "status": "refunded", "input": input }))
     });
 
-    Ok(OpenChannel::builder()
-        .agent(responder)?
-        .action(refund)?
-        .channel(ChannelDefinition {
+    Ok(OpenChannel::new(OpenChannelOptions {
+        agents: vec![responder],
+        actions: vec![refund],
+        channels: vec![ChannelDefinition {
             provider: PROVIDER.to_owned(),
             source: None,
             sink: Some(Box::new(ConsoleSink)),
-        })
-        .policy(Box::new(RefundPolicy))
-        .approver(human(APPROVER_ID, "Finance Approver"))
-        .build())
+        }],
+        policy: Box::new(RefundPolicy),
+        store: Arc::new(MemoryEventStore::default()),
+        approver: human(APPROVER_ID, "Finance Approver"),
+        approval_timeout_ms: 60_000,
+        concurrency: usize::MAX,
+        hooks: Hooks::default(),
+        clock: None,
+        logger: None,
+        runtime_actor: None,
+    }))
 }
 
 /// Ingests one `message.received` addressed to the example agent.
