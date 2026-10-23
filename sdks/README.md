@@ -8,7 +8,7 @@ The TypeScript, Python, and Rust distributions all use the package name
 | ------------------------------ | -------------------------------- | ---------------------------- | --------------------------------- |
 | [`typescript/`](./typescript/) | npm `openchannel` | `openchannel` | `openChannel`, `AgentHost`        |
 | [`python/`](./python/)         | PyPI `openchannel`              | `openchannel`               | `OpenChannel`, `AgentHost`        |
-| [`rust/`](./rust/)             | crates.io `openchannel`         | `openchannel`               | `OpenChannelBuilder`, `AgentHost` |
+| [`rust/`](./rust/)             | crates.io `openchannel`         | `openchannel`               | `OpenChannelOptions`, `OpenChannel` |
 
 All SDKs expose one event API for both wire versions: `2.0` is the canonical
 envelope in `proto/ocp`. There is one envelope and one protocol version, `2.0`.
