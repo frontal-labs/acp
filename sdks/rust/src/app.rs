@@ -18,6 +18,7 @@ use crate::models::{
 use crate::payloads::ApprovalOutcome;
 
 /// How long an approval waits for a decision unless the builder sets otherwise.
+#[allow(dead_code)]
 const DEFAULT_APPROVAL_TIMEOUT: Duration = Duration::from_secs(60);
 const APPROVAL_EXPIRED_REASON: &str = "Approval deadline expired";
 /// Event names only the application may produce; inbound copies are rejected.
