@@ -987,8 +987,6 @@ fn insert_action(
     Ok(())
 }
 
-
-
 #[cfg(test)]
 #[allow(clippy::unwrap_used, clippy::expect_used)]
 mod tests {
@@ -1199,15 +1197,13 @@ mod tests {
         let clock = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
         let executions = Arc::new(AtomicUsize::new(0));
 
-        let app_a =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
+        let app_a = billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
         app_a.start().expect("app A starts");
         let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ok"));
         app_a.stop().expect("app A stops");
 
         clock.advance(Duration::from_secs(5));
-        let app_b =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
+        let app_b = billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
         app_b.start().expect("app B starts");
 
         assert_eq!(store.query_by_type("approval.expired").len(), 1);
@@ -1223,14 +1219,12 @@ mod tests {
         let clock = Arc::new(ManualClock::new(epoch_at(1_700_000_000)));
         let executions = Arc::new(AtomicUsize::new(0));
 
-        let app_a =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
+        let app_a = billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 1_000);
         app_a.start().expect("app A starts");
         let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ok"));
         app_a.stop().expect("app A stops");
 
-        let app_b =
-            billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 60_000);
+        let app_b = billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 60_000);
         app_b.start().expect("app B starts");
         assert!(store.query_by_type("approval.expired").is_empty());
         app_b.approve(&approval_id, &finance(), "ok").expect("still pending");
@@ -1325,13 +1319,16 @@ mod tests {
         let peak = Arc::new(AtomicUsize::new(0));
         let (active_in, peak_in) = (Arc::clone(&active), Arc::clone(&peak));
         let app = OpenChannel::new(OpenChannelOptions {
-            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), move |_| {
-                let now = active_in.fetch_add(1, Ordering::SeqCst) + 1;
-                peak_in.fetch_max(now, Ordering::SeqCst);
-                thread::sleep(Duration::from_millis(30));
-                active_in.fetch_sub(1, Ordering::SeqCst);
-                Ok(())
-            })],
+            agents: vec![AgentDefinition::new(
+                AgentCard::new("agent:billing", "Billing"),
+                move |_| {
+                    let now = active_in.fetch_add(1, Ordering::SeqCst) + 1;
+                    peak_in.fetch_max(now, Ordering::SeqCst);
+                    thread::sleep(Duration::from_millis(30));
+                    active_in.fetch_sub(1, Ordering::SeqCst);
+                    Ok(())
+                },
+            )],
             actions: vec![],
             channels: vec![],
             policy: Box::new(BlockEverything),
@@ -1383,13 +1380,17 @@ mod tests {
         let app = OpenChannel::new(OpenChannelOptions {
             policy: Box::new(RequireApprovalPolicy),
             store: Arc::new(MemoryEventStore::default()),
-            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
-                context.request("refund", serde_json::json!({ "amount": 10 }));
-                Ok(())
-            })],
-            actions: vec![ActionDefinition::new("refund", move |input, _context| {
-                Ok(input.clone())
-            })],
+            agents: vec![AgentDefinition::new(
+                AgentCard::new("agent:billing", "Billing"),
+                |context| {
+                    context.request("refund", serde_json::json!({ "amount": 10 }));
+                    Ok(())
+                },
+            )],
+            actions: vec![ActionDefinition::new(
+                "refund",
+                move |input, _context| Ok(input.clone()),
+            )],
             channels: vec![],
             approver: Some(finance()),
             approval_timeout_ms: 60_000,
@@ -1425,13 +1426,14 @@ mod tests {
         let app = OpenChannel::new(OpenChannelOptions {
             policy: Box::new(BlockEverything),
             store: Arc::new(MemoryEventStore::default()),
-            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
-                context.request("refund", serde_json::json!({ "amount": 10 }));
-                Ok(())
-            })],
-            actions: vec![ActionDefinition::new("refund", |input, _context| {
-                Ok(input.clone())
-            })],
+            agents: vec![AgentDefinition::new(
+                AgentCard::new("agent:billing", "Billing"),
+                |context| {
+                    context.request("refund", serde_json::json!({ "amount": 10 }));
+                    Ok(())
+                },
+            )],
+            actions: vec![ActionDefinition::new("refund", |input, _context| Ok(input.clone()))],
             channels: vec![],
             approver: Some(ActorRef::default()),
             approval_timeout_ms: 60_000,
@@ -1473,7 +1475,9 @@ mod tests {
     #[test]
     fn receive_accepts_optional_metadata() {
         let app = OpenChannel::new(OpenChannelOptions {
-            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |_| Ok(()))],
+            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |_| {
+                Ok(())
+            })],
             actions: vec![],
             channels: vec![ChannelDefinition {
                 provider: "echo".to_owned(),
@@ -1507,7 +1511,10 @@ mod tests {
     #[test]
     fn exposes_agent_cards_and_adds_agents_after_build() {
         let mut app = OpenChannel::new(OpenChannelOptions {
-            agents: vec![AgentDefinition::new(AgentCard::new("agent:triage", "Triage"), |_| Ok(()))],
+            agents: vec![AgentDefinition::new(
+                AgentCard::new("agent:triage", "Triage"),
+                |_| Ok(()),
+            )],
             actions: vec![],
             channels: vec![],
             policy: Box::new(BlockEverything),

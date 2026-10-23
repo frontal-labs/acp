@@ -12,10 +12,10 @@ use std::error::Error;
 use std::sync::Arc;
 
 use openchannel::{
-    ActionDefinition, ActionInvocation, ActionPolicy, ActionResult, ActorRef,
+    message_received, ActionDefinition, ActionInvocation, ActionPolicy, ActionResult, ActorRef,
     ActorType, AgentCard, AgentDefinition, AgentError, ChannelDefinition, ChannelRef, ChannelSink,
     ConversationRef, DeliveryReceipt, EventEnvelope, EventPayload, HandleResult, Hooks,
-    MemoryEventStore, OpenChannel, OpenChannelOptions, PolicyDecision, message_received,
+    MemoryEventStore, OpenChannel, OpenChannelOptions, PolicyDecision,
 };
 
 /// Stable OCP identifier of the example agent.
