@@ -1,5 +1,5 @@
 {
-  "name": "@frontal-labs/open-channel-testing",
+  "name": "@openchannel/testing",
   "version": "2.0.0",
   "private": true,
   "description": "Testing fixtures and utilities for OpenChannel Protocol implementations",
@@ -45,8 +45,8 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.5",
-    "@frontal-labs/open-channel-core": "workspace:*",
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@openchannel/core": "workspace:*",
+    "@openchannel/protocol": "workspace:*"
   },
   "devDependencies": {
     "vitest": "^4.1.12"

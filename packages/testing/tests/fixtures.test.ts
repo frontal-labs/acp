@@ -1,4 +1,4 @@
-import { ActorType, eventType as typeOf } from "@frontal-labs/open-channel-protocol";
+import { ActorType, eventType as typeOf } from "@openchannel/protocol";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -9,7 +9,7 @@ import {
   createTestMessage,
 } from "../src/index.js";
 
-describe("@frontal-labs/open-channel-testing fixtures", () => {
+describe("@openchannel/testing fixtures", () => {
   it("creates reusable actors and message payloads", () => {
     expect(createTestHuman().type).toBe(ActorType.HUMAN);
     expect(createTestAgent().id).toBe("agent:test");

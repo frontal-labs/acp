@@ -16,15 +16,17 @@
  *   pnpm exec tsx examples/native-typescript/src/approval-flow.ts
  */
 import { create } from "@bufbuild/protobuf";
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ActorRefSchema, ActorType, ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
 import {
   type ActionResult,
+  ActorRefSchema,
+  ActorType,
   action,
+  ChannelRefSchema,
   type EventEnvelope,
   eventType,
   messageReceived,
   openChannel,
+  RuleBasedPolicyEngine,
 } from "openchannel";
 
 import { createDemoEventStore } from "./demo-store.js";

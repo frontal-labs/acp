@@ -1,4 +1,4 @@
-# @frontal-labs/open-channel-policy
+# @openchannel/policy
 
 Reference policy interfaces and ordered rule-based evaluation for OCP actions.
 

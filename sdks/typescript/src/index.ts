@@ -1,4 +1,12 @@
 export type {
+  PolicyContext,
+  PolicyDecision,
+  PolicyEngine,
+  PolicyRule,
+  RuleBasedPolicyOptions,
+} from "@openchannel/policy";
+export { RuleBasedPolicyEngine } from "@openchannel/policy";
+export type {
   ActionRequest,
   ActorRef,
   ChannelRef,
@@ -6,11 +14,14 @@ export type {
   EventEnvelope,
   EventType,
   MessageReceived,
-} from "@frontal-labs/open-channel-protocol";
+} from "@openchannel/protocol";
 export {
+  ActorRefSchema,
+  ActorType,
   actionExecuted,
   actionFailed,
   approvalRequested,
+  ChannelRefSchema,
   EVENT_TYPES,
   eventType,
   fromBinary,
@@ -22,9 +33,11 @@ export {
   toBinary,
   toJson,
   validateEvent,
-} from "@frontal-labs/open-channel-protocol";
+} from "@openchannel/protocol";
+export { createActor } from "@openchannel/runtime";
 export { AgentHost } from "./agent-host.js";
-export { deliveryReceipt, openChannel } from "./app.js";
+export { openChannel } from "./app.js";
+export { deliveryReceipt } from "./delivery.js";
 export { consoleLogger } from "./logger.js";
 export type {
   ActionDefinition,

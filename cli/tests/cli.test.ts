@@ -1,9 +1,9 @@
-import { toJson } from "@frontal-labs/open-channel-protocol";
-import { createBufferedTestIO, createTestEvent } from "@frontal-labs/open-channel-testing";
+import { toJson } from "@openchannel/protocol";
+import { createBufferedTestIO, createTestEvent } from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 import { runCommand } from "../src/index.js";
 
-describe("@frontal-labs/open-channel-cli", () => {
+describe("@openchannel/cli", () => {
   it("validates buffered ProtoJSON input", async () => {
     const { io, stdout } = createBufferedTestIO(
       JSON.stringify(toJson(createTestEvent({ eventType: "message.received" }))),

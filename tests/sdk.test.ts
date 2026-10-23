@@ -1,14 +1,14 @@
 import { create } from "@bufbuild/protobuf";
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ChannelRefSchema } from "@frontal-labs/open-channel-protocol";
-import { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
+import { RuleBasedPolicyEngine } from "@openchannel/policy";
+import { ChannelRefSchema } from "@openchannel/protocol";
+import { ChannelGateway, OpenChannelRuntime } from "@openchannel/runtime";
 import {
   createTestAgent,
   createTestChannelAdapter,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@frontal-labs/open-channel-testing";
+} from "@openchannel/testing";
 import { AgentHost, eventType } from "openchannel";
 import { describe, expect, it } from "vitest";
 

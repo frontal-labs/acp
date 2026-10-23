@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { RuleBasedPolicyEngine } from "@openchannel/policy";
 import {
   ActionRequestSchema,
   type ActorRef,
@@ -9,14 +9,14 @@ import {
   ApprovalRequestedSchema,
   eventType,
   newEvent,
-} from "@frontal-labs/open-channel-protocol";
-import { ManualClock, SYSTEM_ACTOR } from "@frontal-labs/open-channel-runtime";
+} from "@openchannel/protocol";
+import { ManualClock, SYSTEM_ACTOR } from "@openchannel/runtime";
 import {
   createTestAgent,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@frontal-labs/open-channel-testing";
+} from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 import { action, openChannel } from "../src/index.js";
 

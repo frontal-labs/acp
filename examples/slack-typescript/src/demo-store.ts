@@ -4,7 +4,7 @@
  * OCP concept: the event store is where `openChannel()` persists every event
  * envelope and action record. This file is NOT production code. It loses all
  * state when the process exits. For durable storage, pass a store such as
- * `@frontal-labs/open-channel-ext-postgres` to `openChannel()` instead.
+ * `openchannel/postgres` to `openChannel()` instead.
  */
 import type { EventEnvelope, OpenChannelOptions } from "openchannel";
 import { eventType } from "openchannel";

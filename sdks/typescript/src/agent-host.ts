@@ -1,6 +1,6 @@
 import { create } from "@bufbuild/protobuf";
-import type { DeliveryReceipt } from "@frontal-labs/open-channel-adapter";
-import { ActionError, ConflictError, OpenChannelError } from "@frontal-labs/open-channel-core";
+import type { DeliveryReceipt } from "@openchannel/adapter";
+import { ActionError, ConflictError, OpenChannelError } from "@openchannel/core";
 import {
   type ActorRef,
   ActorRefSchema,
@@ -9,8 +9,8 @@ import {
   type MessageReceived,
   MessageSentSchema,
   newEvent,
-} from "@frontal-labs/open-channel-protocol";
-import type { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
+} from "@openchannel/protocol";
+import type { ChannelGateway, OpenChannelRuntime } from "@openchannel/runtime";
 
 import { consoleLogger } from "./logger.js";
 import type {

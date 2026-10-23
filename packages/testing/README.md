@@ -1,11 +1,11 @@
-# `@frontal-labs/open-channel-testing`
+# `@openchannel/testing`
 
 Shared OCP testing fixtures and helpers for TypeScript packages.
 
 The package provides deterministic actors, channels, conversations, actions, every event type, event inspection helpers, deferred promises, polling, recorders, and buffered CLI I/O. It is intended for tests and local reference implementations, not production runtime code.
 
 ```ts
-import { createTestEvent, eventTypes, requireEvent } from "@frontal-labs/open-channel-testing";
+import { createTestEvent, eventTypes, requireEvent } from "@openchannel/testing";
 
 const event = createTestEvent({ eventType: "message.received", text: "hello" });
 const events = [event];

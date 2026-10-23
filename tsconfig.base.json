@@ -10,49 +10,16 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@frontal-labs/open-channel-adapter": ["packages/adapter/src/index.ts"],
-      "@frontal-labs/open-channel-cli": ["cli/src/index.ts"],
-      "@frontal-labs/open-channel-core": ["packages/core/src/index.ts"],
-      "@frontal-labs/open-channel-demo": ["packages/demo/src/index.ts"],
-      "@frontal-labs/open-channel-policy": ["packages/policy/src/index.ts"],
-      "@frontal-labs/open-channel-protocol": ["packages/protocol/src/index.ts"],
-      "@frontal-labs/open-channel-runtime": ["packages/runtime/src/index.ts"],
+      "@openchannel/adapter": ["packages/adapter/src/index.ts"],
+      "@openchannel/cli": ["cli/src/index.ts"],
+      "@openchannel/core": ["packages/core/src/index.ts"],
+      "@openchannel/demo": ["packages/demo/src/index.ts"],
+      "@openchannel/policy": ["packages/policy/src/index.ts"],
+      "@openchannel/protocol": ["packages/protocol/src/index.ts"],
+      "@openchannel/runtime": ["packages/runtime/src/index.ts"],
       "openchannel": ["sdks/typescript/src/index.ts"],
-      "@frontal-labs/open-channel-testing": ["packages/testing/src/index.ts"],
-      "@frontal-labs/open-channel-ext-a2a": ["extensions/a2a/src/index.ts"],
-      "@frontal-labs/open-channel-ext-calendar": [
-        "extensions/calendar/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-directory": [
-        "extensions/directory/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-email": ["extensions/email/src/index.ts"],
-      "@frontal-labs/open-channel-ext-google-chat": [
-        "extensions/google-chat/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-mcp": ["extensions/mcp/src/index.ts"],
-      "@frontal-labs/open-channel-ext-microsoft-teams": [
-        "extensions/microsoft-teams/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-opentelemetry": [
-        "extensions/opentelemetry/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-policy-cedar": [
-        "extensions/policy-cedar/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-policy-opa": [
-        "extensions/policy-opa/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-postgres": [
-        "extensions/postgres/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-shared": [
-        "extensions/shared/src/index.ts"
-      ],
-      "@frontal-labs/open-channel-ext-slack": ["extensions/slack/src/index.ts"],
-      "@frontal-labs/open-channel-ext-whatsapp": [
-        "extensions/whatsapp/src/index.ts"
-      ]
+      "@openchannel/testing": ["packages/testing/src/index.ts"],
+      "openchannel/*": ["sdks/typescript/src/*/index.ts"]
     }
   }
 }

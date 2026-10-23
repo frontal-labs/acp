@@ -30,6 +30,58 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./a2a": {
+      "types": "./dist/a2a/index.d.ts",
+      "import": "./dist/a2a/index.js"
+    },
+    "./calendar": {
+      "types": "./dist/calendar/index.d.ts",
+      "import": "./dist/calendar/index.js"
+    },
+    "./cedar": {
+      "types": "./dist/cedar/index.d.ts",
+      "import": "./dist/cedar/index.js"
+    },
+    "./directory": {
+      "types": "./dist/directory/index.d.ts",
+      "import": "./dist/directory/index.js"
+    },
+    "./email": {
+      "types": "./dist/email/index.d.ts",
+      "import": "./dist/email/index.js"
+    },
+    "./google-chat": {
+      "types": "./dist/google-chat/index.d.ts",
+      "import": "./dist/google-chat/index.js"
+    },
+    "./mcp": {
+      "types": "./dist/mcp/index.d.ts",
+      "import": "./dist/mcp/index.js"
+    },
+    "./opa": {
+      "types": "./dist/opa/index.d.ts",
+      "import": "./dist/opa/index.js"
+    },
+    "./otel": {
+      "types": "./dist/otel/index.d.ts",
+      "import": "./dist/otel/index.js"
+    },
+    "./postgres": {
+      "types": "./dist/postgres/index.d.ts",
+      "import": "./dist/postgres/index.js"
+    },
+    "./slack": {
+      "types": "./dist/slack/index.d.ts",
+      "import": "./dist/slack/index.js"
+    },
+    "./teams": {
+      "types": "./dist/teams/index.d.ts",
+      "import": "./dist/teams/index.js"
+    },
+    "./whatsapp": {
+      "types": "./dist/whatsapp/index.d.ts",
+      "import": "./dist/whatsapp/index.js"
     }
   },
   "files": [
@@ -44,15 +96,26 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.5",
-    "@frontal-labs/open-channel-adapter": "workspace:*",
-    "@frontal-labs/open-channel-core": "workspace:*",
-    "@frontal-labs/open-channel-policy": "workspace:*",
-    "@frontal-labs/open-channel-protocol": "workspace:*",
-    "@frontal-labs/open-channel-runtime": "workspace:*"
+    "@openchannel/adapter": "workspace:*",
+    "@openchannel/core": "workspace:*",
+    "@openchannel/policy": "workspace:*",
+    "@openchannel/protocol": "workspace:*",
+    "@openchannel/runtime": "workspace:*"
   },
   "devDependencies": {
-    "@frontal-labs/open-channel-testing": "workspace:*",
-    "vitest": "^4.1.12"
+    "@openchannel/testing": "workspace:*",
+    "@types/pg": "^8.23.1",
+    "pg": "^8.23.1",
+    "vitest": "^4.1.12",
+    "zod": "^4.6.7"
+  },
+  "peerDependencies": {
+    "zod": "^4.6.7"
+  },
+  "peerDependenciesMeta": {
+    "zod": {
+      "optional": true
+    }
   },
   "engines": {
     "node": ">=22.18.0"

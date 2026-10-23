@@ -2,8 +2,8 @@
 
 OCP uses Changesets for JavaScript package versioning and release orchestration. The public release surface is:
 
-- npm: `openchannel` (TypeScript SDK), `@frontal-labs/open-channel-cli`, and the `@frontal-labs/open-channel-*` packages;
-- GitHub Packages (npm registry, scope `@frontal-labs`): the scoped TypeScript packages, as a mirror; `openchannel` is published to npm only;
+- npm: `openchannel` (TypeScript SDK, including the `openchannel/<provider>` subpaths), `@openchannel/cli`, and the core `@openchannel/*` packages;
+- GitHub Packages (npm registry, scope `@openchannel`): the scoped core TypeScript packages, as a mirror; `openchannel` is published to npm only;
 - crates.io: `openchannel`;
 - PyPI: `openchannel`.
 
@@ -15,6 +15,19 @@ import identifier is `openchannel` in TypeScript, Python, and Rust.
 Release image/container identifiers retain ecosystem suffixes (`open-channel-ts`,
 `open-channel-py`, and `open-channel-rs`) even though the published SDK package names are
 unified as `openchannel`.
+
+## One-time setup for the `@openchannel` scope
+
+These steps need account owner access and are not done by the repository:
+
+1. Create the `openchannel` organisation on npm and grant the release team publish rights.
+2. Create the `openchannel` organisation on GitHub, or the GitHub Packages registry above will reject
+   the `@openchannel` scope, because GitHub Packages only accepts a scope that matches the owning
+   organisation.
+3. Add an `NPM_TOKEN` secret with publish rights for `@openchannel`.
+4. Decide what happens to the old `@frontal-labs/*` packages on npm. Deprecating them points existing
+   installs at the new names, for example with `npm deprecate "@frontal-labs/open-channel-*" "Renamed to @openchannel/*"`.
+   Run this only after the first `@openchannel` release is published.
 
 ## Prepare a release
 
@@ -35,7 +48,7 @@ release PR. When that PR lands, it publishes:
 
 Configure these repository secrets before enabling publishing:
 
-- `NPM_TOKEN`: npm publish token for the `@frontal-labs` scope;
+- `NPM_TOKEN`: npm publish token for the `@openchannel` scope;
 - `CARGO_REGISTRY_TOKEN`: crates.io token for `openchannel`;
 - `PYPI_API_TOKEN`: PyPI token for `openchannel`.
 
@@ -43,6 +56,10 @@ GitHub Packages uses the workflow's `GITHUB_TOKEN`. The release job requests `pa
 
 The `CI` workflow runs a `release-dry-run` job on every pull request. It builds the packages and runs
 both dry runs, so packaging problems show up before a release PR is merged.
+
+## Publish order
+
+The `openchannel` SDK depends on the core `@openchannel/*` packages (`adapter`, `core`, `policy`, `protocol`, `runtime`), so they are released together. They share the `fixed` group in `.changeset/config.json`, and `changeset publish` publishes dependencies before dependents. Do not publish `openchannel` alone: its install would fail until the core packages exist on the registry.
 
 ## Dry runs
 
@@ -58,7 +75,7 @@ must be checked with the dry runs first.
 ## Installing from GitHub Packages
 
 ```ini
-@frontal-labs:registry=https://npm.pkg.github.com
+@openchannel:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${GITHUB_TOKEN}
 ```
 

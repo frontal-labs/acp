@@ -1,6 +1,6 @@
-import type { EventEnvelope, EventType } from "@frontal-labs/open-channel-protocol";
-import { eventType } from "@frontal-labs/open-channel-protocol";
-import { createTestEvent, createTestEventStore } from "@frontal-labs/open-channel-testing";
+import type { EventEnvelope, EventType } from "@openchannel/protocol";
+import { eventType } from "@openchannel/protocol";
+import { createTestEvent, createTestEventStore } from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 import { ManualClock } from "../src/index.js";
 

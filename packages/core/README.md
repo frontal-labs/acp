@@ -1,4 +1,4 @@
-# @frontal-labs/open-channel-core
+# @openchannel/core
 
 Small provider-neutral primitives shared by OCP runtimes and integrations.
 
@@ -13,6 +13,6 @@ The core package intentionally does not own provider transport, persistence, pol
 ## Development
 
 ```bash
-pnpm --filter @frontal-labs/open-channel-core build
-pnpm --filter @frontal-labs/open-channel-core typecheck
+pnpm --filter @openchannel/core build
+pnpm --filter @openchannel/core typecheck
 ```

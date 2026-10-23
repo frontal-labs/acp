@@ -33,28 +33,25 @@ importers:
       '@commitlint/config-conventional':
         specifier: ^21.2.0
         version: 21.2.4
-      '@frontal-labs/open-channel-adapter':
+      '@openchannel/adapter':
         specifier: workspace:*
         version: link:packages/adapter
-      '@frontal-labs/open-channel-cli':
+      '@openchannel/cli':
         specifier: workspace:*
         version: link:cli
-      '@frontal-labs/open-channel-core':
+      '@openchannel/core':
         specifier: workspace:*
         version: link:packages/core
-      '@frontal-labs/open-channel-ext-slack':
-        specifier: workspace:*
-        version: link:extensions/slack
-      '@frontal-labs/open-channel-policy':
+      '@openchannel/policy':
         specifier: workspace:*
         version: link:packages/policy
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:packages/protocol
-      '@frontal-labs/open-channel-runtime':
+      '@openchannel/runtime':
         specifier: workspace:*
         version: link:packages/runtime
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:packages/testing
       '@types/node':
@@ -90,338 +87,24 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:../packages/protocol
     devDependencies:
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:../packages/testing
       vitest:
         specifier: ^4.1.12
         version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
 
-  extensions/a2a:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-ext-shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/calendar:
-    dependencies:
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/directory:
-    dependencies:
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/email:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-ext-shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/google-chat:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-ext-shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/mcp:
-    dependencies:
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/microsoft-teams:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-ext-shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/opentelemetry:
-    dependencies:
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/policy-cedar:
-    dependencies:
-      '@frontal-labs/open-channel-policy':
-        specifier: workspace:*
-        version: link:../../packages/policy
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/policy-opa:
-    dependencies:
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-policy':
-        specifier: workspace:*
-        version: link:../../packages/policy
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/postgres:
-    dependencies:
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      '@frontal-labs/open-channel-runtime':
-        specifier: workspace:*
-        version: link:../../packages/runtime
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      '@types/pg':
-        specifier: ^8.23.1
-        version: 8.23.1
-      pg:
-        specifier: ^8.23.1
-        version: 8.23.1
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/shared:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      zod:
-        specifier: ^4.6.7
-        version: 4.6.7
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/slack:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-ext-shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
-  extensions/whatsapp:
-    dependencies:
-      '@bufbuild/protobuf':
-        specifier: ^2.2.5
-        version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
-        specifier: workspace:*
-        version: link:../../packages/adapter
-      '@frontal-labs/open-channel-core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@frontal-labs/open-channel-ext-shared':
-        specifier: workspace:*
-        version: link:../shared
-      '@frontal-labs/open-channel-protocol':
-        specifier: workspace:*
-        version: link:../../packages/protocol
-      openchannel:
-        specifier: workspace:*
-        version: link:../../sdks/typescript
-    devDependencies:
-      '@frontal-labs/open-channel-testing':
-        specifier: workspace:*
-        version: link:../../packages/testing
-      vitest:
-        specifier: ^4.1.12
-        version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
-
   packages/adapter:
     dependencies:
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:../protocol
     devDependencies:
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:../testing
       vitest:
@@ -436,13 +119,13 @@ importers:
 
   packages/demo:
     dependencies:
-      '@frontal-labs/open-channel-adapter':
+      '@openchannel/adapter':
         specifier: workspace:*
         version: link:../adapter
-      '@frontal-labs/open-channel-policy':
+      '@openchannel/policy':
         specifier: workspace:*
         version: link:../policy
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:../testing
       openchannel:
@@ -455,11 +138,11 @@ importers:
 
   packages/policy:
     dependencies:
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:../protocol
     devDependencies:
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:../testing
       vitest:
@@ -471,7 +154,7 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel-core':
+      '@openchannel/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:
@@ -484,20 +167,20 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
+      '@openchannel/adapter':
         specifier: workspace:*
         version: link:../adapter
-      '@frontal-labs/open-channel-core':
+      '@openchannel/core':
         specifier: workspace:*
         version: link:../core
-      '@frontal-labs/open-channel-policy':
+      '@openchannel/policy':
         specifier: workspace:*
         version: link:../policy
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:../protocol
     devDependencies:
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:../testing
       vitest:
@@ -509,10 +192,10 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel-core':
+      '@openchannel/core':
         specifier: workspace:*
         version: link:../core
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:../protocol
     devDependencies:
@@ -525,28 +208,37 @@ importers:
       '@bufbuild/protobuf':
         specifier: ^2.2.5
         version: 2.16.0
-      '@frontal-labs/open-channel-adapter':
+      '@openchannel/adapter':
         specifier: workspace:*
         version: link:../../packages/adapter
-      '@frontal-labs/open-channel-core':
+      '@openchannel/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@frontal-labs/open-channel-policy':
+      '@openchannel/policy':
         specifier: workspace:*
         version: link:../../packages/policy
-      '@frontal-labs/open-channel-protocol':
+      '@openchannel/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
-      '@frontal-labs/open-channel-runtime':
+      '@openchannel/runtime':
         specifier: workspace:*
         version: link:../../packages/runtime
     devDependencies:
-      '@frontal-labs/open-channel-testing':
+      '@openchannel/testing':
         specifier: workspace:*
         version: link:../../packages/testing
+      '@types/pg':
+        specifier: ^8.23.1
+        version: 8.23.1
+      pg:
+        specifier: ^8.23.1
+        version: 8.23.1
       vitest:
         specifier: ^4.1.12
         version: 4.1.12(@types/node@22.20.5)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)(yaml@2.9.1)
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
 
 packages:
 

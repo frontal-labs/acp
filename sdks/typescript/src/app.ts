@@ -1,13 +1,12 @@
 import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
-import type { DeliveryReceipt } from "@frontal-labs/open-channel-adapter";
 import {
   ActionError,
   ConflictError,
   createActionId,
   OpenChannelError,
   ValidationError,
-} from "@frontal-labs/open-channel-core";
+} from "@openchannel/core";
 import {
   ActionExecutedSchema,
   ActionFailedSchema,
@@ -19,13 +18,13 @@ import {
   type EventType,
   eventType,
   newEvent,
-} from "@frontal-labs/open-channel-protocol";
+} from "@openchannel/protocol";
 import {
   ChannelGateway,
   type EventStore,
   OpenChannelRuntime,
   SYSTEM_ACTOR,
-} from "@frontal-labs/open-channel-runtime";
+} from "@openchannel/runtime";
 import { AgentHost } from "./agent-host.js";
 import type {
   ActionDefinition,
@@ -233,7 +232,6 @@ class OpenChannelApp implements OpenChannel {
    */
   private async recoverApprovals(): Promise<void> {
     for (const requested of await this.runtime.restorePendingApprovals()) {
-      // biome-ignore lint/performance/noAwaitInLoops: Recovery rebuilds stored approvals in their original order.
       await this.rebuildPendingAction(requested);
     }
     const requests = await this.runtime.ownedApprovalRequests();
@@ -254,16 +252,13 @@ class OpenChannelApp implements OpenChannel {
         continue;
       }
       // Fail closed: a durable store that reports the action as finished also blocks a re-run.
-      // biome-ignore lint/performance/noAwaitInLoops: Recovery checks and replays grants in their original order.
       const record = await this.runtime.getAction(actionId);
       if (record?.status === "completed" || record?.status === "failed") {
         continue;
       }
-      // biome-ignore lint/performance/noAwaitInLoops: Recovery checks and replays grants in their original order.
       const pending = await this.rebuildPendingAction(requested);
       if (pending) {
         delete this.pendingActions[decided.payload.value.approvalId];
-        // biome-ignore lint/performance/noAwaitInLoops: Recovery runs one grant at a time.
         await this.executeAction(pending);
       }
     }
@@ -708,13 +703,4 @@ class OpenChannelApp implements OpenChannel {
       return String(result);
     }
   }
-}
-
-/** Builds the delivery receipt a channel sink returns after a successful provider send. */
-export function deliveryReceipt(
-  provider: string,
-  event: EventEnvelope,
-  externalId?: string,
-): DeliveryReceipt {
-  return { deliveredAt: new Date(), eventId: event.eventId, externalId, provider };
 }

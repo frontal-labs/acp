@@ -2,7 +2,7 @@
  * Slack OCP example: an agent that answers messages in a Slack channel.
  *
  * OCP concepts demonstrated:
- * - `createSlackChannel()` is the channel adapter. Its source turns a Slack event into a
+ * - `slackChannel()` is the channel adapter. Its source turns a Slack event into a
  *   `message.received` event. Its sink turns a `message.sent` event into `chat.postMessage`.
  * - `verifySlackWebhook()` checks the Slack signing secret before any event enters OCP.
  * - `app.receive()` deduplicates by Slack `event_id`, so a retried delivery is not answered twice.
@@ -17,14 +17,8 @@ import { createHmac } from "node:crypto";
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import type { AddressInfo } from "node:net";
 import { create } from "@bufbuild/protobuf";
-import {
-  createSlackChannel,
-  type SlackTransport,
-  verifySlackWebhook,
-} from "@frontal-labs/open-channel-ext-slack";
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ActorRefSchema, ActorType } from "@frontal-labs/open-channel-protocol";
-import { openChannel } from "openchannel";
+import { ActorRefSchema, ActorType, openChannel, RuleBasedPolicyEngine } from "openchannel";
+import { type SlackTransport, slackChannel, verifySlackWebhook } from "openchannel/slack";
 
 import { createDemoEventStore } from "./demo-store.js";
 
@@ -144,7 +138,7 @@ export function createSlackApp(options: { botUserId?: string; transport: SlackTr
       },
     ],
     channels: [
-      createSlackChannel({
+      slackChannel({
         botUserId: options.botUserId,
         recipient: helper,
         transport: options.transport,
@@ -152,7 +146,7 @@ export function createSlackApp(options: { botUserId?: string; transport: SlackTr
     ],
     policy: new RuleBasedPolicyEngine({ rules: [] }),
     // Demo-only in-memory store. Production deployments use a durable store such as
-    // @frontal-labs/open-channel-ext-postgres.
+    // openchannel/postgres.
     store: createDemoEventStore(),
   });
 }
@@ -391,7 +385,6 @@ async function selftest(): Promise<void> {
   // The reply is asynchronous, so poll for it up to the timeout.
   const deadline = Date.now() + SELFTEST_TIMEOUT_MS;
   while (posted.length === 0 && Date.now() < deadline) {
-    // biome-ignore lint/performance/noAwaitInLoops: Polls until the asynchronous reply arrives.
     await new Promise((resolve) => setTimeout(resolve, SELFTEST_POLL_MS));
   }
   await app.stop();

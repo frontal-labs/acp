@@ -8,7 +8,7 @@ import {
   findEvent,
   requireEvent,
   waitFor,
-} from "@frontal-labs/open-channel-testing";
+} from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 
 describe("OCP testing toolkit", () => {

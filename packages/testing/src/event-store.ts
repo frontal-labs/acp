@@ -1,4 +1,4 @@
-import { type EventEnvelope, eventType as typeOf } from "@frontal-labs/open-channel-protocol";
+import { type EventEnvelope, eventType as typeOf } from "@openchannel/protocol";
 
 /** Action bookkeeping record kept by a test event store. */
 export interface TestActionRecord {

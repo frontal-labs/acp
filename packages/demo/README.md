@@ -1,4 +1,4 @@
-# @frontal-labs/open-channel-demo
+# @openchannel/demo
 
 Runnable OCP approval and action-execution scenario.
 
