@@ -18,7 +18,7 @@ const requiredCommands = [
 ];
 const requiredFiles = [
   "package.json",
-  "proto/v1/api/events.proto",
+  "proto/ocp/api/events.proto",
   ".changeset/config.json",
   ".frontal-code/settings.json",
   ".cursor/rules/ocp-repository.mdc",
