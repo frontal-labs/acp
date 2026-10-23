@@ -212,6 +212,7 @@ jobs:
           key: cargo-${{ runner.os }}-${{ hashFiles('**/Cargo.lock') }}
 
       - run: pnpm install --frozen-lockfile
+      - run: pnpm generate
       - name: Install Python quality tools
         run: python -m pip install --disable-pip-version-check --no-cache-dir "ruff==0.16.8"
       - run: pnpm test
