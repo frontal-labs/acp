@@ -45,7 +45,7 @@ No value is read from a tracked file. The self-test uses placeholder values that
 
 - The Slack example stores events in memory. Restarting it loses history, and claimed actions are
   forgotten. That is acceptable for a development run.
-- The Postgres store needs its migration applied once per database. `migratePostgresEventStore`
+- The Postgres store needs its migration applied once per database. `migratePostgresStore`
   is idempotent. Use `tableName` to keep development data separate from other tables.
 - Claimed actions now expire after a lease (five minutes by default, configurable with
   `leaseMs`). A worker that crashes mid-action no longer blocks that action forever. The lease

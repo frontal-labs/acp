@@ -1,4 +1,4 @@
-# @frontal-labs/open-channel-runtime
+# @openchannel/runtime
 
 Low-level OCP runtime for event processing, policy evaluation, approvals, escalation, audit storage, and channel dispatch. Application developers can use `openChannel()` from `openchannel` as the lifecycle-managed facade.
 

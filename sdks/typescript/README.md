@@ -1,23 +1,26 @@
 # openchannel
 
 The npm package `openchannel` for building OCP agents, hosts, policy-controlled
-actions, and channel integrations.
+actions, and channel integrations. Providers and capabilities ship as subpaths, such as
+`openchannel/slack` and `openchannel/postgres`. See [docs/SUBPATHS.md](docs/SUBPATHS.md).
 
 ```bash
 pnpm add openchannel
 ```
 
 ```ts
-import { openChannel } from "openchannel";
+import { openChannel, RuleBasedPolicyEngine } from "openchannel";
+import { postgresStore } from "openchannel/postgres";
 
 const app = openChannel({
-  policy,
+  policy: new RuleBasedPolicyEngine({ rules: [] }), // no actions granted yet
+  store: postgresStore({ client }),                 // durable EventStore; any EventStore works
   agents: [
     {
       id: "agent:support",
       name: "Support Agent",
       onMessage: async (context) => {
-        await ctx.reply(`Received: ${ctx.message.text}`);
+        await context.reply(`Received: ${context.message.text}`);
       },
     },
   ],
@@ -29,7 +32,7 @@ await app.start();
 `openChannel()` composes the runtime, `AgentHost`, channel source/sink
 registration, action registry, lifecycle, and hooks. Use `AgentHost` directly
 when an application needs lower-level composition. The package also exposes
-the typed event builders through `@frontal-labs/open-channel-protocol`. There is one envelope, version `2.0`.
+the typed event builders through `@openchannel/protocol`. There is one envelope, version `2.0`.
 
 ## Development
 

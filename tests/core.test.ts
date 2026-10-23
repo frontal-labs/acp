@@ -1,9 +1,5 @@
-import {
-  createActionId,
-  createCorrelationId,
-  ValidationError,
-} from "@frontal-labs/open-channel-core";
-import { createTestEvent, createTestEventBus } from "@frontal-labs/open-channel-testing";
+import { createActionId, createCorrelationId, ValidationError } from "@openchannel/core";
+import { createTestEvent, createTestEventBus } from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 
 const ACTION_ID_PATTERN = /^action:[0-9a-f-]{36}$/;

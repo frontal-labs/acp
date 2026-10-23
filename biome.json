@@ -4,5 +4,31 @@
     "ultracite/biome/core",
     "ultracite/biome/vitest",
     "./ultracite.json"
+  ],
+  "overrides": [
+    {
+      "includes": [
+        "sdks/typescript/src/app.ts",
+        "sdks/typescript/tests/channels/a2a/a2a-provider.test.ts",
+        "examples/slack-typescript/src/main.ts"
+      ],
+      "linter": {
+        "rules": {
+          "performance": {
+            "noAwaitInLoops": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["examples/slack-typescript/src/main.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noExplicitAny": "off"
+          }
+        }
+      }
+    }
   ]
 }

@@ -14,7 +14,7 @@ Run `pnpm check` from the repository root. For a faster configuration-only check
 ## Repository boundaries
 
 - Do not edit generated files under `proto/gen` manually.
-- Keep provider-specific behavior in adapters and extensions.
+- Keep provider-specific behavior in adapters and in the SDK provider subpaths (`sdks/typescript/src/<provider>/`).
 - Keep runtime policy and protocol packages provider-neutral.
 - Public TypeScript APIs must be exported through the owning package's `src/index.ts`.
 - Add a Changeset for user-visible package changes.

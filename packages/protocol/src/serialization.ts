@@ -5,7 +5,7 @@ import {
   toJson as encodeJson,
   type JsonValue,
 } from "@bufbuild/protobuf";
-import { ValidationError } from "@frontal-labs/open-channel-core";
+import { ValidationError } from "@openchannel/core";
 
 import { validateEvent } from "./events.js";
 import { type EventEnvelope, EventEnvelopeSchema } from "./generated.js";

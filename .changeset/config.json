@@ -10,33 +10,19 @@
   "fixed": [
     [
       "openchannel",
-      "@frontal-labs/open-channel-adapter",
-      "@frontal-labs/open-channel-cli",
-      "@frontal-labs/open-channel-core",
-      "@frontal-labs/open-channel-ext-a2a",
-      "@frontal-labs/open-channel-ext-calendar",
-      "@frontal-labs/open-channel-ext-directory",
-      "@frontal-labs/open-channel-ext-email",
-      "@frontal-labs/open-channel-ext-google-chat",
-      "@frontal-labs/open-channel-ext-mcp",
-      "@frontal-labs/open-channel-ext-microsoft-teams",
-      "@frontal-labs/open-channel-ext-opentelemetry",
-      "@frontal-labs/open-channel-ext-policy-cedar",
-      "@frontal-labs/open-channel-ext-policy-opa",
-      "@frontal-labs/open-channel-ext-postgres",
-      "@frontal-labs/open-channel-ext-shared",
-      "@frontal-labs/open-channel-ext-slack",
-      "@frontal-labs/open-channel-ext-whatsapp",
-      "@frontal-labs/open-channel-policy",
-      "@frontal-labs/open-channel-protocol",
-      "@frontal-labs/open-channel-runtime"
+      "@openchannel/adapter",
+      "@openchannel/cli",
+      "@openchannel/core",
+      "@openchannel/policy",
+      "@openchannel/protocol",
+      "@openchannel/runtime"
     ]
   ],
   "linked": [],
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@frontal-labs/open-channel-demo"],
+  "ignore": ["@openchannel/demo"],
   "privatePackages": {
     "version": true,
     "tag": false

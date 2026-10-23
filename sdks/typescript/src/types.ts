@@ -3,9 +3,9 @@ import type {
   ChannelSource,
   DeliveryReceipt,
   ReceiveMetadata,
-} from "@frontal-labs/open-channel-adapter";
-import type { ActionError, OpenChannelError } from "@frontal-labs/open-channel-core";
-import type { PolicyEngine } from "@frontal-labs/open-channel-policy";
+} from "@openchannel/adapter";
+import type { ActionError, OpenChannelError } from "@openchannel/core";
+import type { PolicyEngine } from "@openchannel/policy";
 import type {
   ActionRequest,
   ActorRef,
@@ -14,7 +14,7 @@ import type {
   EventEnvelope,
   EventType,
   MessageReceived,
-} from "@frontal-labs/open-channel-protocol";
+} from "@openchannel/protocol";
 import type {
   ChannelGateway,
   Clock,
@@ -22,7 +22,7 @@ import type {
   OpenChannelRuntime,
   RuntimeResult,
   SubmitActionInput,
-} from "@frontal-labs/open-channel-runtime";
+} from "@openchannel/runtime";
 
 /** A discoverable skill an agent advertises. */
 export interface AgentSkill {

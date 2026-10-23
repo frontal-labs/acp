@@ -5,9 +5,9 @@ import type {
   DeliveryOptions,
   DeliveryReceipt,
   ReceiveMetadata,
-} from "@frontal-labs/open-channel-adapter";
-import { OpenChannelError, TransportError, ValidationError } from "@frontal-labs/open-channel-core";
-import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+} from "@openchannel/adapter";
+import { OpenChannelError, TransportError, ValidationError } from "@openchannel/core";
+import type { EventEnvelope } from "@openchannel/protocol";
 
 import type { OpenChannelRuntime } from "./runtime.js";
 import type { RuntimeResult } from "./types.js";

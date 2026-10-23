@@ -1,5 +1,5 @@
 {
-  "name": "@frontal-labs/open-channel-runtime",
+  "name": "@openchannel/runtime",
   "version": "2.0.0",
   "description": "OpenChannel Protocol runtime orchestration for requests, approvals, escalation, and audit events",
   "keywords": [
@@ -45,13 +45,13 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.5",
-    "@frontal-labs/open-channel-adapter": "workspace:*",
-    "@frontal-labs/open-channel-core": "workspace:*",
-    "@frontal-labs/open-channel-policy": "workspace:*",
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@openchannel/adapter": "workspace:*",
+    "@openchannel/core": "workspace:*",
+    "@openchannel/policy": "workspace:*",
+    "@openchannel/protocol": "workspace:*"
   },
   "devDependencies": {
-    "@frontal-labs/open-channel-testing": "workspace:*",
+    "@openchannel/testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

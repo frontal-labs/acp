@@ -9,7 +9,7 @@ import { join, resolve } from "node:path";
 // which makes re-runs safe.
 
 const REGISTRY = "https://npm.pkg.github.com";
-const SCOPE = "@frontal-labs";
+const SCOPE = "@openchannel";
 const root = resolve(import.meta.dirname, "..");
 const dryRun = process.argv.includes("--dry-run");
 const token = process.env.GITHUB_TOKEN ?? process.env.NODE_AUTH_TOKEN;

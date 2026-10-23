@@ -1,5 +1,5 @@
 {
-  "name": "@frontal-labs/open-channel-cli",
+  "name": "@openchannel/cli",
   "version": "2.0.0",
   "description": "Command-line tools for validating and inspecting OpenChannel Protocol messages",
   "keywords": [
@@ -47,10 +47,10 @@
   },
   "dependencies": {
     "@bufbuild/protobuf": "^2.2.5",
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@openchannel/protocol": "workspace:*"
   },
   "devDependencies": {
-    "@frontal-labs/open-channel-testing": "workspace:*",
+    "@openchannel/testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

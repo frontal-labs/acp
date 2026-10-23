@@ -1,4 +1,4 @@
-import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import type { EventEnvelope } from "@openchannel/protocol";
 
 /** Delivery options accepted by a test channel, matching the adapter contract. */
 export interface TestDeliveryOptions {

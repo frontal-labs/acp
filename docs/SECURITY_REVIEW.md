@@ -9,9 +9,9 @@ deployed environment, live provider accounts, or secrets management on a target 
 - Approval decisions: `packages/runtime` (`decideApproval`).
 - Inbound webhooks: Slack, WhatsApp, Microsoft Teams, Google Chat (`extensions/*/src/verification.ts`),
   and the Slack quickstart server (`examples/slack-typescript/main.ts`).
-- Bearer-token verification: `extensions/shared/src/jwt.ts`, `extensions/microsoft-teams/src/auth.ts`,
-  `extensions/google-chat/src/auth.ts`.
-- Shared signature helpers: `extensions/shared/src/signatures.ts`.
+- Bearer-token verification: `extensions/microsoft-teams/src/jwt.ts` and `extensions/microsoft-teams/src/auth.ts`,
+  `extensions/google-chat/src/jwt.ts` and `extensions/google-chat/src/auth.ts`.
+- Webhook signature checks: `extensions/slack/src/verification.ts`, `extensions/whatsapp/src/verification.ts`.
 - Durable storage: `extensions/postgres/src/store.ts`.
 - Dependencies: `pnpm audit` (production and development).
 
@@ -23,7 +23,7 @@ deployed environment, live provider accounts, or secrets management on a target 
 | Slack example server   | The request body was read without a size limit, before the signature was checked.                     | Bodies over 1 MiB get 413 with `connection: close`.                                                                                                                                      | `examples/slack-typescript --selftest` (checks the status the client receives)               |
 | Slack example server   | A correctly signed body that is not valid JSON threw inside an async handler.                         | Returns 400.                                                                                                                                                                             | `examples/slack-typescript --selftest`                                                       |
 | WhatsApp               | The webhook verify token was compared with `!==`, which is not constant-time.                         | Compared with `timingSafeEqual`; length mismatches are rejected.                                                                                                                         | `extensions/whatsapp/tests/verification.test.ts`                                             |
-| Teams and Google Chat  | No reference token verifier existed; the host had to write one.                                       | `createTeamsTokenVerifier` and `createGoogleChatTokenVerifier` check the RS256 signature, issuer, audience, and expiry, and reject `alg: none`, tampered payloads, and unpublished keys. | `extensions/microsoft-teams/tests/auth.test.ts`, `extensions/google-chat/tests/auth.test.ts` |
+| Teams and Google Chat  | No reference token verifier existed; the host had to write one.                                       | `teamsTokenVerifier` and `googleChatTokenVerifier` check the RS256 signature, issuer, audience, and expiry, and reject `alg: none`, tampered payloads, and unpublished keys. | `extensions/microsoft-teams/tests/auth.test.ts`, `extensions/google-chat/tests/auth.test.ts` |
 | Postgres store         | With a custom `tableName`, the migration still created `ocp_events`, so the first write failed.       | The migration takes the same table name, and index names derive from it. The name is validated before it is interpolated.                                                                | `extensions/postgres/tests/migration.test.ts`                                                |
 | Routing (availability) | Teams, Google Chat, WhatsApp, email, and A2A dropped inbound messages because no `recipient` was set. | Each source takes a `recipient` option.                                                                                                                                                  | `extensions/*/tests/routing.test.ts`                                                         |
 | Dependencies           | `vitest` 2.x had a critical advisory (UI server file read and execution).                             | Upgraded to `vitest` 4.1.12 across the workspace. The full test suite passes.                                                                                                            | `pnpm audit`, `pnpm test`                                                                    |
@@ -59,7 +59,7 @@ deployed environment, live provider accounts, or secrets management on a target 
 - **No rate limiting on webhook endpoints.** The Slack example has a size limit but no per-client
   limit. Put the endpoint behind a gateway that rate-limits.
 - **Example stores and channels are in memory.** The in-memory store in each example
-  (for instance `examples/native-typescript`) loses state on restart. Production uses `@frontal-labs/open-channel-ext-postgres`.
+  (for instance `examples/native-typescript`) loses state on restart. Production uses `openchannel/postgres`.
 - **Empty policy in examples.** The examples can only reply. Any action needs explicit rules.
 - **Dependency advisories that remain** (`pnpm audit`, after the vitest upgrade):
   - `braces` (high) and `sprintf-js` (moderate): transitive through `@changesets/cli`, a release

@@ -2,4 +2,3 @@ packages:
   - packages/*
   - cli
   - sdks/typescript
-  - extensions/*

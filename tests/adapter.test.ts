@@ -1,12 +1,12 @@
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ChannelGateway, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
+import { RuleBasedPolicyEngine } from "@openchannel/policy";
+import { ChannelGateway, OpenChannelRuntime } from "@openchannel/runtime";
 import {
   createTestAgent,
   createTestChannel,
   createTestChannelAdapter,
   createTestEvent,
   createTestEventStore,
-} from "@frontal-labs/open-channel-testing";
+} from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 
 describe("OCP channel gateway", () => {

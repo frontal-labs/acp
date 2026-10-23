@@ -1,13 +1,13 @@
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { ApprovalOutcome, eventType } from "@frontal-labs/open-channel-protocol";
-import { ManualClock, OpenChannelRuntime } from "@frontal-labs/open-channel-runtime";
+import { RuleBasedPolicyEngine } from "@openchannel/policy";
+import { ApprovalOutcome, eventType } from "@openchannel/protocol";
+import { ManualClock, OpenChannelRuntime } from "@openchannel/runtime";
 import {
   createTestAction,
   createTestAgent,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@frontal-labs/open-channel-testing";
+} from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 
 function createRuntime() {

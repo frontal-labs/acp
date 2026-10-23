@@ -1,5 +1,5 @@
 {
-  "name": "@frontal-labs/open-channel-adapter",
+  "name": "@openchannel/adapter",
   "version": "2.0.0",
   "description": "Adapter interfaces for connecting OpenChannel Protocol transports and channels",
   "keywords": [
@@ -43,10 +43,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@openchannel/protocol": "workspace:*"
   },
   "devDependencies": {
-    "@frontal-labs/open-channel-testing": "workspace:*",
+    "@openchannel/testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {

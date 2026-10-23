@@ -90,7 +90,7 @@ Slack event (signed)
   → verifySlackWebhook()            reject unsigned or replayed requests (401)
   → 200 acknowledged                Slack retries unacknowledged events
   → app.receive("slack", payload)   normalize to message.received, dedupe by event_id
-  → AgentHost routes to the agent   by recipient (set in createSlackChannel)
+  → AgentHost routes to the agent   by recipient (set in slackChannel)
   → agent handler replies           context.reply(...)
   → message.sent through the sink   Slack chat.postMessage, threaded when Slack sent a thread
 ```
@@ -103,7 +103,7 @@ applies policy and approvals first.
 
 | Concept | Where it appears |
 | --- | --- |
-| Channel adapter (source and sink) | `createSlackChannel()` in `createSlackApp` |
+| Channel adapter (source and sink) | `slackChannel()` in `createSlackApp` |
 | Inbound verification | `verifySlackWebhook()` in `createWebhookServer` |
 | Outbound delivery | `createSlackWebApiTransport()` calls `chat.postMessage` |
 | Agent identity | The `helper` actor and the `agents[]` entry in `createSlackApp` |
@@ -114,7 +114,7 @@ applies policy and approvals first.
 ## Production notes
 
 - **Store.** `src/main.ts` uses the demo-only in-memory store in
-  `src/demo-store.ts`. Use `@frontal-labs/open-channel-ext-postgres` in production.
+  `src/demo-store.ts`. Use `openchannel/postgres` in production.
 - **Policy.** The policy is empty, so the agent can only reply. Add rules before
   granting it any action.
 - **Retries.** Slack retries unacknowledged deliveries. Events are deduplicated

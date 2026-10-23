@@ -1,5 +1,5 @@
 {
-  "name": "@frontal-labs/open-channel-demo",
+  "name": "@openchannel/demo",
   "version": "2.0.0",
   "private": true,
   "description": "Reference OpenChannel Protocol demo application",
@@ -43,9 +43,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@frontal-labs/open-channel-adapter": "workspace:*",
-    "@frontal-labs/open-channel-policy": "workspace:*",
-    "@frontal-labs/open-channel-testing": "workspace:*",
+    "@openchannel/adapter": "workspace:*",
+    "@openchannel/policy": "workspace:*",
+    "@openchannel/testing": "workspace:*",
     "openchannel": "workspace:*"
   },
   "devDependencies": {

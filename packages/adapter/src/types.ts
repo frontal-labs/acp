@@ -1,4 +1,4 @@
-import type { EventEnvelope } from "@frontal-labs/open-channel-protocol";
+import type { EventEnvelope } from "@openchannel/protocol";
 
 /** Metadata supplied by a provider when normalizing inbound input. */
 export interface ReceiveMetadata {

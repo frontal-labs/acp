@@ -1,4 +1,4 @@
-import { type EventEnvelope, type EventType, eventType } from "@frontal-labs/open-channel-protocol";
+import { type EventEnvelope, type EventType, eventType } from "@openchannel/protocol";
 
 /** Returns event types in their original order. */
 export function eventTypes(events: readonly EventEnvelope[]): EventType[] {

@@ -1,11 +1,11 @@
-import type { ChannelAdapter } from "@frontal-labs/open-channel-adapter";
-import type { PolicyDecision, PolicyEngine } from "@frontal-labs/open-channel-policy";
+import type { ChannelAdapter } from "@openchannel/adapter";
+import type { PolicyDecision, PolicyEngine } from "@openchannel/policy";
 import type {
   ActionRequest,
   ActorRef,
   ApprovalOutcome,
   EventEnvelope,
-} from "@frontal-labs/open-channel-protocol";
+} from "@openchannel/protocol";
 
 /** Append-only event store contract used by the runtime. */
 export interface EventStore {

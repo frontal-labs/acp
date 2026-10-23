@@ -1,5 +1,5 @@
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
-import { createTestEvent, createTestEventStore } from "@frontal-labs/open-channel-testing";
+import { RuleBasedPolicyEngine } from "@openchannel/policy";
+import { createTestEvent, createTestEventStore } from "@openchannel/testing";
 import { describe, expect, it } from "vitest";
 import { OpenChannelRuntime, SYSTEM_ACTOR } from "../src/index.js";
 

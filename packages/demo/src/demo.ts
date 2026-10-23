@@ -1,11 +1,11 @@
-import { RuleBasedPolicyEngine } from "@frontal-labs/open-channel-policy";
+import { RuleBasedPolicyEngine } from "@openchannel/policy";
 import {
   createTestAgent,
   createTestChannelAdapter,
   createTestEvent,
   createTestEventStore,
   createTestHuman,
-} from "@frontal-labs/open-channel-testing";
+} from "@openchannel/testing";
 import { action, eventType, openChannel } from "openchannel";
 
 /** Narrows unknown action input to the ticket shape this demo expects. */

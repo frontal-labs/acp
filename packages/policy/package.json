@@ -1,5 +1,5 @@
 {
-  "name": "@frontal-labs/open-channel-policy",
+  "name": "@openchannel/policy",
   "version": "2.0.0",
   "description": "Authorization, approval, and policy evaluation primitives for OpenChannel Protocol runtimes",
   "keywords": [
@@ -43,10 +43,10 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@frontal-labs/open-channel-protocol": "workspace:*"
+    "@openchannel/protocol": "workspace:*"
   },
   "devDependencies": {
-    "@frontal-labs/open-channel-testing": "workspace:*",
+    "@openchannel/testing": "workspace:*",
     "vitest": "^4.1.12"
   },
   "engines": {
