@@ -1,6 +1,6 @@
 {
   "name": "@openchannel/protocol",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Generated TypeScript protocol types and runtime schemas for the OpenChannel Protocol",
   "keywords": [
     "openchannel-protocol",

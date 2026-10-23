@@ -1,5 +1,15 @@
 # @frontal-labs/open-channel-runtime
 
+## 2.1.0
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @openchannel/adapter@2.1.0
+  - @openchannel/core@2.1.0
+  - @openchannel/policy@2.1.0
+  - @openchannel/protocol@2.1.0
+
 ## 1.0.0
 
 ### Minor Changes

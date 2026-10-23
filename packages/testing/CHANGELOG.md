@@ -1,5 +1,13 @@
 # @frontal-labs/open-channel-testing
 
+## 2.0.1
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @openchannel/core@2.1.0
+  - @openchannel/protocol@2.1.0
+
 ## 1.0.0
 
 ### Minor Changes

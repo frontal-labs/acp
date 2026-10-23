@@ -1,5 +1,24 @@
 # @frontal-labs/open-channel
 
+## 2.1.0
+
+### Minor Changes
+
+- [#23](https://github.com/frontal-labs/open-channel/pull/23) [`9f57ea5`](https://github.com/frontal-labs/open-channel/commit/9f57ea5025130cb78ef19a382a330fcf39bf75aa) Thanks [@gabrielvfonseca](https://github.com/gabrielvfonseca)! - Fold every channel and capability extension into the `openchannel` SDK as subpath imports: `openchannel/slack`, `openchannel/teams`, `openchannel/google-chat`, `openchannel/email`, `openchannel/whatsapp`, `openchannel/a2a`, `openchannel/calendar`, `openchannel/mcp`, `openchannel/directory`, `openchannel/otel`, `openchannel/opa`, `openchannel/cedar`, and `openchannel/postgres`. The `@openchannel/<provider>` packages are no longer published.
+
+  Exports drop the `create` prefix: `createSlackChannel` is now `slackChannel`, `createPostgresEventStore` is now `postgresStore`, and so on. The SDK also re-exports `RuleBasedPolicyEngine`, `createActor`, `ActorType`, `ActorRefSchema`, and `ChannelRefSchema` so applications import from `openchannel` alone. `zod` is an optional peer, required only by `openchannel/calendar` and `openchannel/mcp`.
+
+- [#20](https://github.com/frontal-labs/open-channel/pull/20) [`377b8bc`](https://github.com/frontal-labs/open-channel/commit/377b8bc5ef9d5de09f151ccb2db4ffb7a7a09e21) Thanks [@gabrielvfonseca](https://github.com/gabrielvfonseca)! - Rename the TypeScript SDK package from `@frontal-labs/open-channel` to `openchannel`. Install with `pnpm add openchannel` and import from `"openchannel"`. The Python package is now `openchannel` (imported as `openchannel`), and the Rust crate is now `openchannel`.
+
+### Patch Changes
+
+- Updated dependencies []:
+  - @openchannel/adapter@2.1.0
+  - @openchannel/core@2.1.0
+  - @openchannel/policy@2.1.0
+  - @openchannel/protocol@2.1.0
+  - @openchannel/runtime@2.1.0
+
 ## 1.0.0
 
 ### Minor Changes
