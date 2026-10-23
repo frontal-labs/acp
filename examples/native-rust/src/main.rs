@@ -9,12 +9,13 @@
 //! `cargo test --manifest-path examples/native-rust/Cargo.toml`.
 
 use std::error::Error;
+use std::sync::Arc;
 
 use openchannel::{
-    message_received, ActionDefinition, ActionInvocation, ActionResult, ActorRef,
+    ActionDefinition, ActionInvocation, ActionPolicy, ActionResult, ActorRef,
     ActorType, AgentCard, AgentDefinition, AgentError, ChannelDefinition, ChannelRef, ChannelSink,
     ConversationRef, DeliveryReceipt, EventEnvelope, EventPayload, HandleResult, Hooks,
-    MemoryEventStore, OpenChannel, OpenChannelOptions, PolicyDecision,
+    MemoryEventStore, OpenChannel, OpenChannelOptions, PolicyDecision, message_received,
 };
 
 /// Stable OCP identifier of the example agent.
@@ -100,7 +101,7 @@ fn build_app() -> Result<OpenChannel, AgentError> {
         Ok(serde_json::json!({ "status": "refunded", "input": input }))
     });
 
-    Ok(OpenChannel::new(OpenChannelOptions {
+    OpenChannel::new(OpenChannelOptions {
         agents: vec![responder],
         actions: vec![refund],
         channels: vec![ChannelDefinition {
@@ -110,14 +111,14 @@ fn build_app() -> Result<OpenChannel, AgentError> {
         }],
         policy: Box::new(RefundPolicy),
         store: Arc::new(MemoryEventStore::default()),
-        approver: human(APPROVER_ID, "Finance Approver"),
+        approver: Some(human(APPROVER_ID, "Finance Approver")),
         approval_timeout_ms: 60_000,
         concurrency: usize::MAX,
-        hooks: Hooks::default(),
+        hooks: Some(Hooks::default()),
         clock: None,
         logger: None,
         runtime_actor: None,
-    }))
+    })
 }
 
 /// Ingests one `message.received` addressed to the example agent.
@@ -141,8 +142,8 @@ fn ingest_message(app: &OpenChannel, text: &str) -> Result<HandleResult, AgentEr
 /// Runs the end-to-end demonstration: ingest a message, hold and grant a refund, check the audit
 /// trail, and round-trip an approval event through protobuf.
 fn main() -> Result<(), Box<dyn Error>> {
-    let app = build_app()?;
-    app.start()?;
+    let app = build_app().map_err(|e| Box::new(e) as Box<dyn Error>)?;
+    app.start().map_err(|e| Box::new(e) as Box<dyn Error>)?;
 
     let result = ingest_message(&app, "Explain why OCP keeps policy outside the model prompt.")?;
     println!("handled: {}", result.handled);

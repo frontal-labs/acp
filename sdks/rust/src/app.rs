@@ -1229,7 +1229,6 @@ mod tests {
         let approval_id = approval_id_from(&app_a.ingest(inbound("Refund")).expect("ok"));
         app_a.stop().expect("app A stops");
 
-        clock.advance(Duration::from_secs(5));
         let app_b =
             billing(Arc::clone(&store), clock.clone(), Arc::clone(&executions), 60_000);
         app_b.start().expect("app B starts");
@@ -1426,8 +1425,13 @@ mod tests {
         let app = OpenChannel::new(OpenChannelOptions {
             policy: Box::new(BlockEverything),
             store: Arc::new(MemoryEventStore::default()),
-            agents: vec![],
-            actions: vec![],
+            agents: vec![AgentDefinition::new(AgentCard::new("agent:billing", "Billing"), |context| {
+                context.request("refund", serde_json::json!({ "amount": 10 }));
+                Ok(())
+            })],
+            actions: vec![ActionDefinition::new("refund", |input, _context| {
+                Ok(input.clone())
+            })],
             channels: vec![],
             approver: Some(ActorRef::default()),
             approval_timeout_ms: 60_000,
