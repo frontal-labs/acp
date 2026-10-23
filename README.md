@@ -48,6 +48,38 @@ message.received
 ## Repository layout
 
 ```text
+.
+├── proto/
+│   ├── ocp/
+│   │   ├── api/          The single EventEnvelope protobuf definition
+│   │   └── types/        Shared domain protobuf definitions
+│   ├── gen/              Generated TypeScript, Python, and Rust bindings
+│   └── README.md         Schema and generated-code workflow
+├── packages/
+│   ├── protocol/         Generated types, builders, and serialization helpers
+│   ├── runtime/          Event routing and approval lifecycle
+│   ├── policy/           Rule-based policy reference implementation
+│   ├── adapter/          Provider-neutral adapter contract
+│   ├── core/             Shared event bus and identifier primitives
+│   ├── testing/          Shared fixtures and helpers for TypeScript tests
+│   └── demo/             Runnable end-to-end example
+├── cli/                  `ocp` validation and inspection CLI
+├── sdks/
+│   ├── typescript/       TypeScript app facade, agent host, and developer API
+│   ├── python/           Python app facade, agent host, and developer API
+│   └── rust/             Rust app builder, agent host, and developer API
+├── examples/             Native SDK and optional agent-harness integrations
+├── skills/               OCP-specific instructions for agents and contributors
+├── tests/                Cross-package Vitest conformance tests
+├── docs/
+│   ├── SPEC.md           Normative behavior and compatibility rules
+│   └── DEVELOPMENT.md    Local development and agent SDK guide
+├── skills.sh.json        skills.sh grouping and discovery metadata
+├── turbo.json            Root Turborepo task graph
+├── renovate.json         Dependency-update policy for code and examples
+├── biome.json            Canonical Biome entrypoint and Ultracite presets
+└── ultracite.json        Shared Biome formatting and lint configuration
+```text
 proto/ocp/api/       The single EventEnvelope protobuf definition
 proto/ocp/types/     Shared domain protobuf definitions
 proto/gen/           Generated TypeScript, Python, and Rust bindings
